@@ -33,7 +33,7 @@ def train():
         horizontal_flip=True)
 
     train_generator = train_datagen.flow_from_directory(
-        data_dir + 'tmp/train',
+        data_dir + 'OneSampleImageData/train',
         color_mode='grayscale',
         target_size=(28, 28),
         batch_size=32,
@@ -41,7 +41,7 @@ def train():
         class_mode='categorical')
 
     valid_generator = train_datagen.flow_from_directory(
-        data_dir + 'tmp/valid',
+        data_dir + 'OneSampleImageData/valid',
         color_mode='grayscale',
         target_size=(28, 28),
         batch_size=32,
@@ -49,7 +49,7 @@ def train():
         class_mode='categorical')
 
     test_generator = train_datagen.flow_from_directory(
-        data_dir + 'tmp/test',
+        data_dir + 'OneSampleImageData/test',
         color_mode='grayscale',
         target_size=(28, 28),
         batch_size=1,

@@ -1,6 +1,6 @@
 ### Useful 
-
-
+* [Seismic image processing for geologic faults](https://github.com/dhale/ipf)
+Sources for synthetic data generation
 
 ### Somewhat useful
 * [Learning to Detect Roads in High-Resolution Aerial Images](http://www.cs.utoronto.ca/~vmnih/docs/road_detection.pdf)
@@ -22,3 +22,7 @@ For seismic traces data.
 * [SURFACE DEFORMATION DUE TO SHEAR AND TENSILE FAULTS IN A HALF-SPACE](http://www.bosai.go.jp/study/application/dc3d/download/Okada_1985_BSSA.pdf)
 
 * [Seismic data conditioning and neural network-based attribute selection for enhanced fault detection](http://pg.lyellcollection.org/content/petgeo/early/2013/03/25/petgeo2011-001.full.pdf)
+MLP on extracted features
+
+* [USING GENERATIVE ADVERSARIAL NETWORKS TO IMPROVE DEEP LEARNING FAULT INTERPRETATION NETWORKS](https://www.researchgate.net/profile/Ping_Lu10/publication/326758131_Using_generative_adversarial_networks_to_improve_deep-learning_fault_interpretation_networks/links/5b9a627d45851574f7c3b680/Using-generative-adversarial-networks-to-improve-deep-learning-fault-interpretation-networks.pdf)
+GANs for interpolating seismic images

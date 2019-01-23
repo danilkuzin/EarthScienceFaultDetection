@@ -3,8 +3,8 @@ import os
 from PIL import Image
 
 data_dir = "../../data/"
-image_path_raw = "tmp/CNN_faults_context_raw.jpg"
-image_path_gt = "tmp/CNN_faults_context_lines.jpg"
+image_path_raw = "OneSampleImageData/CNN_faults_context_raw.jpg"
+image_path_gt = "OneSampleImageData/CNN_faults_context_lines.jpg"
 
 print(os.listdir(data_dir))
 
@@ -16,14 +16,14 @@ def preprocess_tmp_files():
 
     box_shape = (28, 28)
 
-    os.mkdir(data_dir + "tmp/train/")
-    os.mkdir(data_dir + "tmp/train/fault/")
-    os.mkdir(data_dir + "tmp/train/nonfault/")
-    os.mkdir(data_dir + "tmp/valid/")
-    os.mkdir(data_dir + "tmp/valid/fault/")
-    os.mkdir(data_dir + "tmp/valid/nonfault/")
-    os.mkdir(data_dir + "tmp/test/")
-    os.mkdir(data_dir + "tmp/test/test/")
+    os.mkdir(data_dir + "OneSampleImageData/train/")
+    os.mkdir(data_dir + "OneSampleImageData/train/fault/")
+    os.mkdir(data_dir + "OneSampleImageData/train/nonfault/")
+    os.mkdir(data_dir + "OneSampleImageData/valid/")
+    os.mkdir(data_dir + "OneSampleImageData/valid/fault/")
+    os.mkdir(data_dir + "OneSampleImageData/valid/nonfault/")
+    os.mkdir(data_dir + "OneSampleImageData/test/")
+    os.mkdir(data_dir + "OneSampleImageData/test/test/")
 
 
     for i in range(0, im_lines.size[0] // box_shape[0]):
@@ -41,32 +41,34 @@ def preprocess_tmp_files():
             if red:
                 if (i % 17 == 0):
                     region_raw.save(
-                        data_dir + "tmp/test/test/fault_CNN_faults_context_raw_box_{}_{}.jpg".format(
+                        data_dir + "OneSampleImageData/test/test/fault_CNN_faults_context_raw_box_{}_{}.jpg".format(
                             i, j),
                         "JPEG")
                 elif (i % 5 != 0):
-                    region_raw.save(data_dir + "tmp/train/fault/CNN_faults_context_raw_box_{}_{}.jpg".format(i,j),
+                    region_raw.save(data_dir + "OneSampleImageData/train/fault/CNN_faults_context_raw_box_{}_{}.jpg".format(i,j),
                             "JPEG")
                 else:
                     region_raw.save(
-                        data_dir + "tmp/valid/fault/CNN_faults_context_raw_box_{}_{}.jpg".format(
+                        data_dir + "OneSampleImageData/valid/fault/CNN_faults_context_raw_box_{}_{}.jpg".format(
                             i, j),
                         "JPEG")
             else:
                 if (i % 17 == 0):
                     region_raw.save(
-                        data_dir + "tmp/test/test/nonfault_CNN_faults_context_raw_box_{}_{}.jpg".format(
+                        data_dir + "OneSampleImageData/test/test/nonfault_CNN_faults_context_raw_box_{}_{}.jpg".format(
                             i, j),
                         "JPEG")
                 elif (i % 5 != 0):
-                    region_raw.save(data_dir + "tmp/train/nonfault/CNN_faults_context_raw_box_{}_{}.jpg".format(i, j),
+                    region_raw.save(data_dir + "OneSampleImageData/train/nonfault/CNN_faults_context_raw_box_{}_{}.jpg".format(i, j),
                             "JPEG")
                 else:
                     region_raw.save(
-                        data_dir + "tmp/valid/nonfault/CNN_faults_context_raw_box_{}_{}.jpg".format(
+                        data_dir + "OneSampleImageData/valid/nonfault/CNN_faults_context_raw_box_{}_{}.jpg".format(
                             i, j),
                         "JPEG")
 
 
 
 preprocess_tmp_files()
+
+
