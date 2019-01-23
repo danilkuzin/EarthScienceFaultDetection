@@ -67,8 +67,8 @@ class DataPreprocessor22012019:
         fault_locations = np.argwhere(self.features == 1)
         samples_ind = np.random.randint(fault_locations.shape[0], size=self.num_faults_train)
         for i in range(self.num_faults_train):
-            # TODO check if out of original image borders and add thid condition to argwhere?
-            cur_patch = self.optical_rgb[samples_ind-self.patch_size[0]/2:samples_ind+self.patch_size[0]/2][samples_ind-self.patch_size[1]/2:samples_ind+self.patch_size[1]/2]
+            # TODO check if out of original image borders and add this condition to argwhere?
+            cur_patch = self.optical_rgb[fault_locations[samples_ind[i]][0]-self.patch_size[0]//2:fault_locations[samples_ind[i]][0]+self.patch_size[0]//2][fault_locations[samples_ind[i]][1]-self.patch_size[1]//2:fault_locations[samples_ind[i]][1]+self.patch_size[1]//2]
             plt.imsave(self.dirs['train_fault']+"/{}.tif".format(i), cur_patch)
 
 
