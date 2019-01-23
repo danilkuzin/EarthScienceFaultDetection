@@ -24,6 +24,7 @@ class DataPreprocessor22012019:
         self.center_size = (50, 50)
         self.dirs = dict()
         self.num_faults_train = 100
+        self.num_nonfaults_train = 100
 
     def prepare_folders(self):
         self.dirs['train_fault'] = self.data_dir + "learn/train/fault/"
@@ -61,16 +62,44 @@ class DataPreprocessor22012019:
         # plt.imsave('features.png', features*255)
         logging.info('loaded')
 
+    def borders_from_center(self, center):
+        left_border = center[0] - self.patch_size[0] // 2
+        right_border = center[0] + self.patch_size[0] // 2
+        top_border = center[1] - self.patch_size[1] // 2
+        bottom_border = center[1] + self.patch_size[1] // 2
+        return left_border, right_border, top_border, bottom_border
+
     def prepare_train(self):
-        # if an image patch contains fault bit in the center area than assign it as a fault
-        # if an image path contains only nonfault bits, than assign it as a non-fault
+        # if an image patch contains fault bit in the center area than assign it as a fault - go through fault lines and sample patches
         fault_locations = np.argwhere(self.features == 1)
         samples_ind = np.random.randint(fault_locations.shape[0], size=self.num_faults_train)
         for i in range(self.num_faults_train):
             # TODO check if out of original image borders and add this condition to argwhere?
-            cur_patch = self.optical_rgb[fault_locations[samples_ind[i]][0]-self.patch_size[0]//2:fault_locations[samples_ind[i]][0]+self.patch_size[0]//2][fault_locations[samples_ind[i]][1]-self.patch_size[1]//2:fault_locations[samples_ind[i]][1]+self.patch_size[1]//2]
+            left_border = fault_locations[samples_ind[i]][0]-self.patch_size[0]//2
+            right_border = fault_locations[samples_ind[i]][0]+self.patch_size[0]//2
+            top_border = fault_locations[samples_ind[i]][1]-self.patch_size[1]//2
+            bottom_border = fault_locations[samples_ind[i]][1]+self.patch_size[1]//2
+            left_border, right_border, top_border, bottom_border = self.borders_from_center(fault_locations[samples_ind[i]])
+            logging.info("extracting patch {}:{}, {}:{}".format(left_border, right_border, top_border, bottom_border))
+            cur_patch = self.optical_rgb[left_border:right_border][top_border:bottom_border]
             plt.imsave(self.dirs['train_fault']+"/{}.tif".format(i), cur_patch)
 
+        # if an image path contains only nonfault bits, than assign it as a non-fault
+        for i in range(self.num_nonfaults_train):
+            sampled = False
+            while not sampled:
+                ind1 = np.random.randint(self.patch_size[0], self.optical_rgb.shape[0] - self.patch_size[0])
+                ind2 = np.random.randint(self.patch_size[0], self.optical_rgb.shape[0] - self.patch_size[0])
+                left_border, right_border, top_border, bottom_border = self.borders_from_center(
+                    fault_locations[samples_ind[i]])
+                logging.info("trying patch {}:{}, {}:{} as nonfault".format(left_border, right_border, top_border, bottom_border))
+                for i1 in range(self.patch_size[0]):
+                    for i2 in range(self.patch_size[1]):
+                        if self.features[left_border + i1][top_border + i2] != 3:
+                            continue
+                cur_patch = self.optical_rgb[left_border:right_border][top_border:bottom_border]
+                plt.imsave(self.dirs['train_nonfault'] + "/{}.tif".format(i), cur_patch)
+                sampled = True
 
 
 if __name__ == "__main__":
