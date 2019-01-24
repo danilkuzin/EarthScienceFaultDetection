@@ -174,7 +174,7 @@ def apply_im(t, p):
     #         yu, x1i, x2i)
     # }
 def apply_im_norm(t, p):
-    n2, n1 = p.shape[1, 2]
+    _, n2, n1 = p.shape
     q0 = apply_im(t,p[0])
     q1 = apply_im(t,p[1])
     q2 = apply_im(t,p[2])
@@ -185,7 +185,7 @@ def apply_im_norm(t, p):
         qsi = 1.0/np.sqrt(q1i*q1i+q2i*q2i)
         q1[i2][i1] = q1i*qsi
         q2[i2][i1] = q2i*qsi
-    return np.array(q0,q1,q2)
+    return np.array((q0,q1,q2))
 
 def seismicAndSlopes2d2014A(noise):
     n1 = 501
@@ -200,6 +200,8 @@ def seismicAndSlopes2d2014A(noise):
     fold = Sinusoidal2(0.0, 0.05, 1.0e-4, 2.0e-4)
     shear = VerticalShear2(Linear1(0.0, 0.05))
     p = apply_im_norm(fold, p)
+    plt.imshow(p[0])
+    plt.show()
 
 if __name__ == "__main__":
     seismicAndSlopes2d2014A(0.5)
