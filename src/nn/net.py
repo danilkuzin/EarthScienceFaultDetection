@@ -3,7 +3,7 @@ import tensorflow as tf
 
 def cnn_for_mnist_adjust_lr_with_softmax(lr=1e-4):
     cnn_model = tf.keras.models.Sequential()
-    cnn_model.add(tf.keras.layers.InputLayer(input_shape=(28, 28, 1)))
+    cnn_model.add(tf.keras.layers.InputLayer(input_shape=(150, 150, 1)))
     cnn_model.add(tf.keras.layers.Conv2D(32, (5, 5), strides=1, padding='same'))
     cnn_model.add(tf.keras.layers.Activation('relu'))
     cnn_model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='same'))

@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -40,11 +42,13 @@ class DataPreprocessor22012019:
         self.dirs['valid_fault'] = self.data_dir + "learn/valid/fault/"
         self.dirs['valid_nonfault'] = self.data_dir + "learn/valid/nonfault/"
         self.dirs['test'] = self.data_dir + "learn/test/test/"
+        self.dirs['all_patches'] = self.data_dir + "all/"
         pathlib.Path(self.dirs['train_fault']).mkdir(parents=True, exist_ok=True)
         pathlib.Path(self.dirs['train_nonfault']).mkdir(parents=True, exist_ok=True)
         pathlib.Path(self.dirs['valid_fault']).mkdir(parents=True, exist_ok=True)
         pathlib.Path(self.dirs['valid_nonfault']).mkdir(parents=True, exist_ok=True)
         pathlib.Path(self.dirs['test']).mkdir(parents=True, exist_ok=True)
+        pathlib.Path(self.dirs['all_patches']).mkdir(parents=True, exist_ok=True)
 
     def load(self):
         logging.info('loading...')
@@ -108,7 +112,7 @@ class DataPreprocessor22012019:
             logging.info(
                 "trying patch {}:{}, {}:{} as nonfault".format(left_border, right_border, top_border, bottom_border))
             isProbablyFault = False
-            for i1, i2 in zip(range(self.patch_size[0]), range(self.patch_size[1])):
+            for i1, i2 in itertools.product(range(self.patch_size[0]), range(self.patch_size[1])):
                 if self.features[left_border + i1][top_border + i2] != 3:
                     isProbablyFault = True
                     logging.info("probably fault")
@@ -146,6 +150,14 @@ class DataPreprocessor22012019:
             plt.imsave(self.dirs['test'] + "/{}.tif".format(i), cur_patch)
         logging.info("true test classes: {}".format(self.true_test_classes))
 
+    def prepare_all_patches(self):
+        for i, j in itertools.product(range(self.optical_rgb.shape[0] // self.patch_size[0]),
+                        range(self.optical_rgb.shape[1] // self.patch_size[1])):
+            cur_patch = self.optical_rgb[i * self.patch_size[0]: (i + 1) * self.patch_size[0],
+                        j * self.patch_size[0]: (j + 1) * self.patch_size[0]]
+            plt.imsave(self.dirs['all_patches'] + "/{}_{}.tif".format(i, j), cur_patch)
+
+    # to use as input for tensorflow dataset from generator
     def __iter__(self):
         while True:
             class_label = np.random.binomial(1, p=0.5, size=1)
@@ -164,5 +176,6 @@ if __name__ == "__main__":
     loader.prepare_train()
     loader.prepare_valid()
     loader.prepare_test()
+    loader.prepare_all_patches()
 
 
