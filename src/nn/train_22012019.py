@@ -5,6 +5,7 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 from src.DataPreprocessor.preprocess_data_22012019 import DataPreprocessor22012019
 from src.nn.net import cnn_for_mnist_adjust_lr_with_softmax
@@ -45,12 +46,12 @@ def train():
         class_mode=None)
 
     model = cnn_for_mnist_adjust_lr_with_softmax()
-    model.fit_generator(train_generator,
+    history = model.fit_generator(train_generator,
                         steps_per_epoch=50,
                         epochs=5,
                         validation_data=valid_generator
                         )
-
+    tf.keras.utils.plot_model(model, to_file='model.png')
     # model.save is not working in keras https://github.com/keras-team/keras/issues/11683
     model.save_weights('model.h5')
     # test_generator.reset()
@@ -60,7 +61,23 @@ def train():
     # labels = (train_generator.class_indices)
     # labels = dict((v, k) for k, v in labels.items())
     # predictions = [labels[k] for k in predicted_class_indices]
+    # Plot training & validation accuracy values
+    plt.plot(history.history['acc'])
+    plt.plot(history.history['val_acc'])
+    plt.title('Model accuracy')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
+    plt.show()
 
+    # Plot training & validation loss values
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('Model loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
+    plt.show()
 #    print(predictions)
 
 def train_with_gen():
