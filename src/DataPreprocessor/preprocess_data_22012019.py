@@ -13,6 +13,10 @@ from PIL import Image
 from tqdm import trange
 
 
+class OutOfBoundsException(Exception):
+    pass
+
+
 class DataPreprocessor22012019:
     def __init__(self, data_dir):
         self.data_dir = data_dir
@@ -79,48 +83,58 @@ class DataPreprocessor22012019:
         right_border = center[0] + self.patch_size[0] // 2
         top_border = center[1] - self.patch_size[1] // 2
         bottom_border = center[1] + self.patch_size[1] // 2
+
+        if not (0 < left_border < self.optical_rgb.shape[0]
+                and 0 < right_border < self.optical_rgb.shape[0]
+                and 0 < top_border < self.optical_rgb.shape[1]
+                and 0 < bottom_border < self.optical_rgb.shape[1]):
+            raise OutOfBoundsException
+
         return left_border, right_border, top_border, bottom_border
 
     def sample_fault_patch(self):
-        # if an image patch contains fault bit in the center area than assign it as a fault - go through fault lines and sample patches
+        """if an image patch contains fault bit in the center area than assign it as a fault - go through fault lines
+        and sample patches"""
         fault_locations = np.argwhere(self.features == 1)
         sampled = False
+        left_border, right_border, top_border, bottom_border = None, None, None, None
         while not sampled:
             samples_ind = np.random.randint(fault_locations.shape[0])
-            left_border, right_border, top_border, bottom_border = self.borders_from_center(
-                fault_locations[samples_ind])
-            if 0 < left_border < self.optical_rgb.shape[0] \
-                    and 0 < right_border < self.optical_rgb.shape[0] \
-                    and 0 < top_border < self.optical_rgb.shape[1] \
-                    and 0 < bottom_border < self.optical_rgb.shape[1]:
-                sampled = True
-
-            if sampled:
+            try:
+                left_border, right_border, top_border, bottom_border = self.borders_from_center(
+                    fault_locations[samples_ind])
                 logging.info(
                     "extracting patch {}:{}, {}:{}".format(left_border, right_border, top_border, bottom_border))
-                return self.optical_rgb[left_border:right_border, top_border:bottom_border]
+                sampled = True
+            except OutOfBoundsException:
+                sampled = False
+
+        return self.optical_rgb[left_border:right_border, top_border:bottom_border]
 
     def sample_nonfault_patch(self):
-        # if an image path contains only nonfault bits, than assign it as a non-fault
+        """if an image path contains only nonfault bits, than assign it as a non-fault"""
+        nonfault_locations = np.argwhere(self.features == 3)
         sampled = False
+        left_border, right_border, top_border, bottom_border = None, None, None, None
         while not sampled:
-            # todo sample first index from non-faults
-            ind1 = np.random.randint(self.patch_size[0], self.optical_rgb.shape[0] - self.patch_size[0])
-            ind2 = np.random.randint(self.patch_size[0], self.optical_rgb.shape[0] - self.patch_size[0])
-            left_border, right_border, top_border, bottom_border = self.borders_from_center(
-                (ind1, ind2))
-            logging.info(
-                "trying patch {}:{}, {}:{} as nonfault".format(left_border, right_border, top_border, bottom_border))
-            isProbablyFault = False
-            for i1, i2 in itertools.product(range(self.patch_size[0]), range(self.patch_size[1])):
-                if self.features[left_border + i1][top_border + i2] != 3:
-                    isProbablyFault = True
-                    logging.info("probably fault")
-                    break
-            if not isProbablyFault:
-                logging.info("nonfault")
-                sampled = True
-                return self.optical_rgb[left_border:right_border, top_border:bottom_border]
+            samples_ind = np.random.randint(nonfault_locations.shape[0])
+            try:
+                left_border, right_border, top_border, bottom_border = self.borders_from_center(
+                    nonfault_locations[samples_ind])
+                logging.info(
+                    "trying patch {}:{}, {}:{} as nonfault".format(left_border, right_border, top_border, bottom_border))
+                is_probably_fault = False
+                for i1, i2 in itertools.product(range(self.patch_size[0]), range(self.patch_size[1])):
+                    if self.features[left_border + i1][top_border + i2] != 3:
+                        is_probably_fault = True
+                        logging.info("probably fault")
+                        break
+                if not is_probably_fault:
+                    logging.info("nonfault")
+                    sampled = True
+            except OutOfBoundsException:
+                sampled = False
+        return self.optical_rgb[left_border:right_border, top_border:bottom_border]
 
     def prepare_train(self):
         for i in trange(self.num_faults_train):
@@ -172,7 +186,6 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.WARN)
     loader = DataPreprocessor22012019("../../data/Data22012019/")
     loader.prepare_folders()
-    #loader.load()
     loader.prepare_train()
     loader.prepare_valid()
     loader.prepare_test()

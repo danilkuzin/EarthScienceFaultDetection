@@ -46,7 +46,7 @@ def train():
 
     model = cnn_for_mnist_adjust_lr_with_softmax()
     model.fit_generator(train_generator,
-                        steps_per_epoch=10,
+                        steps_per_epoch=50,
                         epochs=5,
                         validation_data=valid_generator
                         )
@@ -89,7 +89,8 @@ def apply_for_all_patches():
         patch_arr = np.array(patch_grsc)
         patch_prep = np.expand_dims(patch_arr, axis=2)# add colour
         patch_prep = np.expand_dims(patch_prep, axis=0)# add batch
-        res = model.predict(patch_prep)
+        patch_resc = patch_prep / 255
+        res = model.predict(patch_resc)
         res = res[0]
         if res[0] > res[1]:
             res_im[i * 150: (i + 1) * 150,
