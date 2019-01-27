@@ -4,7 +4,7 @@ import itertools
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-from tqdm import tqdm
+from tqdm import tqdm, trange
 import matplotlib.pyplot as plt
 
 from src.DataPreprocessor.preprocess_data_22012019 import DataPreprocessor22012019
@@ -51,7 +51,8 @@ def train():
                         epochs=5,
                         validation_data=valid_generator
                         )
-    tf.keras.utils.plot_model(model, to_file='model.png')
+    # pydot not working
+    # tf.keras.utils.plot_model(model, to_file='model.png')
     # model.save is not working in keras https://github.com/keras-team/keras/issues/11683
     model.save_weights('model.h5')
     # test_generator.reset()
@@ -119,33 +120,69 @@ def apply_for_all_patches():
     res_im_im.save('out.tif')
         #print(res)
 
+def apply_for_test():
+    model = cnn_for_mnist_adjust_lr_with_softmax()
+    model.load_weights('model.h5')
+    res_faults = np.zeros((1000, 2))
+    res_nonfaults = np.zeros((1000, 2))
+
+    train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
+        rescale=1./255,
+        shear_range=0.2,
+        zoom_range=0.2,
+        horizontal_flip=True)
+
+    train_generator = train_datagen.flow_from_directory(
+        data_dir + 'learn/train',
+        color_mode='grayscale',
+        target_size=(150, 150),
+        batch_size=32,
+        shuffle=True,
+        class_mode='categorical')
+
+    for i in trange(1000):
+        patch_rgb = Image.open(data_dir+'learn/test_with_labels/fault/{}.tif'.format(i))
+        patch_grsc = patch_rgb.convert('L')
+        patch_arr = np.array(patch_grsc)
+        patch_prep = np.expand_dims(patch_arr, axis=2)# add colour
+        patch_prep = np.expand_dims(patch_prep, axis=0)# add batch
+        patch_resc = patch_prep / 255
+        res_faults[i] = model.predict(patch_resc)
+
+    for i in trange(1000):
+        patch_rgb = Image.open(data_dir + 'learn/test_with_labels/nonfault/{}.tif'.format(i))
+        patch_grsc = patch_rgb.convert('L')
+        patch_arr = np.array(patch_grsc)
+        patch_prep = np.expand_dims(patch_arr, axis=2)  # add colour
+        patch_prep = np.expand_dims(patch_prep, axis=0)  # add batch
+        patch_resc = patch_prep / 255
+        res_nonfaults[i] = model.predict(patch_resc)
+
+    labels = (train_generator.class_indices)
+    labels = dict((v, k) for k, v in labels.items())
+
+    predicted_class_indices = np.argmax(res_faults, axis=1)
+    predictions_faults = np.array([labels[k] for k in predicted_class_indices])
+    predicted_class_indices = np.argmax(res_nonfaults, axis=1)
+    predictions_nonfaults = np.array([labels[k] for k in predicted_class_indices])
+
+    print(np.mean(predictions_faults == 'fault'))
+    print(np.mean(predictions_nonfaults == 'nonfault'))
+
+
 def combine_images():
     mask = Image.open('out.tif').convert('RGBA')
     mask_np = np.array(mask)
     mask_np[:,:,3] = 60*np.ones((22*150, 22*150))
     mask_a = Image.fromarray(mask_np)
-    orig = Image.open(data_dir+'/data.tif')
+    orig = Image.open(data_dir+'data.tif')
     orig_c = orig.crop((0,0,22*150, 22*150))
     Image.alpha_composite(orig_c, mask_a).save("out_mask.tif")
 
-def combine_features_images():
-    mask = Image.open(data_dir+'/feature_categories.tif').convert('RGBA').crop((0,0,22*150, 22*150))
-    mask_np = np.array(mask)
-    for i1, i2 in tqdm(itertools.product(range(22*150), range(22*150))):
-        if np.any(mask_np[i1, i2] == 1):
-            mask_np[i1, i2] = [250, 0, 0, 0]
-        if np.any(mask_np[i1, i2] == 2):
-            mask_np[i1, i2] = [0, 250, 0, 0]
-        if np.any(mask_np[i1, i2] ==3):
-            mask_np[i1, i2] = [0, 0, 250, 0]
-    mask_np[:,:,3] = 60*np.ones((22*150, 22*150))
-    mask_a = Image.fromarray(mask_np)
-    orig = Image.open(data_dir+'/data.tif')
-    orig_c = orig.crop((0,0,22*150, 22*150))
-    Image.alpha_composite(orig_c, mask_a).save("out_features_mask.tif")
 
 if __name__ == "__main__":
     #train()
     #apply_for_all_patches()
-    combine_images()
+    apply_for_test()
+    #combine_images()
     #combine_features_images()
