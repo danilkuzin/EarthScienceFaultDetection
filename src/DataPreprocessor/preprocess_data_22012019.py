@@ -158,12 +158,11 @@ class DataPreprocessor22012019:
         self.load_slope(backend)
         self.load_optical(backend)
         plt.imsave(self.data_dir+'data.tif', self.optical_rgb)
-
         self.load_ir(backend)
         self.load_features(backend)
-
         logging.info('loaded')
 
+    # to be used for parsing gdal headers and recreating them in output results
     def parse_meta_with_gdal(self):
         # based on https://www.gdal.org/gdal_tutorial.html
         #Opening the File
@@ -214,13 +213,10 @@ class DataPreprocessor22012019:
         #dataset = gdal.Translate(self.data_dir+'tmp.tif', dataset, options=gdal.TranslateOptions(outputType=gdal.GDT_Byte, scaleParams=[0, 65535, 0, 255]))
         #dataset = gdal.Translate(self.data_dir+'tmp.tif', gdal.TranslateOptions(["-of", "GTiff", "-ot", "Byte", "-scale", "0 65535 0 255"]))
 
-
-
         # Reading Raster Data
         scanline = band.ReadRaster(xoff=0, yoff=0,
                                    xsize=band.XSize, ysize=1,
                                    buf_xsize=band.XSize, buf_ysize=1,
-#                                   buf_type=gdal.GDT_Float32)
                                    buf_type=gdal.GDT_Byte)
 
         #tuple_of_floats = struct.unpack('f' * band.XSize, scanline)
@@ -387,5 +383,5 @@ if __name__ == "__main__":
     #loader.prepare_test()
     #loader.prepare_test_with_labels()
     #loader.prepare_all_patches()
-    loader.parse_meta_with_gdal()
+    # loader.parse_meta_with_gdal()
 
