@@ -25,3 +25,7 @@
   242  sudo apt-get install python3-dev
   243  ~/VirtualEnv/VirtualEnv3/bin/pip install GDAL==2.2.3
   244  ~/VirtualEnv/VirtualEnv3/bin/pip install gdal==2.2.3 --global-option=build_ext --global-option="-I/usr/include/gdal/"
+
+## MAC
+brew install gdal
+~/VirtualEnv/VirtualEnv3/bin/pip install gdal==2.4.0 --global-option=build_ext --global-option="-I/usr/include/gdal/"
