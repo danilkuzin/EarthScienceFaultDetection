@@ -11,6 +11,7 @@ import pathlib
 import gdal
 from osgeo import gdal_array
 import struct
+import tensorflow as tf
 
 from PIL import Image
 
@@ -27,7 +28,8 @@ class GdalFileException(Exception):
 
 class DataOutput(Enum):
     FOLDER = 1,
-    H5=2
+    H5 = 2,
+    TFRECORD = 3
 
 class Backend(Enum):
     PILLOW = 1
@@ -44,6 +46,12 @@ class DatasetType(Enum):
     TRAIN = 1,
     VALIDATION = 2,
     TEST = 3
+
+def _int64_feature(value):
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+
+def _bytes_feature(value):
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 # todo normalise images
 # todo include lookalikes as well
@@ -63,12 +71,12 @@ class DataPreprocessor22012019:
         self.center_size = (50, 50)
         self.dirs = dict()
         self.datasets_sizes = dict()
-        self.datasets_sizes[DatasetType.TRAIN.name + "_" + FeatureValue.FAULT.name] = 1000
-        self.datasets_sizes[DatasetType.TRAIN.name + "_" + FeatureValue.NONFAULT.name] = 1000
-        self.datasets_sizes[DatasetType.VALIDATION.name + "_" + FeatureValue.FAULT.name] = 200
-        self.datasets_sizes[DatasetType.VALIDATION.name + "_" + FeatureValue.NONFAULT.name] = 200
-        self.datasets_sizes[DatasetType.TEST.name + "_" + FeatureValue.FAULT.name] = 100
-        self.datasets_sizes[DatasetType.TEST.name + "_" + FeatureValue.NONFAULT.name] = 100
+        self.datasets_sizes[DatasetType.TRAIN.name + "_" + FeatureValue.FAULT.name] = 100
+        self.datasets_sizes[DatasetType.TRAIN.name + "_" + FeatureValue.NONFAULT.name] = 100
+        self.datasets_sizes[DatasetType.VALIDATION.name + "_" + FeatureValue.FAULT.name] = 20
+        self.datasets_sizes[DatasetType.VALIDATION.name + "_" + FeatureValue.NONFAULT.name] = 20
+        self.datasets_sizes[DatasetType.TEST.name + "_" + FeatureValue.FAULT.name] = 10
+        self.datasets_sizes[DatasetType.TEST.name + "_" + FeatureValue.NONFAULT.name] = 10
         self.num_channels = 5 # r, g, b, elevation, slope
         self.true_test_classes = None
         self.load()
@@ -328,6 +336,28 @@ class DataPreprocessor22012019:
             with h5py.File(self.data_dir + category + '.h5', 'w') as hf:
                 hf.create_dataset(category, data=arr)
 
+        elif output == DataOutput.TFRECORD:
+            arr = np.zeros(
+                (self.datasets_sizes[category], self.patch_size[0], self.patch_size[1], self.num_channels))
+            for i in trange(self.datasets_sizes[category]):
+                arr[i] = self.sample_patch(label)
+
+            filename = os.path.join(self.data_dir, category + '.tfrecords')
+            logging.info('Writing', filename)
+            with tf.python_io.TFRecordWriter(filename) as writer:
+                for index in range(self.datasets_sizes[category]):
+                    image_raw = arr[index].tostring()
+                    example = tf.train.Example(
+                        features=tf.train.Features(
+                            feature={
+                                'height': _int64_feature(arr.shape[1]),
+                                'width': _int64_feature(arr.shape[2]),
+                                'depth': _int64_feature(arr.shape[3]),
+                                'label': _int64_feature(label.value),
+                                'image_raw': _bytes_feature(image_raw)
+                            }))
+                    writer.write(example.SerializeToString())
+
     def prepare_all_patches(self):
         for i, j in tqdm(itertools.product(range(self.optical_rgb.shape[0] // self.patch_size[0]),
                         range(self.optical_rgb.shape[1] // self.patch_size[1]))):
@@ -387,7 +417,7 @@ if __name__ == "__main__":
     loader = DataPreprocessor22012019("../../data/Data22012019/")
     #loader.get_elevation_with_features_mask()
     #loader.prepare_folders()
-    loader.prepare_datasets(output=DataOutput.H5)
+    loader.prepare_datasets(output=DataOutput.TFRECORD)
     #loader.prepare_valid()
     #loader.prepare_test()
     #loader.prepare_test_with_labels()
