@@ -1,3 +1,4 @@
+import h5py
 import itertools
 from enum import Enum
 
@@ -24,6 +25,9 @@ class OutOfBoundsException(Exception):
 class GdalFileException(Exception):
     pass
 
+class DataOutput(Enum):
+    FOLDER = 1,
+    H5=2
 
 class Backend(Enum):
     PILLOW = 1
@@ -35,6 +39,11 @@ class FeatureValue(Enum):
     FAULT = 1
     FAULT_LOOKALIKE = 2
     NONFAULT = 3
+
+class DatasetType(Enum):
+    TRAIN = 1,
+    VALIDATION = 2,
+    TEST = 3
 
 # todo normalise images
 # todo include lookalikes as well
@@ -53,13 +62,14 @@ class DataPreprocessor22012019:
         self.patch_size = (150, 150)
         self.center_size = (50, 50)
         self.dirs = dict()
-        self.num_faults_train = 10000
-        self.num_nonfaults_train = 10000
-        self.num_faults_valid = 1000
-        self.num_nonfaults_valid = 1000
-        self.num_faults_test_w_labels = 1000
-        self.num_nonfaults_test_w_labels = 1000
-        self.num_test = 10
+        self.datasets_sizes = dict()
+        self.datasets_sizes[DatasetType.TRAIN.name + "_" + FeatureValue.FAULT.name] = 1000
+        self.datasets_sizes[DatasetType.TRAIN.name + "_" + FeatureValue.NONFAULT.name] = 1000
+        self.datasets_sizes[DatasetType.VALIDATION.name + "_" + FeatureValue.FAULT.name] = 200
+        self.datasets_sizes[DatasetType.VALIDATION.name + "_" + FeatureValue.NONFAULT.name] = 200
+        self.datasets_sizes[DatasetType.TEST.name + "_" + FeatureValue.FAULT.name] = 100
+        self.datasets_sizes[DatasetType.TEST.name + "_" + FeatureValue.NONFAULT.name] = 100
+        self.num_channels = 5 # r, g, b, elevation, slope
         self.true_test_classes = None
         self.load()
 
@@ -256,7 +266,10 @@ class DataPreprocessor22012019:
             except OutOfBoundsException:
                 sampled = False
 
-        return self.optical_rgb[left_border:right_border, top_border:bottom_border]
+        return np.concatenate((self.optical_rgb[left_border:right_border, top_border:bottom_border],
+                               np.expand_dims(self.elevation[left_border:right_border, top_border:bottom_border], axis=2),
+                               np.expand_dims(self.slope[left_border:right_border, top_border:bottom_border], axis=2)),
+                              axis=2)
 
     def sample_nonfault_patch(self):
         """if an image path contains only nonfault bits, than assign it as a non-fault"""
@@ -281,44 +294,39 @@ class DataPreprocessor22012019:
                     sampled = True
             except OutOfBoundsException:
                 sampled = False
-        return self.optical_rgb[left_border:right_border, top_border:bottom_border]
+        return np.concatenate((self.optical_rgb[left_border:right_border, top_border:bottom_border],
+                               np.expand_dims(self.elevation[left_border:right_border, top_border:bottom_border], axis=2),
+                               np.expand_dims(self.slope[left_border:right_border, top_border:bottom_border], axis=2)),
+                              axis=2)
 
-    def prepare_train(self):
-        for i in trange(self.num_faults_train):
-            cur_patch = self.sample_fault_patch()
-            plt.imsave(self.dirs['train_fault'] + "/{}.tif".format(i), cur_patch)
+    def sample_patch(self, label):
+        if label==FeatureValue.FAULT:
+            return self.sample_fault_patch()
+        elif label==FeatureValue.NONFAULT:
+            return self.sample_nonfault_patch()
 
-        for i in trange(self.num_nonfaults_train):
-            cur_patch = self.sample_nonfault_patch()
-            plt.imsave(self.dirs['train_nonfault'] + "/{}.tif".format(i), cur_patch)
+    def prepare_datasets(self, output):
+        self.prepare_dataset(output, DatasetType.TRAIN, FeatureValue.FAULT)
+        self.prepare_dataset(output, DatasetType.TRAIN, FeatureValue.NONFAULT)
+        self.prepare_dataset(output, DatasetType.VALIDATION, FeatureValue.FAULT)
+        self.prepare_dataset(output, DatasetType.VALIDATION, FeatureValue.NONFAULT)
+        self.prepare_dataset(output, DatasetType.TEST, FeatureValue.FAULT)
+        self.prepare_dataset(output, DatasetType.TEST, FeatureValue.NONFAULT)
 
-    def prepare_valid(self):
-        for i in trange(self.num_faults_valid):
-            cur_patch = self.sample_fault_patch()
-            plt.imsave(self.dirs['valid_fault'] + "/{}.tif".format(i), cur_patch)
+    def prepare_dataset(self, output, data_type, label):
+        category = data_type.name + "_" + label.name
+        if output == DataOutput.FOLDER:
+            for i in trange(self.datasets_sizes[category]):
+                patch_im = Image.fromarray(self.sample_patch(label))
+                patch_im.save(self.dirs[category] + "/{}.tif".format(i))
 
-        for i in trange(self.num_nonfaults_valid):
-            cur_patch = self.sample_nonfault_patch()
-            plt.imsave(self.dirs['valid_nonfault'] + "/{}.tif".format(i), cur_patch)
-
-    def prepare_test(self):
-        self.true_test_classes = np.random.binomial(1, p=0.5, size=self.num_test)
-        for i in trange(self.num_test):
-            if self.true_test_classes[i] == 1:
-                cur_patch = self.sample_fault_patch()
-            else:
-                cur_patch = self.sample_nonfault_patch()
-            plt.imsave(self.dirs['test'] + "/{}.tif".format(i), cur_patch)
-        logging.info("true test classes: {}".format(self.true_test_classes))
-
-    def prepare_test_with_labels(self):
-        for i in trange(self.num_faults_test_w_labels):
-            cur_patch = self.sample_fault_patch()
-            plt.imsave(self.dirs['test_w_labels_fault'] + "/{}.tif".format(i), cur_patch)
-
-        for i in trange(self.num_nonfaults_test_w_labels):
-            cur_patch = self.sample_nonfault_patch()
-            plt.imsave(self.dirs['test_w_labels_nonfault'] + "/{}.tif".format(i), cur_patch)
+        elif output == DataOutput.H5:
+            arr = np.zeros(
+                (self.datasets_sizes[category], self.patch_size[0], self.patch_size[1], self.num_channels))
+            for i in trange(self.datasets_sizes[category]):
+                arr[i] = self.sample_patch(label)
+            with h5py.File(self.data_dir + category + '.h5', 'w') as hf:
+                hf.create_dataset(category, data=arr)
 
     def prepare_all_patches(self):
         for i, j in tqdm(itertools.product(range(self.optical_rgb.shape[0] // self.patch_size[0]),
@@ -379,7 +387,7 @@ if __name__ == "__main__":
     loader = DataPreprocessor22012019("../../data/Data22012019/")
     #loader.get_elevation_with_features_mask()
     #loader.prepare_folders()
-    #loader.prepare_train()
+    loader.prepare_datasets(output=DataOutput.H5)
     #loader.prepare_valid()
     #loader.prepare_test()
     #loader.prepare_test_with_labels()
