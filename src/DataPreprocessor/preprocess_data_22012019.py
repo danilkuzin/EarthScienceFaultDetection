@@ -36,7 +36,8 @@ class FeatureValue(Enum):
     FAULT_LOOKALIKE = 2
     NONFAULT = 3
 
-
+# todo normalise images
+# todo include lookalikes as well
 class DataPreprocessor22012019:
     def __init__(self, data_dir):
         self.data_dir = data_dir
