@@ -39,12 +39,12 @@ def cnn_for_mnist(x):
     #  Last dimension is for "features" - there is only one here, since images are
     #  grayscale -- it would be 3 for an RGB image, 4 for RGBA, etc.
     with tf.name_scope('reshape'):
-        x_image = tf.reshape(x, [-1, 28, 28, 1])
+        x_image = tf.reshape(x, [-1, 150, 150, 5])
 
     # First layer
     # First convolutional layer - maps one grayscale image to 64 feature maps.
     with tf.name_scope('conv1'):
-        W_conv1 = weight_variable([5, 5, 1, 32])
+        W_conv1 = weight_variable([5, 5, 5, 32])
         b_conv1 = bias_variable([32])
         h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
 
@@ -67,10 +67,10 @@ def cnn_for_mnist(x):
     # Fully connected layer 1 -- after 2 round of downsampling, our 28x28 image
     # is down to 7x7x128 feature maps -- maps this to 1024 features.
     with tf.name_scope('fc1'):
-        W_fc1 = weight_variable([7 * 7 * 64, 1024])
+        W_fc1 = weight_variable([38 * 38 * 64, 1024])
         b_fc1 = bias_variable([1024])
 
-        h_pool2_flat = tf.reshape(h_pool2, [-1, 7*7*64])
+        h_pool2_flat = tf.reshape(h_pool2, [-1, 38 * 38*64])
         h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
     # Dropout - controls the complexity of the model, prevents co-adaptation of
@@ -92,7 +92,7 @@ def cnn_for_mnist(x):
 
 
 def deepnn_framework():
-    x = tf.placeholder(tf.float32, shape=[None, 784, 1])
+    x = tf.placeholder(tf.float32, shape=[None, 150, 150, 5])
     gt_labels = tf.placeholder(tf.float32, shape=[None, 2])
 
     predicted_output, keep_prob, cnn_without_last_layer = cnn_for_mnist(x)
