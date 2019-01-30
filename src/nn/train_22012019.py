@@ -7,7 +7,7 @@ from PIL import Image
 from tqdm import tqdm, trange
 import matplotlib.pyplot as plt
 
-from src.DataPreprocessor.data_preprocessor import DataPreprocessor
+from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Backend, Mode
 from src.nn.net import cnn_for_mnist_adjust_lr_with_softmax
 
 data_dir = "../../data/Region 1 - Lopukangri/"
@@ -212,11 +212,72 @@ def apply_for_muga_puruo():
     orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
     Image.alpha_composite(orig_c, mask_a).save("out_mask_muga_puruo.tif")
 
+def apply_for_sliding_window():
+    data = DataPreprocessor("../../data/Region 1 - Lopukangri/", backend=Backend.GDAL, filename_prefix="tibet", mode=Mode.TEST)
+    model = cnn_for_mnist_adjust_lr_with_softmax()
+    model.load_weights('model.h5')
+
+    stride = 100
+    max_output_size = 20
+    iou_threshold = 0.5
+    score_threshold = float('-inf')
+
+    boxes = []
+    scores = []
+    for top_left_border_x,top_left_border_y in tqdm(itertools.product(range(0, 21 * 150, stride), range(0, 21 * 150, stride))):
+        cur_patch = data.optical_rgb[top_left_border_x:top_left_border_x+150, top_left_border_y:top_left_border_y+150]
+        #todo move this proc into separate func
+        patch_grsc = Image.fromarray(cur_patch).convert('L')
+        patch_arr = np.array(patch_grsc)
+        patch_prep = np.expand_dims(patch_arr, axis=2)  # add colour
+        patch_prep = np.expand_dims(patch_prep, axis=0)  # add batch
+        patch_resc = patch_prep / 255
+
+        probs = model.predict(patch_resc)
+        probs_for_first__in_batch = probs[0]
+        fault_prob = probs_for_first__in_batch[0]
+        # todo check if y, x, y, x are correct and not are x, y, x, y
+        boxes.append([top_left_border_x,top_left_border_y, top_left_border_x+150, top_left_border_y+150])
+        scores.append(fault_prob)
+
+    selected_indices = tf.image.non_max_suppression(
+        boxes,
+        scores,
+        max_output_size = max_output_size,
+        iou_threshold=iou_threshold,
+        score_threshold=score_threshold,
+        name=None
+    )
+
+    with tf.Session() as sess:
+        boxes_ind = selected_indices.eval(session=sess)
+
+        res_im = np.zeros((22 * 150, 22 * 150, 3))
+        res_im[:,:] = 0, 0, 255
+        for box_ind in boxes_ind:
+            c_box = boxes[box_ind]
+            print("box: [{}]".format(c_box))
+            res_im[c_box[0]:c_box[2],
+            c_box[1]: c_box[3]] = [255, 0, 0]
+
+        res_im_im = Image.fromarray(res_im.astype(np.uint8))
+        res_im_im.save('out_slding.tif')
+
+        mask = Image.open('out_slding.tif').convert('RGBA')
+        mask_np = np.array(mask)
+        mask_np[:, :, 3] = 60 * np.ones((22 * 150, 22 * 150))
+        mask_a = Image.fromarray(mask_np)
+        orig = Image.open(data_dir + 'data.tif')
+        orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
+        Image.alpha_composite(orig_c, mask_a).save("out_mask_sliding.tif")
+
+
 
 if __name__ == "__main__":
     #train()
     #apply_for_all_patches()
     #apply_for_test()
-    apply_for_muga_puruo()
+    #apply_for_muga_puruo()
+    apply_for_sliding_window()
     #combine_images()
     #combine_features_images()

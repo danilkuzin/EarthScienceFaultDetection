@@ -61,6 +61,7 @@ def _bytes_feature(value):
 # todo normalise images
 # todo include lookalikes as well
 # todo add random seed
+# todo move each enum into corresponding class with corresponding functions (load im, write dataset, etc)
 class DataPreprocessor:
     def __init__(self, data_dir, backend, filename_prefix, mode):
         self.data_dir = data_dir
@@ -73,6 +74,7 @@ class DataPreprocessor:
         self.swir2 = None
         self.panchromatic = None
         self.features = None
+        # todo move patch_size to sampling parameters in function
         self.patch_size = (150, 150)
         self.center_size = (50, 50)
         self.dirs = dict()

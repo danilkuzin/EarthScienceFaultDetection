@@ -23,7 +23,8 @@ def train():
                               mode=Mode.TRAIN)
 
     def train_generator():
-        batch_size = 5
+        batch_size = 10
+        # todo at least, make grayscale and not red only
         while True:
             img_batch = np.zeros((batch_size, 150, 150, 1))
             lbl_batch = np.zeros((batch_size, 2))
@@ -31,15 +32,15 @@ def train():
                 class_label = np.random.binomial(1, p=0.5, size=1)
                 if class_label == 1:
                     patch = loader.sample_fault_patch()
-                    img_batch[i] = np.expand_dims(patch[:, :, 0], axis = 2)
+                    img_batch[i] = np.expand_dims(patch[:, :, 0] / 255, axis = 2)
                     lbl_batch[i] = np.array([1, 0])
                 else:
                     patch = loader.sample_nonfault_patch()
-                    img_batch[i] = np.expand_dims(patch[:, :, 0], axis = 2)
+                    img_batch[i] = np.expand_dims(patch[:, :, 0] / 255, axis = 2)
                     lbl_batch[i] = np.array([0, 1])
             yield img_batch, lbl_batch
 
-    history = model.fit_generator(train_generator(), steps_per_epoch=50,  epochs=5, validation_data=None)
+    history = model.fit_generator(train_generator(), steps_per_epoch=10,  epochs=50, validation_data=None)
     # pydot not working
     # tf.keras.utils.plot_model(model, to_file='model.png')
     # model.save is not working in keras https://github.com/keras-team/keras/issues/11683
