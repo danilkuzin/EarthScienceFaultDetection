@@ -56,7 +56,7 @@ def _bytes_feature(value):
 # todo normalise images
 # todo include lookalikes as well
 class DataPreprocessor22012019:
-    def __init__(self, data_dir):
+    def __init__(self, data_dir, backend):
         self.data_dir = data_dir
         self.elevation = None
         self.slope = None
@@ -79,7 +79,7 @@ class DataPreprocessor22012019:
         self.datasets_sizes[DatasetType.TEST.name + "_" + FeatureValue.NONFAULT.name] = 10
         self.num_channels = 5 # r, g, b, elevation, slope
         self.true_test_classes = None
-        self.load()
+        self.load(backend)
 
     def prepare_folders(self):
         self.dirs['train_fault'] = self.data_dir + "learn/train/fault/"
@@ -171,7 +171,7 @@ class DataPreprocessor22012019:
         elif backend == Backend.GDAL:
             self.features = np.array(gdal.Open(path, gdal.GA_ReadOnly).ReadAsArray())
 
-    def load(self, backend=Backend.GDAL):
+    def load(self, backend):
         logging.info('loading...')
         self.load_elevation(backend)
         self.load_slope(backend)
@@ -342,11 +342,12 @@ class DataPreprocessor22012019:
             for i in trange(self.datasets_sizes[category]):
                 arr[i] = self.sample_patch(label)
 
-            filename = os.path.join(self.data_dir, category + '.tfrecords')
+            filename = os.path.join(self.data_dir, category + '.tfrecord')
             logging.info('Writing', filename)
             with tf.python_io.TFRecordWriter(filename) as writer:
                 for index in range(self.datasets_sizes[category]):
                     image_raw = arr[index].tostring()
+                    #todo consider recording rgb elevation separate from slope as ints to reduce data size and conversion overhead
                     example = tf.train.Example(
                         features=tf.train.Features(
                             feature={
@@ -354,7 +355,8 @@ class DataPreprocessor22012019:
                                 'width': _int64_feature(arr.shape[2]),
                                 'depth': _int64_feature(arr.shape[3]),
                                 'label': _int64_feature(label.value),
-                                'image_raw': _bytes_feature(image_raw)
+                                #'image_raw': _bytes_feature(image_raw)
+                                'image_raw': tf.train.Feature(float_list=tf.train.FloatList(value=arr[index].flatten().astype(np.float32)))
                             }))
                     writer.write(example.SerializeToString())
 
@@ -401,7 +403,7 @@ class DataPreprocessor22012019:
         return Image.alpha_composite(orig, features_map)
 
 
-    # to use as input for tensorflow dataset from generator
+    #todo use as input for tensorflow dataset from generator
     def __iter__(self):
         while True:
             class_label = np.random.binomial(1, p=0.5, size=1)
@@ -414,7 +416,7 @@ class DataPreprocessor22012019:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.WARN)
-    loader = DataPreprocessor22012019("../../data/Data22012019/")
+    loader = DataPreprocessor22012019("../../data/Data22012019/", backend=Backend.GDAL)
     #loader.get_elevation_with_features_mask()
     #loader.prepare_folders()
     loader.prepare_datasets(output=DataOutput.TFRECORD)

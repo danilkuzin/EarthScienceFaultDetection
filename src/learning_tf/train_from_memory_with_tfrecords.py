@@ -46,10 +46,23 @@ CNN_predicted_output = np.zeros_like(n_train, dtype=np.float64)
 #     patch = np.expand_dims(patch, axis=1)  # add colour
 #     return patch
 
-def create_dataset(data_size, batch_size):
-    filenames = [data_dir+"TRAIN_FAULT.tfrecords", data_dir+"TRAIN_NONFAULT.tfrecords"]
-    dataset = tf.data.TFRecordDataset(filenames)
 
+def _parse_image_function(example_proto):
+    # Parse the input tf.Example proto using the dictionary above.
+    image_feature_description = {
+        'height': tf.FixedLenFeature([], tf.int64),
+        'width': tf.FixedLenFeature([], tf.int64),
+        'depth': tf.FixedLenFeature([], tf.int64),
+        'label': tf.FixedLenFeature([], tf.int64),
+        'image_raw': tf.VarLenFeature(tf.float32),
+    }
+
+    return tf.parse_single_example(example_proto, image_feature_description)
+
+def create_dataset(data_size, batch_size):
+    filenames = [data_dir+"TRAIN_FAULT.tfrecord", data_dir+"TRAIN_NONFAULT.tfrecord"]
+    dataset = tf.data.TFRecordDataset(filenames)
+    dataset = dataset.map(_parse_image_function)
     return dataset
 
 sess = tf.Session()
@@ -72,6 +85,8 @@ for epoch in trange(n_epoch):
             #x = X.eval()
             #gt_labels = Y.eval()
             X = dataset.take(batch_size)
+            for t in X:
+                print(t['image_raw'].values.numpy().reshape(150, 150, 5))
             predicted_output, keep_prob, cnn_without_last_layer = cnn_for_mnist(x)
             redicted_probs = tf.nn.softmax(predicted_output)
 
