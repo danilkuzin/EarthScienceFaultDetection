@@ -9,7 +9,7 @@ import logging
 import os
 import pathlib
 import gdal
-from osgeo import gdal_array
+from osgeo import gdal_array, osr
 import struct
 import tensorflow as tf
 
@@ -62,6 +62,7 @@ def _bytes_feature(value):
 # todo include lookalikes as well
 # todo add random seed
 # todo move each enum into corresponding class with corresponding functions (load im, write dataset, etc)
+# todo class is too big, consider separating classes
 class DataPreprocessor:
     def __init__(self, data_dir, backend, filename_prefix, mode):
         self.data_dir = data_dir
@@ -79,6 +80,7 @@ class DataPreprocessor:
         self.center_size = (50, 50)
         self.dirs = dict()
         self.datasets_sizes = dict()
+        self.gdal_options = dict()
         self.datasets_sizes[DatasetType.TRAIN.name + "_" + FeatureValue.FAULT.name] = 100
         self.datasets_sizes[DatasetType.TRAIN.name + "_" + FeatureValue.NONFAULT.name] = 100
         self.datasets_sizes[DatasetType.VALIDATION.name + "_" + FeatureValue.FAULT.name] = 20
@@ -239,14 +241,20 @@ class DataPreprocessor:
         # Getting Dataset Information
         print("Driver: {}/{}".format(dataset.GetDriver().ShortName,
                                      dataset.GetDriver().LongName))
+        self.gdal_options['driver'] = dataset.GetDriver()
+
         print("Size is {} x {} x {}".format(dataset.RasterXSize,
                                             dataset.RasterYSize,
                                             dataset.RasterCount))
+        self.gdal_options['size'] = [dataset.RasterXSize, dataset.RasterYSize,  dataset.RasterCount]
+
         print("Projection is {}".format(dataset.GetProjection()))
+        self.gdal_options['projection'] = dataset.GetProjection()
         geotransform = dataset.GetGeoTransform()
         if geotransform:
             print("Origin = ({}, {})".format(geotransform[0], geotransform[3]))
             print("Pixel Size = ({}, {})".format(geotransform[1], geotransform[5]))
+        self.gdal_options['geotransform'] = geotransform
 
         # Fetching a Raster Band
         band = dataset.GetRasterBand(1)
@@ -436,6 +444,24 @@ class DataPreprocessor:
         features_map = self.get_features_map_transparent(opacity)
         orig = Image.fromarray(self.elevation).convert('RGBA')
         return Image.alpha_composite(orig, features_map)
+
+    def write_array(self, backend, image):
+        # image is self.optical_rgb.shape[0] X self.optical_rgb.shape[1] in this case
+        if backend == Backend.GDAL:
+            driver = self.gdal_options['driver']
+            dst_ds = driver.Create("out_im", xsize=self.optical_rgb.shape[0], ysize=self.optical_rgb.shape[1],
+                                   bands=1, eType=gdal.GDT_Byte)
+
+            geotransform = self.gdal_options['geotransform']
+            dst_ds.SetGeoTransform(geotransform)
+            projection = self.gdal_options['projection']
+            dst_ds.SetProjection(projection)
+            raster = image.astype(np.uint8)
+            dst_ds.GetRasterBand(1).WriteArray(raster)
+
+            dst_ds = None
+        else:
+            raise NotImplementedError
 
 
     #todo use as input for tensorflow dataset from generator
