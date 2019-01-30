@@ -60,6 +60,7 @@ def _bytes_feature(value):
 
 # todo normalise images
 # todo include lookalikes as well
+# todo add random seed
 class DataPreprocessor:
     def __init__(self, data_dir, backend, filename_prefix, mode):
         self.data_dir = data_dir

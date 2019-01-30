@@ -7,7 +7,7 @@ from PIL import Image
 from tqdm import tqdm, trange
 import matplotlib.pyplot as plt
 
-from src.DataPreprocessor.data_preprocessor import DataPreprocessor
+from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Backend, Mode
 from src.nn.net import cnn_for_mnist_adjust_lr_with_softmax
 
 data_dir = "../../data/Region 1 - Lopukangri/"
@@ -17,47 +17,33 @@ data_dir_muga_puruo = "../../data/Region 2 - Muga Puruo/"
 def train():
     #todo normalise images
 
-    train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
-        rescale=1./255,
-        shear_range=0.2,
-        zoom_range=0.2,
-        horizontal_flip=True)
-
-    train_generator = train_datagen.flow_from_directory(
-        data_dir + 'learn/train',
-        color_mode='grayscale',
-        target_size=(150, 150),
-        batch_size=32,
-        shuffle=True,
-        class_mode='categorical')
-
-    valid_generator = train_datagen.flow_from_directory(
-        data_dir + 'learn/valid',
-        color_mode='grayscale',
-        target_size=(150, 150),
-        batch_size=32,
-        shuffle=True,
-        class_mode='categorical')
-
-    #todo replace train_gen with smth without zooming, etc! also potentially disable dropout
-    test_generator = train_datagen.flow_from_directory(
-        data_dir + 'learn/test',
-        color_mode='grayscale',
-        target_size=(28, 28),
-        batch_size=1,
-        class_mode=None)
-
     model = cnn_for_mnist_adjust_lr_with_softmax()
-    #todo fit generator here - use generator from DataPreprocessor.__iter__
-    history = model.fit_generator(train_generator,
-                        steps_per_epoch=50,
-                        epochs=5,
-                        validation_data=valid_generator
-                        )
+
+    loader = DataPreprocessor("../../data/Region 1 - Lopukangri/", backend=Backend.GDAL, filename_prefix="tibet",
+                              mode=Mode.TRAIN)
+
+    def train_generator():
+        batch_size = 5
+        while True:
+            img_batch = np.zeros((batch_size, 150, 150, 1))
+            lbl_batch = np.zeros((batch_size, 2))
+            for i in range(batch_size):
+                class_label = np.random.binomial(1, p=0.5, size=1)
+                if class_label == 1:
+                    patch = loader.sample_fault_patch()
+                    img_batch[i] = np.expand_dims(patch[:, :, 0], axis = 2)
+                    lbl_batch[i] = np.array([1, 0])
+                else:
+                    patch = loader.sample_nonfault_patch()
+                    img_batch[i] = np.expand_dims(patch[:, :, 0], axis = 2)
+                    lbl_batch[i] = np.array([0, 1])
+            yield img_batch, lbl_batch
+
+    history = model.fit_generator(train_generator(), steps_per_epoch=50,  epochs=5, validation_data=None)
     # pydot not working
     # tf.keras.utils.plot_model(model, to_file='model.png')
     # model.save is not working in keras https://github.com/keras-team/keras/issues/11683
-    model.save_weights('model.h5')
+    model.save_weights('model_from_gen.h5')
     # test_generator.reset()
     # pred = model.predict_generator(test_generator, verbose=1)
     #
@@ -67,7 +53,7 @@ def train():
     # predictions = [labels[k] for k in predicted_class_indices]
     # Plot training & validation accuracy values
     plt.plot(history.history['acc'])
-    plt.plot(history.history['val_acc'])
+    #plt.plot(history.history['val_acc'])
     plt.title('Model accuracy')
     plt.ylabel('Accuracy')
     plt.xlabel('Epoch')
@@ -76,29 +62,13 @@ def train():
 
     # Plot training & validation loss values
     plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
+    #plt.plot(history.history['val_loss'])
     plt.title('Model loss')
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Test'], loc='upper left')
     plt.show()
 #    print(predictions)
-
-def train_with_gen():
-    generator_state = DataPreprocessor("../../data/Data22012019/")
-
-    dataset = tf.data.Dataset.from_generator(
-        lambda: generator_state,
-        (tf.float32, tf.float32),
-        (tf.TensorShape([None, 28, 28, 1]), tf.TensorShape([None, 2]))
-    )
-
-    model = cnn_for_mnist_adjust_lr_with_softmax()
-    #model.fit(dataset.map(lambda x, y: tf.image.resize_images).make_one_shot_iterator(),
-    #          steps_per_epoch=None,
-    #          epochs=1,
-    #          verbose=1)
-
 
 def apply_for_all_patches():
     model = cnn_for_mnist_adjust_lr_with_softmax()
@@ -214,9 +184,9 @@ def apply_for_muga_puruo():
 
 
 if __name__ == "__main__":
-    #train()
+    train()
     #apply_for_all_patches()
     #apply_for_test()
-    apply_for_muga_puruo()
+    #apply_for_muga_puruo()
     #combine_images()
     #combine_features_images()
