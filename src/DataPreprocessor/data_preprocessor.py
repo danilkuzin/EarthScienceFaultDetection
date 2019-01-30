@@ -26,6 +26,10 @@ class OutOfBoundsException(Exception):
 class GdalFileException(Exception):
     pass
 
+class Mode(Enum):
+    TRAIN = 1
+    TEST = 2
+
 class DataOutput(Enum):
     FOLDER = 1,
     H5 = 2,
@@ -53,10 +57,11 @@ def _int64_feature(value):
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
+
 # todo normalise images
 # todo include lookalikes as well
-class DataPreprocessor22012019:
-    def __init__(self, data_dir, backend):
+class DataPreprocessor:
+    def __init__(self, data_dir, backend, filename_prefix, mode):
         self.data_dir = data_dir
         self.elevation = None
         self.slope = None
@@ -79,29 +84,36 @@ class DataPreprocessor22012019:
         self.datasets_sizes[DatasetType.TEST.name + "_" + FeatureValue.NONFAULT.name] = 10
         self.num_channels = 5 # r, g, b, elevation, slope
         self.true_test_classes = None
+        self.filename_prefix = filename_prefix
+        self.mode = mode
+        self.prepare_folders()
         self.load(backend)
 
     def prepare_folders(self):
-        self.dirs['train_fault'] = self.data_dir + "learn/train/fault/"
-        self.dirs['train_nonfault'] = self.data_dir + "learn/train/nonfault/"
-        self.dirs['valid_fault'] = self.data_dir + "learn/valid/fault/"
-        self.dirs['valid_nonfault'] = self.data_dir + "learn/valid/nonfault/"
-        self.dirs['test_w_labels_fault'] = self.data_dir + "learn/test_with_labels/fault/"
-        self.dirs['test_w_labels_nonfault'] = self.data_dir + "learn/test_with_labels/nonfault/"
-        self.dirs['test'] = self.data_dir + "learn/test/test/"
+        if self.mode == Mode.TRAIN:
+            self.dirs['train_fault'] = self.data_dir + "learn/train/fault/"
+            self.dirs['train_nonfault'] = self.data_dir + "learn/train/nonfault/"
+            self.dirs['valid_fault'] = self.data_dir + "learn/valid/fault/"
+            self.dirs['valid_nonfault'] = self.data_dir + "learn/valid/nonfault/"
+            self.dirs['test_w_labels_fault'] = self.data_dir + "learn/test_with_labels/fault/"
+            self.dirs['test_w_labels_nonfault'] = self.data_dir + "learn/test_with_labels/nonfault/"
+            self.dirs['test'] = self.data_dir + "learn/test/test/"
+            pathlib.Path(self.dirs['train_fault']).mkdir(parents=True, exist_ok=True)
+            pathlib.Path(self.dirs['train_nonfault']).mkdir(parents=True, exist_ok=True)
+            pathlib.Path(self.dirs['valid_fault']).mkdir(parents=True, exist_ok=True)
+            pathlib.Path(self.dirs['valid_nonfault']).mkdir(parents=True, exist_ok=True)
+            pathlib.Path(self.dirs['test_w_labels_fault']).mkdir(parents=True, exist_ok=True)
+            pathlib.Path(self.dirs['test_w_labels_nonfault']).mkdir(parents=True, exist_ok=True)
+            pathlib.Path(self.dirs['test']).mkdir(parents=True, exist_ok=True)
         self.dirs['all_patches'] = self.data_dir + "all/"
-        pathlib.Path(self.dirs['train_fault']).mkdir(parents=True, exist_ok=True)
-        pathlib.Path(self.dirs['train_nonfault']).mkdir(parents=True, exist_ok=True)
-        pathlib.Path(self.dirs['valid_fault']).mkdir(parents=True, exist_ok=True)
-        pathlib.Path(self.dirs['valid_nonfault']).mkdir(parents=True, exist_ok=True)
-        pathlib.Path(self.dirs['test_w_labels_fault']).mkdir(parents=True, exist_ok=True)
-        pathlib.Path(self.dirs['test_w_labels_nonfault']).mkdir(parents=True, exist_ok=True)
-        pathlib.Path(self.dirs['test']).mkdir(parents=True, exist_ok=True)
         pathlib.Path(self.dirs['all_patches']).mkdir(parents=True, exist_ok=True)
 
     def load_elevation(self, backend):
         """elevation map (from the Shuttle Radar Topography Mission), values in meters above sea level"""
-        path = self.data_dir + 'tibet_elev.tif'
+        path = self.data_dir + self.filename_prefix + '_elev.tif'
+        my_file = pathlib.Path(path)
+        if not my_file.is_file():
+            raise Exception('file does not exist:{}'.format(path))
         if backend == Backend.PILLOW:
             self.elevation = np.array(Image.open(path))
         elif backend == Backend.OPENCV:
@@ -111,7 +123,10 @@ class DataPreprocessor22012019:
 
     def load_slope(self, backend):
         """slope map derived from the elevation, values in degrees from horizontal, 0-90"""
-        path = self.data_dir + 'tibet_slope.tif'
+        path = self.data_dir + self.filename_prefix + '_slope.tif'
+        my_file = pathlib.Path(path)
+        if not my_file.is_file():
+            raise Exception('file does not exist:{}'.format(path))
         if backend == Backend.PILLOW:
             self.slope = np.array(Image.open(path))
         elif backend == Backend.OPENCV:
@@ -123,7 +138,19 @@ class DataPreprocessor22012019:
 
     def load_optical(self, backend):
         """standard red / green / blue optical bands from the Landsat-8 platform, each 0 - 255"""
-        path_r, path_g, path_b = self.data_dir + 'tibet_R.tif', self.data_dir + 'tibet_G.tif', self.data_dir + 'tibet_B.tif'
+        path_r, path_g, path_b = self.data_dir + self.filename_prefix + '_R.tif', \
+                                 self.data_dir + self.filename_prefix + '_G.tif', \
+                                 self.data_dir + self.filename_prefix + '_B.tif'
+        my_file = pathlib.Path(path_r)
+        if not my_file.is_file():
+            raise Exception('file does not exist:{}'.format(path_r))
+        my_file = pathlib.Path(path_g)
+        if not my_file.is_file():
+            raise Exception('file does not exist:{}'.format(path_g))
+        my_file = pathlib.Path(path_b)
+        if not my_file.is_file():
+            raise Exception('file does not exist:{}'.format(path_b))
+
         optical_r, optical_g, optical_b = None, None, None
         if backend == Backend.PILLOW:
             # todo check this
@@ -151,12 +178,13 @@ class DataPreprocessor22012019:
 
     def load_ir(self, backend):
         #todo add support for other backends
-        self.nir = cv2.imread(self.data_dir + 'tibet_NIR.tif')  # near infrared from Landsat
-        self.ir = cv2.imread(self.data_dir + 'tibet_IR.tif')  # infrared from Landsat
-        self.swir1 = cv2.imread(self.data_dir + 'tibet_SWIR1.tif')  # shortwave infrared1 from Landsat
-        self.swir2 = cv2.imread(self.data_dir + 'tibet_SWIR2.tif')  # shortwave infrared2 from Landsat
+        #todo add file exist checks
+        self.nir = cv2.imread(self.data_dir + self.filename_prefix + '_NIR.tif')  # near infrared from Landsat
+        self.ir = cv2.imread(self.data_dir + self.filename_prefix + '_IR.tif')  # infrared from Landsat
+        self.swir1 = cv2.imread(self.data_dir + self.filename_prefix + '_SWIR1.tif')  # shortwave infrared1 from Landsat
+        self.swir2 = cv2.imread(self.data_dir + self.filename_prefix + '_SWIR2.tif')  # shortwave infrared2 from Landsat
         self.panchromatic = cv2.imread(
-        self.data_dir + 'tibet_P.tif')  # panchromatic band from Landsat, essentially just total surface reflectance, like a grayscale image of the ground
+        self.data_dir + self.filename_prefix + '_P.tif')  # panchromatic band from Landsat, essentially just total surface reflectance, like a grayscale image of the ground
 
     def load_features(self, backend):
         """0 - neutral, undefined content (could include faults--fair area for testing)
@@ -164,6 +192,9 @@ class DataPreprocessor22012019:
         2 - fault lookalikes - features that we think share visual or topographic similarity with faults, but expert interpretation can exclude
         3 - not-faults - areas that definitely do not include faults, nor things that we think even look like faults, can be used directly for training what faults are not."""
         path = self.data_dir+'feature_categories.tif'
+        my_file = pathlib.Path(path)
+        if not my_file.is_file():
+            raise Exception('file does not exist:{}'.format(path))
         if backend == Backend.PILLOW:
             self.features = np.array(Image.open(path))
         elif backend == Backend.OPENCV:
@@ -178,14 +209,15 @@ class DataPreprocessor22012019:
         self.load_optical(backend)
         plt.imsave(self.data_dir+'data.tif', self.optical_rgb)
         self.load_ir(backend)
-        self.load_features(backend)
+        if self.mode == Mode.TRAIN:
+            self.load_features(backend)
         logging.info('loaded')
 
     # to be used for parsing gdal headers and recreating them in output results
     def parse_meta_with_gdal(self):
         # based on https://www.gdal.org/gdal_tutorial.html
         #Opening the File
-        dataset = gdal.Open(self.data_dir+'tibet_R.tif', gdal.GA_ReadOnly)
+        dataset = gdal.Open(self.data_dir+self.filename_prefix + '_R.tif', gdal.GA_ReadOnly)
         if not dataset:
             raise GdalFileException()
 
@@ -412,17 +444,4 @@ class DataPreprocessor22012019:
             else:
                 cur_patch = self.sample_nonfault_patch()
             yield cur_patch, class_label
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.WARN)
-    loader = DataPreprocessor22012019("../../data/Data22012019/", backend=Backend.GDAL)
-    #loader.get_elevation_with_features_mask()
-    #loader.prepare_folders()
-    loader.prepare_datasets(output=DataOutput.TFRECORD)
-    #loader.prepare_valid()
-    #loader.prepare_test()
-    #loader.prepare_test_with_labels()
-    #loader.prepare_all_patches()
-    # loader.parse_meta_with_gdal()
 

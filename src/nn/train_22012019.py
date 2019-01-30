@@ -7,10 +7,11 @@ from PIL import Image
 from tqdm import tqdm, trange
 import matplotlib.pyplot as plt
 
-from src.DataPreprocessor.preprocess_data_22012019 import DataPreprocessor22012019
+from src.DataPreprocessor.data_preprocessor import DataPreprocessor
 from src.nn.net import cnn_for_mnist_adjust_lr_with_softmax
 
-data_dir = "../../data/Data22012019/"
+data_dir = "../../data/Region 1 - Lopukangri/"
+data_dir_muga_puruo = "../../data/Region 2 - Muga Puruo/"
 
 def train():
     #todo normalise images
@@ -82,7 +83,7 @@ def train():
 #    print(predictions)
 
 def train_with_gen():
-    generator_state = DataPreprocessor22012019("../../data/Data22012019/")
+    generator_state = DataPreprocessor("../../data/Data22012019/")
 
     dataset = tf.data.Dataset.from_generator(
         lambda: generator_state,
@@ -179,10 +180,41 @@ def combine_images():
     orig_c = orig.crop((0,0,22*150, 22*150))
     Image.alpha_composite(orig_c, mask_a).save("out_mask.tif")
 
+def apply_for_muga_puruo():
+    model = cnn_for_mnist_adjust_lr_with_softmax()
+    model.load_weights('model.h5')
+    res_im = np.zeros((22 * 150, 22 * 150, 3))
+    for i, j in tqdm(itertools.product(range(22), range(22))):
+        patch_rgb = Image.open(data_dir_muga_puruo + 'all/{}_{}.tif'.format(i, j))
+        patch_grsc = patch_rgb.convert('L')
+        patch_arr = np.array(patch_grsc)
+        patch_prep = np.expand_dims(patch_arr, axis=2)  # add colour
+        patch_prep = np.expand_dims(patch_prep, axis=0)  # add batch
+        patch_resc = patch_prep / 255
+        res = model.predict(patch_resc)
+        res = res[0]
+        if res[0] > res[1]:
+            res_im[i * 150: (i + 1) * 150,
+            j * 150: (j + 1) * 150] = [255, 0, 0]
+        else:
+            res_im[i * 150: (i + 1) * 150,
+            j * 150: (j + 1) * 150] = [0, 0, 255]
+    res_im_im = Image.fromarray(res_im.astype(np.uint8))
+    res_im_im.save('out_muga_puruo.tif')
+
+    mask = Image.open('out_muga_puruo.tif').convert('RGBA')
+    mask_np = np.array(mask)
+    mask_np[:, :, 3] = 60 * np.ones((22 * 150, 22 * 150))
+    mask_a = Image.fromarray(mask_np)
+    orig = Image.open(data_dir_muga_puruo + 'data.tif')
+    orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
+    Image.alpha_composite(orig_c, mask_a).save("out_mask_muga_puruo.tif")
+
 
 if __name__ == "__main__":
     #train()
     #apply_for_all_patches()
-    apply_for_test()
+    #apply_for_test()
+    apply_for_muga_puruo()
     #combine_images()
     #combine_features_images()
