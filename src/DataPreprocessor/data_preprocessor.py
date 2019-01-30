@@ -463,6 +463,15 @@ class DataPreprocessor:
         else:
             raise NotImplementedError
 
+    def normalise(self):
+        # todo think how to distribute values: 0-1 or -0.5 - 0.5 as it is different now
+        self.optical_rgb[:, :, 0] = self.optical_rgb[:, :, 0] / 255 - 0.5
+        self.optical_rgb[:, :, 1] = self.optical_rgb[:, :, 1] / 255 - 0.5
+        self.optical_rgb[:, :, 2] = self.optical_rgb[:, :, 2] / 255 - 0.5
+        self.elevation_mean = np.mean(self.elevation)
+        self.elevation_var = np.var(self.elevation)
+        self.elevation = (self.elevation - self.elevation_mean) / self.elevation_var
+        self.slope = (self.slope - 45) / 45
 
     #todo use as input for tensorflow dataset from generator
     def __iter__(self):
