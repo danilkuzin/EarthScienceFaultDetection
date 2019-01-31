@@ -1,14 +1,16 @@
+from tempfile import NamedTemporaryFile
+
 import h5py
 import itertools
 from enum import Enum
 
 import numpy as np
 import matplotlib.pyplot as plt
-import cv2
+
 import logging
 import os
 import pathlib
-import gdal
+#import gdal
 from osgeo import gdal_array, osr
 import struct
 import tensorflow as tf
@@ -17,6 +19,8 @@ from PIL import Image
 
 #TODO rewrite this as some tf.Dataset.from_generator or keras.ImageDataGenerator that feeds data in the same manner
 from tqdm import trange, tqdm
+
+from src.DataPreprocessor.Backend.backend import Backend
 
 
 class OutOfBoundsException(Exception):
@@ -35,10 +39,10 @@ class DataOutput(Enum):
     H5 = 2,
     TFRECORD = 3
 
-class Backend(Enum):
-    PILLOW = 1
-    OPENCV = 2
-    GDAL = 3
+#class Backend(Enum):
+#    PILLOW = 1
+#    OPENCV = 2
+#    GDAL = 3
 
 class FeatureValue(Enum):
     UNDEFINED = 0
@@ -64,7 +68,7 @@ def _bytes_feature(value):
 # todo move each enum into corresponding class with corresponding functions (load im, write dataset, etc)
 # todo class is too big, consider separating classes
 class DataPreprocessor:
-    def __init__(self, data_dir, backend, filename_prefix, mode):
+    def __init__(self, data_dir: str, backend: Backend, filename_prefix: str, mode):
         self.data_dir = data_dir
         self.elevation = None
         self.slope = None
@@ -113,178 +117,21 @@ class DataPreprocessor:
         self.dirs['all_patches'] = self.data_dir + "all/"
         pathlib.Path(self.dirs['all_patches']).mkdir(parents=True, exist_ok=True)
 
-    def load_elevation(self, backend):
-        """elevation map (from the Shuttle Radar Topography Mission), values in meters above sea level"""
-        path = self.data_dir + self.filename_prefix + '_elev.tif'
-        my_file = pathlib.Path(path)
-        if not my_file.is_file():
-            raise Exception('file does not exist:{}'.format(path))
-        if backend == Backend.PILLOW:
-            self.elevation = np.array(Image.open(path))
-        elif backend == Backend.OPENCV:
-            self.elevation = cv2.imread(path, cv2.IMREAD_UNCHANGED)
-        elif backend == Backend.GDAL:
-            self.elevation = np.array(gdal.Open(path, gdal.GA_ReadOnly).ReadAsArray())
-
-    def load_slope(self, backend):
-        """slope map derived from the elevation, values in degrees from horizontal, 0-90"""
-        path = self.data_dir + self.filename_prefix + '_slope.tif'
-        my_file = pathlib.Path(path)
-        if not my_file.is_file():
-            raise Exception('file does not exist:{}'.format(path))
-        if backend == Backend.PILLOW:
-            self.slope = np.array(Image.open(path))
-        elif backend == Backend.OPENCV:
-            #todo check why it produces None image
-            self.slope = cv2.imread(path, cv2.IMREAD_LOAD_GDAL)
-            raise NotImplementedError("currently not supported")
-        elif backend == Backend.GDAL:
-            self.slope = np.array(gdal.Open(path, gdal.GA_ReadOnly).ReadAsArray())
-
-    def load_optical(self, backend):
-        """standard red / green / blue optical bands from the Landsat-8 platform, each 0 - 255"""
-        path_r, path_g, path_b = self.data_dir + self.filename_prefix + '_R.tif', \
-                                 self.data_dir + self.filename_prefix + '_G.tif', \
-                                 self.data_dir + self.filename_prefix + '_B.tif'
-        my_file = pathlib.Path(path_r)
-        if not my_file.is_file():
-            raise Exception('file does not exist:{}'.format(path_r))
-        my_file = pathlib.Path(path_g)
-        if not my_file.is_file():
-            raise Exception('file does not exist:{}'.format(path_g))
-        my_file = pathlib.Path(path_b)
-        if not my_file.is_file():
-            raise Exception('file does not exist:{}'.format(path_b))
-
-        optical_r, optical_g, optical_b = None, None, None
-        if backend == Backend.PILLOW:
-            # todo check this
-            raise NotImplementedError("currently not supported")
-        elif backend == Backend.OPENCV:
-            optical_r = cv2.imread(path_r)[:, :, 0]
-            optical_g = cv2.imread(path_g)[:, :, 0]
-            optical_b = cv2.imread(path_b)[:, :, 0]
-        elif backend == Backend.GDAL:
-            opt_string = '-ot Byte -of GTiff -scale 0 65535 0 255'
-            # todo check how to remove tmp file
-            dataset_r = gdal.Translate(self.data_dir + 'tmp.tif', gdal.Open(path_r, gdal.GA_ReadOnly),
-                                       options=opt_string)
-            optical_r = np.array(dataset_r.ReadAsArray())
-            dataset_g = gdal.Translate(self.data_dir + 'tmp.tif', gdal.Open(path_g, gdal.GA_ReadOnly),
-                                       options=opt_string)
-            optical_g = np.array(dataset_g.ReadAsArray())
-            dataset_b = gdal.Translate(self.data_dir + 'tmp.tif', gdal.Open(path_b, gdal.GA_ReadOnly),
-                                       options=opt_string)
-            optical_b = np.array(dataset_b.ReadAsArray())
-
-        self.optical_rgb = np.dstack((optical_r, optical_g, optical_b))
-        logging.warning("optical images are not match in 1-2 pixels in size")
-        self.optical_rgb = self.optical_rgb[:self.elevation.shape[0], :self.elevation.shape[1]]
-
-    def load_ir(self, backend):
-        #todo add support for other backends
-        #todo add file exist checks
-        self.nir = cv2.imread(self.data_dir + self.filename_prefix + '_NIR.tif')  # near infrared from Landsat
-        self.ir = cv2.imread(self.data_dir + self.filename_prefix + '_IR.tif')  # infrared from Landsat
-        self.swir1 = cv2.imread(self.data_dir + self.filename_prefix + '_SWIR1.tif')  # shortwave infrared1 from Landsat
-        self.swir2 = cv2.imread(self.data_dir + self.filename_prefix + '_SWIR2.tif')  # shortwave infrared2 from Landsat
-        self.panchromatic = cv2.imread(
-        self.data_dir + self.filename_prefix + '_P.tif')  # panchromatic band from Landsat, essentially just total surface reflectance, like a grayscale image of the ground
-
-    def load_features(self, backend):
-        """0 - neutral, undefined content (could include faults--fair area for testing)
-        1 - faults
-        2 - fault lookalikes - features that we think share visual or topographic similarity with faults, but expert interpretation can exclude
-        3 - not-faults - areas that definitely do not include faults, nor things that we think even look like faults, can be used directly for training what faults are not."""
-        path = self.data_dir+'feature_categories.tif'
-        my_file = pathlib.Path(path)
-        if not my_file.is_file():
-            raise Exception('file does not exist:{}'.format(path))
-        if backend == Backend.PILLOW:
-            self.features = np.array(Image.open(path))
-        elif backend == Backend.OPENCV:
-            self.features = cv2.imread(path, cv2.IMREAD_UNCHANGED)
-        elif backend == Backend.GDAL:
-            self.features = np.array(gdal.Open(path, gdal.GA_ReadOnly).ReadAsArray())
-
     def load(self, backend):
         logging.info('loading...')
-        self.load_elevation(backend)
-        self.load_slope(backend)
-        self.load_optical(backend)
+        self.elevation = backend.load_elevation(path=self.data_dir + self.filename_prefix + '_elev.tif')
+        self.slope = backend.load_slope(path=self.data_dir + self.filename_prefix + '_slope.tif')
+        self.optical_rgb = backend.load_optical(path_r=self.data_dir + self.filename_prefix + '_R.tif',
+                                                path_g=self.data_dir + self.filename_prefix + '_G.tif',
+                                                path_b=self.data_dir + self.filename_prefix + '_B.tif')
+        logging.warning("optical images are not match in 1-2 pixels in size")
+        self.optical_rgb = self.optical_rgb[:self.elevation.shape[0], :self.elevation.shape[1]]
         plt.imsave(self.data_dir+'data.tif', self.optical_rgb)
-        self.load_ir(backend)
         if self.mode == Mode.TRAIN:
-            self.load_features(backend)
+            self.features = backend.load_features(path=self.data_dir+'feature_categories.tif')
         logging.info('loaded')
 
-    # to be used for parsing gdal headers and recreating them in output results
-    def parse_meta_with_gdal(self):
-        # based on https://www.gdal.org/gdal_tutorial.html
-        #Opening the File
-        dataset = gdal.Open(self.data_dir+self.filename_prefix + '_R.tif', gdal.GA_ReadOnly)
-        if not dataset:
-            raise GdalFileException()
 
-        scale = '-scale 0 65535 0 255'
-        options_list = [
-            '-ot Byte',
-            '-of GTiff',
-            scale
-        ]
-        options_string = " ".join(options_list)
-
-        dataset = gdal.Translate(self.data_dir+'tmp.tif', dataset, options=options_string)
-
-        #arr = dataset.ReadAsArray()
-
-        # Getting Dataset Information
-        print("Driver: {}/{}".format(dataset.GetDriver().ShortName,
-                                     dataset.GetDriver().LongName))
-        self.gdal_options['driver'] = dataset.GetDriver()
-
-        print("Size is {} x {} x {}".format(dataset.RasterXSize,
-                                            dataset.RasterYSize,
-                                            dataset.RasterCount))
-        self.gdal_options['size'] = [dataset.RasterXSize, dataset.RasterYSize,  dataset.RasterCount]
-
-        print("Projection is {}".format(dataset.GetProjection()))
-        self.gdal_options['projection'] = dataset.GetProjection()
-        geotransform = dataset.GetGeoTransform()
-        if geotransform:
-            print("Origin = ({}, {})".format(geotransform[0], geotransform[3]))
-            print("Pixel Size = ({}, {})".format(geotransform[1], geotransform[5]))
-        self.gdal_options['geotransform'] = geotransform
-
-        # Fetching a Raster Band
-        band = dataset.GetRasterBand(1)
-        print("Band Type={}".format(gdal.GetDataTypeName(band.DataType)))
-
-        min = band.GetMinimum()
-        max = band.GetMaximum()
-        if not min or not max:
-            (min, max) = band.ComputeRasterMinMax(True)
-        print("Min={:.3f}, Max={:.3f}".format(min, max))
-
-        if band.GetOverviewCount() > 0:
-            print("Band has {} overviews".format(band.GetOverviewCount()))
-
-        if band.GetRasterColorTable():
-            print("Band has a color table with {} entries".format(band.GetRasterColorTable().GetCount()))
-
-        #dataset = gdal.Translate(self.data_dir+'tmp.tif', dataset, options=gdal.TranslateOptions(outputType=gdal.GDT_Byte, scaleParams=[0, 65535, 0, 255]))
-        #dataset = gdal.Translate(self.data_dir+'tmp.tif', gdal.TranslateOptions(["-of", "GTiff", "-ot", "Byte", "-scale", "0 65535 0 255"]))
-
-        # Reading Raster Data
-        scanline = band.ReadRaster(xoff=0, yoff=0,
-                                   xsize=band.XSize, ysize=1,
-                                   buf_xsize=band.XSize, buf_ysize=1,
-                                   buf_type=gdal.GDT_Byte)
-
-        #tuple_of_floats = struct.unpack('f' * band.XSize, scanline)
-        tuple_of_floats = struct.unpack('b' * band.XSize, scanline)
-
-        dataset = None
 
     def borders_from_center(self, center):
         left_border = center[0] - self.patch_size[0] // 2
@@ -410,58 +257,45 @@ class DataPreprocessor:
                         j * self.patch_size[0]: (j + 1) * self.patch_size[0]]
             plt.imsave(self.dirs['all_patches'] + "/{}_{}.tif".format(i, j), cur_patch)
 
-    #to be removed
-    def combine_features_images(self, ):
-        mask = Image.open(self.data_dir+'feature_categories.tif').convert('RGBA').crop((0, 0, 22 * 150, 22 * 150))
-        mask_np = np.array(mask)
-        for i1, i2 in tqdm(itertools.product(range(22 * 150), range(22 * 150))):
-            if np.any(mask_np[i1, i2] == 1):
-                mask_np[i1, i2] = [250, 0, 0, 0]
-            if np.any(mask_np[i1, i2] == 2):
-                mask_np[i1, i2] = [0, 250, 0, 0]
-            if np.any(mask_np[i1, i2] == 3):
-                mask_np[i1, i2] = [0, 0, 250, 0]
-        mask_np[:, :, 3] = 60 * np.ones((22 * 150, 22 * 150))
-        mask_a = Image.fromarray(mask_np)
-        orig = Image.open(self.data_dir + 'data.tif')
-        orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
-        Image.alpha_composite(orig_c, mask_a).save(self.data_dir + "out_features_mask.tif")
+    #todo to be removed
 
-    def get_features_map_transparent(self, opacity):
-        mask_rgba = np.zeros((self.features.shape[0], self.features.shape[1], 4), dtype=np.uint8)
-        mask_rgba[np.where(self.features == 1)] = [250, 0, 0, 0]
-        mask_rgba[np.where(self.features == 2)] = [0, 250, 0, 0]
-        mask_rgba[np.where(self.features == 3)] = [0, 0, 250, 0]
-        mask_rgba[:, :, 3] = opacity
-        return Image.fromarray(mask_rgba)
+    # def combine_features_images(self, ):
+    #     mask = Image.open(self.data_dir+'feature_categories.tif').convert('RGBA').crop((0, 0, 22 * 150, 22 * 150))
+    #     mask_np = np.array(mask)
+    #     for i1, i2 in tqdm(itertools.product(range(22 * 150), range(22 * 150))):
+    #         if np.any(mask_np[i1, i2] == 1):
+    #             mask_np[i1, i2] = [250, 0, 0, 0]
+    #         if np.any(mask_np[i1, i2] == 2):
+    #             mask_np[i1, i2] = [0, 250, 0, 0]
+    #         if np.any(mask_np[i1, i2] == 3):
+    #             mask_np[i1, i2] = [0, 0, 250, 0]
+    #     mask_np[:, :, 3] = 60 * np.ones((22 * 150, 22 * 150))
+    #     mask_a = Image.fromarray(mask_np)
+    #     orig = Image.open(self.data_dir + 'data.tif')
+    #     orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
+    #     Image.alpha_composite(orig_c, mask_a).save(self.data_dir + "out_features_mask.tif")
 
-    def get_optical_rgb_with_features_mask(self, opacity=60):
-        features_map = self.get_features_map_transparent(opacity)
-        orig = Image.fromarray(self.optical_rgb).convert('RGBA')
-        return Image.alpha_composite(orig, features_map)
+    #todo move this to some VisualisationDecorator of the dataset
 
-    def get_elevation_with_features_mask(self, opacity=60):
-        features_map = self.get_features_map_transparent(opacity)
-        orig = Image.fromarray(self.elevation).convert('RGBA')
-        return Image.alpha_composite(orig, features_map)
+    # def get_features_map_transparent(self, opacity):
+    #     mask_rgba = np.zeros((self.features.shape[0], self.features.shape[1], 4), dtype=np.uint8)
+    #     mask_rgba[np.where(self.features == 1)] = [250, 0, 0, 0]
+    #     mask_rgba[np.where(self.features == 2)] = [0, 250, 0, 0]
+    #     mask_rgba[np.where(self.features == 3)] = [0, 0, 250, 0]
+    #     mask_rgba[:, :, 3] = opacity
+    #     return Image.fromarray(mask_rgba)
+    #
+    # def get_optical_rgb_with_features_mask(self, opacity=60):
+    #     features_map = self.get_features_map_transparent(opacity)
+    #     orig = Image.fromarray(self.optical_rgb).convert('RGBA')
+    #     return Image.alpha_composite(orig, features_map)
+    #
+    # def get_elevation_with_features_mask(self, opacity=60):
+    #     features_map = self.get_features_map_transparent(opacity)
+    #     orig = Image.fromarray(self.elevation).convert('RGBA')
+    #     return Image.alpha_composite(orig, features_map)
 
-    def write_array(self, backend, image):
-        # image is self.optical_rgb.shape[0] X self.optical_rgb.shape[1] in this case
-        if backend == Backend.GDAL:
-            driver = self.gdal_options['driver']
-            dst_ds = driver.Create("out_im", xsize=self.optical_rgb.shape[0], ysize=self.optical_rgb.shape[1],
-                                   bands=1, eType=gdal.GDT_Byte)
 
-            geotransform = self.gdal_options['geotransform']
-            dst_ds.SetGeoTransform(geotransform)
-            projection = self.gdal_options['projection']
-            dst_ds.SetProjection(projection)
-            raster = image.astype(np.uint8)
-            dst_ds.GetRasterBand(1).WriteArray(raster)
-
-            dst_ds = None
-        else:
-            raise NotImplementedError
 
     def normalise(self):
         # todo think how to distribute values: 0-1 or -0.5 - 0.5 as it is different now
