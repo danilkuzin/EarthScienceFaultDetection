@@ -131,8 +131,6 @@ class DataPreprocessor:
             self.features = backend.load_features(path=self.data_dir+'feature_categories.tif')
         logging.info('loaded')
 
-
-
     def borders_from_center(self, center):
         left_border = center[0] - self.patch_size[0] // 2
         right_border = center[0] + self.patch_size[0] // 2
@@ -256,46 +254,6 @@ class DataPreprocessor:
             cur_patch = self.optical_rgb[i * self.patch_size[0]: (i + 1) * self.patch_size[0],
                         j * self.patch_size[0]: (j + 1) * self.patch_size[0]]
             plt.imsave(self.dirs['all_patches'] + "/{}_{}.tif".format(i, j), cur_patch)
-
-    #todo to be removed
-
-    # def combine_features_images(self, ):
-    #     mask = Image.open(self.data_dir+'feature_categories.tif').convert('RGBA').crop((0, 0, 22 * 150, 22 * 150))
-    #     mask_np = np.array(mask)
-    #     for i1, i2 in tqdm(itertools.product(range(22 * 150), range(22 * 150))):
-    #         if np.any(mask_np[i1, i2] == 1):
-    #             mask_np[i1, i2] = [250, 0, 0, 0]
-    #         if np.any(mask_np[i1, i2] == 2):
-    #             mask_np[i1, i2] = [0, 250, 0, 0]
-    #         if np.any(mask_np[i1, i2] == 3):
-    #             mask_np[i1, i2] = [0, 0, 250, 0]
-    #     mask_np[:, :, 3] = 60 * np.ones((22 * 150, 22 * 150))
-    #     mask_a = Image.fromarray(mask_np)
-    #     orig = Image.open(self.data_dir + 'data.tif')
-    #     orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
-    #     Image.alpha_composite(orig_c, mask_a).save(self.data_dir + "out_features_mask.tif")
-
-    #todo move this to some VisualisationDecorator of the dataset
-
-    # def get_features_map_transparent(self, opacity):
-    #     mask_rgba = np.zeros((self.features.shape[0], self.features.shape[1], 4), dtype=np.uint8)
-    #     mask_rgba[np.where(self.features == 1)] = [250, 0, 0, 0]
-    #     mask_rgba[np.where(self.features == 2)] = [0, 250, 0, 0]
-    #     mask_rgba[np.where(self.features == 3)] = [0, 0, 250, 0]
-    #     mask_rgba[:, :, 3] = opacity
-    #     return Image.fromarray(mask_rgba)
-    #
-    # def get_optical_rgb_with_features_mask(self, opacity=60):
-    #     features_map = self.get_features_map_transparent(opacity)
-    #     orig = Image.fromarray(self.optical_rgb).convert('RGBA')
-    #     return Image.alpha_composite(orig, features_map)
-    #
-    # def get_elevation_with_features_mask(self, opacity=60):
-    #     features_map = self.get_features_map_transparent(opacity)
-    #     orig = Image.fromarray(self.elevation).convert('RGBA')
-    #     return Image.alpha_composite(orig, features_map)
-
-
 
     def normalise(self):
         # todo think how to distribute values: 0-1 or -0.5 - 0.5 as it is different now

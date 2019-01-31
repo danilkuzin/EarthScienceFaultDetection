@@ -6,6 +6,9 @@ import gdal
 
 
 class GdalBackend(Backend):
+    def __init__(self):
+        self.gdal_options = dict()
+
     def load_elevation(self, path: str) -> np.array:
         dataset = gdal.Open(path, gdal.GA_ReadOnly)
         if not dataset:
@@ -39,14 +42,14 @@ class GdalBackend(Backend):
             raise FileNotFoundError(path)
         return np.array(dataset.ReadAsArray())
 
-
-    # to be used for parsing gdal headers and recreating them in output results
-    def parse_meta_with_gdal(self):
-        # based on https://www.gdal.org/gdal_tutorial.html
+    def parse_meta_with_gdal(self, path: str):
+        """to be used for parsing gdal headers and recreating them in output results
+           based on https://www.gdal.org/gdal_tutorial.html
+        """
         #Opening the File
-        dataset = gdal.Open(self.data_dir+self.filename_prefix + '_R.tif', gdal.GA_ReadOnly)
+        dataset = gdal.Open(path, gdal.GA_ReadOnly)
         if not dataset:
-            raise GdalFileException()
+            raise FileNotFoundError(dataset)
 
         scale = '-scale 0 65535 0 255'
         options_list = [
@@ -56,9 +59,7 @@ class GdalBackend(Backend):
         ]
         options_string = " ".join(options_list)
 
-        dataset = gdal.Translate(self.data_dir+'tmp.tif', dataset, options=options_string)
-
-        #arr = dataset.ReadAsArray()
+        dataset = gdal.Translate(NamedTemporaryFile(delete=False).name, dataset, options=options_string)
 
         # Getting Dataset Information
         print("Driver: {}/{}".format(dataset.GetDriver().ShortName,
@@ -110,18 +111,15 @@ class GdalBackend(Backend):
 
     def write_array(self, backend, image):
         # image is self.optical_rgb.shape[0] X self.optical_rgb.shape[1] in this case
-        if backend == Backend.GDAL:
-            driver = self.gdal_options['driver']
-            dst_ds = driver.Create("out_im", xsize=self.optical_rgb.shape[0], ysize=self.optical_rgb.shape[1],
+        driver = self.gdal_options['driver']
+        dst_ds = driver.Create("out_im", xsize=self.optical_rgb.shape[0], ysize=self.optical_rgb.shape[1],
                                    bands=1, eType=gdal.GDT_Byte)
 
-            geotransform = self.gdal_options['geotransform']
-            dst_ds.SetGeoTransform(geotransform)
-            projection = self.gdal_options['projection']
-            dst_ds.SetProjection(projection)
-            raster = image.astype(np.uint8)
-            dst_ds.GetRasterBand(1).WriteArray(raster)
+        geotransform = self.gdal_options['geotransform']
+        dst_ds.SetGeoTransform(geotransform)
+        projection = self.gdal_options['projection']
+        dst_ds.SetProjection(projection)
+        raster = image.astype(np.uint8)
+        dst_ds.GetRasterBand(1).WriteArray(raster)
 
-            dst_ds = None
-        else:
-            raise NotImplementedError
+        dst_ds = None
