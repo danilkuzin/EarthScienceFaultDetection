@@ -1,4 +1,5 @@
 # based on  DLPlusCrowdsourcing/CatapultData/learning/suppressed_objects/damaged_building/all_object_non_object_data/joint_via_t_before_after_stronger_prior.py
+import h5py
 
 import tensorflow as tf
 import numpy as np
@@ -6,9 +7,10 @@ from math import ceil
 import os
 
 from PIL import Image
+from tqdm import trange
 
-from src.learning_tf.net import deepnn_framework
-from src.learning_tf.utils_dataset_processing import next_batch_indices_cycled, shuffle_arrays
+from src.LearningTf.net import deepnn_framework
+from src.LearningTf.utils_dataset_processing import next_batch_indices_cycled, shuffle_arrays
 
 np.set_printoptions(precision=4, suppress=True)
 is_print_nn_output = True
@@ -32,34 +34,64 @@ CNN_train_prediction = np.zeros_like(range(n_train), dtype=np.int)
 CNN_predicted_output = np.zeros_like(n_train, dtype=np.float64)
 
 
-def load_patch(class_lbl, ind):
-    patch = Image.open(data_dir + 'learn/train/{}/{}.tif'.format(class_lbl, ind))
-    patch.thumbnail((28, 28), Image.ANTIALIAS)
-    patch = patch.convert('L')
-    patch = np.array(patch)
-    patch = patch / 255
-    patch = patch.flatten()
-    patch = np.expand_dims(patch, axis=1)  # add colour
-    return patch
+# def load_patch(class_lbl, ind):
+#     patch = Image.open(data_dir + 'learn/train/{}/{}.tif'.format(class_lbl, ind))
+#     patch.thumbnail((28, 28), Image.ANTIALIAS)
+#     patch = patch.convert('L')
+#     patch = np.array(patch)
+#     patch = patch / 255
+#     patch = patch.flatten()
+#     patch = np.expand_dims(patch, axis=1)  # add colour
+#     return patch
 
+def _parse_image_function(example_proto):
+    # Parse the input tf.Example proto using the dictionary above.
+    image_feature_description = {
+        'height': tf.FixedLenFeature([], tf.int64),
+        'width': tf.FixedLenFeature([], tf.int64),
+        'depth': tf.FixedLenFeature([], tf.int64),
+        'label': tf.FixedLenFeature([], tf.int64),
+        'image_raw': tf.VarLenFeature(tf.float32),
+    }
+
+    return tf.parse_single_example(example_proto, image_feature_description)
+
+def create_dataset(data_size, batch_size):
+    filenames = [data_dir+"TRAIN_FAULT.tfrecord", data_dir+"TRAIN_NONFAULT.tfrecord"]
+    dataset = tf.data.TFRecordDataset(filenames).shuffle(buffer_size=10).repeat()
+    dataset = dataset.map(_parse_image_function)
+    return dataset
+
+sess = tf.Session()
+# Create an iterator over the dataset
+dataset = create_dataset(data_size=100, batch_size=batch_size)
+iterator = dataset.make_initializable_iterator()
+# Initialize the iterator
+sess.run(iterator.initializer)
+
+# Neural Net Input (images, labels)
+X = iterator.get_next()
 
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
-    for epoch in range(n_epoch):
-        print('\tepoch %d...' % epoch)
-        indices_rand = np.arange(10000)
-        np.random.shuffle(indices_rand)
+    sess.run(iterator.initializer, feed_dict={})
 
-        for batch_num in range(2 * int(ceil(n_train / batch_size))):
-            images = np.zeros((batch_size, 784, 1))
-            labels = np.zeros((batch_size, n_classes))
-            for ind_in_batch in range(batch_size // 2):
-                images[2 * ind_in_batch] = load_patch("fault", indices_rand[batch_num * batch_size + ind_in_batch])
-                images[2 * ind_in_batch + 1] = load_patch("nonfault", indices_rand[batch_num * batch_size + ind_in_batch])
-                labels[2 * ind_in_batch] = np.array([0, 1]) # fault
-                labels[2 * ind_in_batch + 1] = np.array([1, 0]) # nonfault
+    for epoch in trange(n_epoch):
+        print('\tepoch %d...' % epoch)
+
+        for batch_num in trange(2 * int(ceil(n_train / batch_size))):
+            images = np.zeros((batch_size, 150, 150, 5))
+            labels = np.zeros((batch_size, 2))
+            for ind in range(batch_size):
+                images[ind] = X['image_raw'].eval().values.reshape(150, 150, 5)
+                lbl = X['label'].eval()
+                if lbl == 1:
+                    labels[ind, 0] = 1
+                elif lbl ==3:
+                    labels[ind, 1] = 1
 
             if is_print_nn_output and batch_num % 100 == 0:
+
                 cur_train_accuracy = accuracy.eval(feed_dict={
                     x: images,
                     gt_labels: labels,

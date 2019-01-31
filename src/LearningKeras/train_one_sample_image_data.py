@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-from src.nn.net import cnn_for_mnist_adjust_lr_with_softmax
+from src.LearningKeras.net import cnn_for_mnist_adjust_lr_with_softmax
 
 data_dir = "../../data/"
 

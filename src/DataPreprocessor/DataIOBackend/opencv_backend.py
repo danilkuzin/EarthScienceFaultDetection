@@ -1,4 +1,4 @@
-from src.DataPreprocessor.Backend.backend import Backend
+from src.DataPreprocessor.DataIOBackend.backend import Backend
 import cv2
 import numpy as np
 

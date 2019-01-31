@@ -1,4 +1,3 @@
-import cv2
 import itertools
 
 import tensorflow as tf
@@ -8,7 +7,7 @@ from tqdm import tqdm, trange
 import matplotlib.pyplot as plt
 
 from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Backend, Mode
-from src.nn.net import cnn_for_mnist_adjust_lr_with_softmax
+from src.LearningKeras.net import cnn_for_mnist_adjust_lr_with_softmax
 
 data_dir = "../../data/Region 1 - Lopukangri/"
 data_dir_muga_puruo = "../../data/Region 2 - Muga Puruo/"
@@ -26,7 +25,7 @@ def train():
         batch_size = 10
         # todo at least, make grayscale and not red only
         while True:
-            img_batch = np.zeros((batch_size, 150, 150, 1))
+            img_batch = np.zeros((batch_size, 150, 150, 5))
             lbl_batch = np.zeros((batch_size, 2))
             for i in range(batch_size):
                 class_label = np.random.binomial(1, p=0.5, size=1)

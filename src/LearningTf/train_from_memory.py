@@ -9,8 +9,8 @@ import os
 from PIL import Image
 from tqdm import trange
 
-from src.learning_tf.net import deepnn_framework
-from src.learning_tf.utils_dataset_processing import next_batch_indices_cycled, shuffle_arrays
+from src.LearningTf.net import deepnn_framework
+from src.LearningTf.utils_dataset_processing import next_batch_indices_cycled, shuffle_arrays
 
 np.set_printoptions(precision=4, suppress=True)
 is_print_nn_output = True

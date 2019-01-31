@@ -9,8 +9,8 @@ import os
 from PIL import Image
 from tqdm import trange
 
-from src.learning_tf.net import deepnn_framework, cnn_for_mnist
-from src.learning_tf.utils_dataset_processing import next_batch_indices_cycled, shuffle_arrays
+from src.LearningTf.net import deepnn_framework, cnn_for_mnist
+from src.LearningTf.utils_dataset_processing import next_batch_indices_cycled, shuffle_arrays
 
 tf.enable_eager_execution()
 

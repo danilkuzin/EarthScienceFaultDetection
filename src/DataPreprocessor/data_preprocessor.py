@@ -1,6 +1,5 @@
 from tempfile import NamedTemporaryFile
 
-import h5py
 import itertools
 from enum import Enum
 
@@ -20,7 +19,8 @@ from PIL import Image
 #TODO rewrite this as some tf.Dataset.from_generator or keras.ImageDataGenerator that feeds data in the same manner
 from tqdm import trange, tqdm
 
-from src.DataPreprocessor.Backend.backend import Backend
+from src.DataPreprocessor.DataIOBackend.backend import Backend
+from src.DataPreprocessor.PatchesOutputBackend.backend import PatchesOutputBackend
 
 
 class OutOfBoundsException(Exception):
@@ -55,12 +55,6 @@ class DatasetType(Enum):
     VALIDATION = 2,
     TEST = 3
 
-def _int64_feature(value):
-    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
-
-def _bytes_feature(value):
-    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
-
 
 # todo normalise images
 # todo include lookalikes as well
@@ -68,7 +62,8 @@ def _bytes_feature(value):
 # todo move each enum into corresponding class with corresponding functions (load im, write dataset, etc)
 # todo class is too big, consider separating classes
 class DataPreprocessor:
-    def __init__(self, data_dir: str, backend: Backend, filename_prefix: str, mode):
+    def __init__(self, data_dir: str, backend: Backend, filename_prefix: str, mode, seed: int):
+        np.random.seed(seed)
         self.data_dir = data_dir
         self.elevation = None
         self.slope = None
@@ -145,6 +140,12 @@ class DataPreprocessor:
 
         return left_border, right_border, top_border, bottom_border
 
+    def concatenate_full_patch(self, left_border: int, right_border: int, top_border: int, bottom_border: int):
+        return np.concatenate((self.optical_rgb[left_border:right_border, top_border:bottom_border],
+                               np.expand_dims(self.elevation[left_border:right_border, top_border:bottom_border], axis=2),
+                               np.expand_dims(self.slope[left_border:right_border, top_border:bottom_border], axis=2)),
+                              axis=2)
+
     def sample_fault_patch(self):
         """if an image patch contains fault bit in the center area than assign it as a fault - go through fault lines
         and sample patches"""
@@ -162,10 +163,7 @@ class DataPreprocessor:
             except OutOfBoundsException:
                 sampled = False
 
-        return np.concatenate((self.optical_rgb[left_border:right_border, top_border:bottom_border],
-                               np.expand_dims(self.elevation[left_border:right_border, top_border:bottom_border], axis=2),
-                               np.expand_dims(self.slope[left_border:right_border, top_border:bottom_border], axis=2)),
-                              axis=2)
+        return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
 
     def sample_nonfault_patch(self):
         """if an image path contains only nonfault bits, than assign it as a non-fault"""
@@ -190,10 +188,7 @@ class DataPreprocessor:
                     sampled = True
             except OutOfBoundsException:
                 sampled = False
-        return np.concatenate((self.optical_rgb[left_border:right_border, top_border:bottom_border],
-                               np.expand_dims(self.elevation[left_border:right_border, top_border:bottom_border], axis=2),
-                               np.expand_dims(self.slope[left_border:right_border, top_border:bottom_border], axis=2)),
-                              axis=2)
+        return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
 
     def sample_patch(self, label):
         if label==FeatureValue.FAULT:
@@ -201,59 +196,31 @@ class DataPreprocessor:
         elif label==FeatureValue.NONFAULT:
             return self.sample_nonfault_patch()
 
-    def prepare_datasets(self, output):
-        self.prepare_dataset(output, DatasetType.TRAIN, FeatureValue.FAULT)
-        self.prepare_dataset(output, DatasetType.TRAIN, FeatureValue.NONFAULT)
-        self.prepare_dataset(output, DatasetType.VALIDATION, FeatureValue.FAULT)
-        self.prepare_dataset(output, DatasetType.VALIDATION, FeatureValue.NONFAULT)
-        self.prepare_dataset(output, DatasetType.TEST, FeatureValue.FAULT)
-        self.prepare_dataset(output, DatasetType.TEST, FeatureValue.NONFAULT)
+    def prepare_datasets(self, output_backend):
+        self.prepare_dataset(output_backend, DatasetType.TRAIN, FeatureValue.FAULT)
+        self.prepare_dataset(output_backend, DatasetType.TRAIN, FeatureValue.NONFAULT)
+        self.prepare_dataset(output_backend, DatasetType.VALIDATION, FeatureValue.FAULT)
+        self.prepare_dataset(output_backend, DatasetType.VALIDATION, FeatureValue.NONFAULT)
+        self.prepare_dataset(output_backend, DatasetType.TEST, FeatureValue.FAULT)
+        self.prepare_dataset(output_backend, DatasetType.TEST, FeatureValue.NONFAULT)
 
-    def prepare_dataset(self, output, data_type, label):
+    def prepare_dataset(self, output_backend: PatchesOutputBackend, data_type, label):
         category = data_type.name + "_" + label.name
-        if output == DataOutput.FOLDER:
-            for i in trange(self.datasets_sizes[category]):
-                patch_im = Image.fromarray(self.sample_patch(label))
-                patch_im.save(self.dirs[category] + "/{}.tif".format(i))
+        arr = np.zeros(
+            (self.datasets_sizes[category], self.patch_size[0], self.patch_size[1], self.num_channels))
+        for i in trange(self.datasets_sizes[category]):
+            arr[i] = self.sample_patch(label)
+        output_backend.save(arr, label==1 if 0 else 1, self.dirs[category])
 
-        elif output == DataOutput.H5:
-            arr = np.zeros(
-                (self.datasets_sizes[category], self.patch_size[0], self.patch_size[1], self.num_channels))
-            for i in trange(self.datasets_sizes[category]):
-                arr[i] = self.sample_patch(label)
-            with h5py.File(self.data_dir + category + '.h5', 'w') as hf:
-                hf.create_dataset(category, data=arr)
-
-        elif output == DataOutput.TFRECORD:
-            arr = np.zeros(
-                (self.datasets_sizes[category], self.patch_size[0], self.patch_size[1], self.num_channels))
-            for i in trange(self.datasets_sizes[category]):
-                arr[i] = self.sample_patch(label)
-
-            filename = os.path.join(self.data_dir, category + '.tfrecord')
-            logging.info('Writing', filename)
-            with tf.python_io.TFRecordWriter(filename) as writer:
-                for index in range(self.datasets_sizes[category]):
-                    image_raw = arr[index].tostring()
-                    #todo consider recording rgb elevation separate from slope as ints to reduce data size and conversion overhead
-                    example = tf.train.Example(
-                        features=tf.train.Features(
-                            feature={
-                                'height': _int64_feature(arr.shape[1]),
-                                'width': _int64_feature(arr.shape[2]),
-                                'depth': _int64_feature(arr.shape[3]),
-                                'label': _int64_feature(label.value),
-                                #'image_raw': _bytes_feature(image_raw)
-                                'image_raw': tf.train.Feature(float_list=tf.train.FloatList(value=arr[index].flatten().astype(np.float32)))
-                            }))
-                    writer.write(example.SerializeToString())
-
-    def prepare_all_patches(self):
+    def prepare_all_patches(self, backend: PatchesOutputBackend):
         for i, j in tqdm(itertools.product(range(self.optical_rgb.shape[0] // self.patch_size[0]),
                         range(self.optical_rgb.shape[1] // self.patch_size[1]))):
-            cur_patch = self.optical_rgb[i * self.patch_size[0]: (i + 1) * self.patch_size[0],
-                        j * self.patch_size[0]: (j + 1) * self.patch_size[0]]
-            plt.imsave(self.dirs['all_patches'] + "/{}_{}.tif".format(i, j), cur_patch)
+            left_border = i * self.patch_size[0]
+            right_border = (i + 1) * self.patch_size[0]
+            top_border = j * self.patch_size[0]
+            bottom_border = (j + 1) * self.patch_size[0]
+            cur_patch = self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
+            backend.save(array=cur_patch, label=0, path=self.dirs['all_patches'] + "/{}_{}.tif".format(i, j))
 
     def normalise(self):
         # todo think how to distribute values: 0-1 or -0.5 - 0.5 as it is different now

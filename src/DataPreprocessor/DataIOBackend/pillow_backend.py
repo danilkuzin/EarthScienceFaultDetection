@@ -1,6 +1,6 @@
 from PIL import Image
 
-from src.DataPreprocessor.Backend.backend import Backend
+from src.DataPreprocessor.DataIOBackend.backend import Backend
 import numpy as np
 
 
