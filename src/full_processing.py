@@ -34,8 +34,11 @@ def process_1_lopukangri():
                            data_preprocessor=loader,
                            batch_size=batch_size)
 
-    #trainer.train(steps_per_epoch=50, epochs=5)
+    train_generator = loader.train_generator(batch_size=batch_size)
+    trainer.train(steps_per_epoch=50, epochs=5, train_generator=train_generator)
     trainer.apply_for_all_patches()
 
 process_1_lopukangri()
+
+#todo train only on subset of bands, i.e only rgb, only slope etc
 

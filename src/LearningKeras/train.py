@@ -13,8 +13,6 @@ from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Backend, Mo
 data_dir = "../../data/Region 1 - Lopukangri/"
 data_dir_muga_puruo = "../../data/Region 2 - Muga Puruo/"
 
-
-#todo add ensembling
 class KerasTrainer:
     def __init__(self, model_generator, ensemble_size: int, data_preprocessor: DataPreprocessor, batch_size: int):
         self.model_generator = model_generator
@@ -22,23 +20,7 @@ class KerasTrainer:
         self.data_preprocessor = data_preprocessor
         self.batch_size = batch_size
 
-    def train(self, steps_per_epoch, epochs):
-        def train_generator():
-            while True:
-                img_batch = np.zeros((self.batch_size,
-                                      self.data_preprocessor.patch_size[0],
-                                      self.data_preprocessor.patch_size[1],
-                                      self.data_preprocessor.num_channels))
-                lbl_batch = np.zeros((self.batch_size, 2))
-                for i in range(self.batch_size):
-                    class_label = np.random.binomial(1, p=0.5, size=1)
-                    if class_label == 1:
-                        img_batch[i] = self.data_preprocessor.sample_fault_patch()
-                        lbl_batch[i] = np.array([0, 1])
-                    else:
-                        img_batch[i] = self.data_preprocessor.sample_nonfault_patch()
-                        lbl_batch[i] = np.array([1, 0])
-                yield img_batch, lbl_batch
+    def train(self, steps_per_epoch, epochs, train_generator):
 
         for i in range(self.ensemble_size):
             model = self.model_generator()
@@ -164,16 +146,15 @@ class KerasTrainer:
             images[en] = np.array(Image.alpha_composite(orig_c, mask_a))
         return images
 
-    def apply_for_sliding_window(self):
+    def apply_for_sliding_window(self, data_preprocessor: DataPreprocessor, stride, max_output_size):
 
+        #todo merge ensemble results
         with tf.Session() as sess:
             res = []
             for en in trange(self.ensemble_size):
                 model = self.model_generator()
                 model.load_weights('models/model_{}.h5'.format(en))
 
-                stride = 100
-                max_output_size = 50
                 iou_threshold = 0.5
                 score_threshold = float('-inf')
 
@@ -181,7 +162,7 @@ class KerasTrainer:
                 scores = []
                 for top_left_border_x, top_left_border_y in tqdm(
                         itertools.product(range(0, 21 * 150, stride), range(0, 21 * 150, stride))):
-                    cur_patch = self.data_preprocessor.concatenate_full_patch(
+                    cur_patch = data_preprocessor.concatenate_full_patch(
                                 top_left_border_x, top_left_border_x + 150,
                                 top_left_border_y, top_left_border_y + 150)
 
@@ -218,7 +199,7 @@ class KerasTrainer:
                 mask_np = np.array(mask)
                 mask_np[:, :, 3] = 60 * np.ones((22 * 150, 22 * 150))
                 mask_a = Image.fromarray(mask_np)
-                orig = Image.fromarray(self.data_preprocessor.original_optical_rgb).convert('RGBA')
+                orig = Image.fromarray(data_preprocessor.original_optical_rgb).convert('RGBA')
                 orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
                 res.append(Image.alpha_composite(orig_c, mask_a))
             return res

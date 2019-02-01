@@ -34,16 +34,6 @@ class Mode(Enum):
     TRAIN = 1
     TEST = 2
 
-class DataOutput(Enum):
-    FOLDER = 1,
-    H5 = 2,
-    TFRECORD = 3
-
-#class Backend(Enum):
-#    PILLOW = 1
-#    OPENCV = 2
-#    GDAL = 3
-
 class FeatureValue(Enum):
     UNDEFINED = 0
     FAULT = 1
@@ -55,8 +45,6 @@ class DatasetType(Enum):
     VALIDATION = 2,
     TEST = 3
 
-
-# todo normalise images
 # todo include lookalikes as well
 # todo add random seed
 # todo move each enum into corresponding class with corresponding functions (load im, write dataset, etc)
@@ -150,7 +138,26 @@ class DataPreprocessor:
     def sample_fault_patch(self):
         """if an image patch contains fault bit in the center area than assign it as a fault - go through fault lines
         and sample patches"""
-        fault_locations = np.argwhere(self.features == 1)
+        fault_locations = np.argwhere(self.features == FeatureValue.FAULT.value)
+        sampled = False
+        left_border, right_border, top_border, bottom_border = None, None, None, None
+        while not sampled:
+            samples_ind = np.random.randint(fault_locations.shape[0])
+            try:
+                left_border, right_border, top_border, bottom_border = self.borders_from_center(
+                    fault_locations[samples_ind])
+                logging.info(
+                    "extracting patch {}:{}, {}:{}".format(left_border, right_border, top_border, bottom_border))
+                sampled = True
+            except OutOfBoundsException:
+                sampled = False
+
+        return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
+
+    def sample_fault_lookalike_patch(self):
+        """if an image patch contains fault lookalike bit in the center area than assign it as a fault - go through
+        fault lookalike lines and sample patches"""
+        fault_locations = np.argwhere(self.features == FeatureValue.FAULT_LOOKALIKE.value)
         sampled = False
         left_border, right_border, top_border, bottom_border = None, None, None, None
         while not sampled:
@@ -168,7 +175,7 @@ class DataPreprocessor:
 
     def sample_nonfault_patch(self):
         """if an image path contains only nonfault bits, than assign it as a non-fault"""
-        nonfault_locations = np.argwhere(self.features == 3)
+        nonfault_locations = np.argwhere(self.features == FeatureValue.NONFAULT.value)
         sampled = False
         left_border, right_border, top_border, bottom_border = None, None, None, None
         while not sampled:
@@ -180,7 +187,7 @@ class DataPreprocessor:
                     "trying patch {}:{}, {}:{} as nonfault".format(left_border, right_border, top_border, bottom_border))
                 is_probably_fault = False
                 for i1, i2 in itertools.product(range(self.patch_size[0]), range(self.patch_size[1])):
-                    if self.features[left_border + i1][top_border + i2] != 3:
+                    if self.features[left_border + i1][top_border + i2] != FeatureValue.NONFAULT.value:
                         is_probably_fault = True
                         logging.info("probably fault")
                         break
@@ -194,16 +201,21 @@ class DataPreprocessor:
     def sample_patch(self, label):
         if label==FeatureValue.FAULT:
             return self.sample_fault_patch()
+        if label==FeatureValue.FAULT_LOOKALIKE:
+            return self.sample_fault_lookalike_patch()
         elif label==FeatureValue.NONFAULT:
             return self.sample_nonfault_patch()
 
     def prepare_datasets(self, output_backend):
         self.prepare_dataset(output_backend, DatasetType.TRAIN, FeatureValue.FAULT)
         self.prepare_dataset(output_backend, DatasetType.TRAIN, FeatureValue.NONFAULT)
+        self.prepare_dataset(output_backend, DatasetType.TRAIN, FeatureValue.FAULT_LOOKALIKE)
         self.prepare_dataset(output_backend, DatasetType.VALIDATION, FeatureValue.FAULT)
         self.prepare_dataset(output_backend, DatasetType.VALIDATION, FeatureValue.NONFAULT)
+        self.prepare_dataset(output_backend, DatasetType.VALIDATION, FeatureValue.FAULT_LOOKALIKE)
         self.prepare_dataset(output_backend, DatasetType.TEST, FeatureValue.FAULT)
         self.prepare_dataset(output_backend, DatasetType.TEST, FeatureValue.NONFAULT)
+        self.prepare_dataset(output_backend, DatasetType.TEST, FeatureValue.FAULT_LOOKALIKE)
 
     def prepare_dataset(self, output_backend: PatchesOutputBackend, data_type, label):
         category = data_type.name + "_" + label.name
@@ -227,7 +239,7 @@ class DataPreprocessor:
         # to protect against evaluation of mean and vars for already normalised data
         # for example in notebooks where this code can be reused
 
-        # todo think how to distribute values: 0-1 or -0.5 - 0.5 as it is different now
+        # todo compute mean for all normalisations
         self.original_optical_rgb = self.optical_rgb
         self.optical_rgb = self.optical_rgb.astype(np.float32)
         self.optical_rgb[:, :, 0] = self.optical_rgb[:, :, 0] / 255. - 0.5
@@ -238,14 +250,20 @@ class DataPreprocessor:
         self.elevation = (self.elevation - self.elevation_mean) / self.elevation_var
         self.slope = (self.slope - 45) / 45
 
-
-    #todo use as input for tensorflow dataset from generator
-    def __iter__(self):
+    def train_generator(self, batch_size):
+        # todo add rotations etc
         while True:
-            class_label = np.random.binomial(1, p=0.5, size=1)
-            if class_label == 1:
-                cur_patch = self.sample_fault_patch()
-            else:
-                cur_patch = self.sample_nonfault_patch()
-            yield cur_patch, class_label
-
+            img_batch = np.zeros((batch_size,
+                                  self.patch_size[0],
+                                  self.patch_size[1],
+                                  self.num_channels))
+            lbl_batch = np.zeros((batch_size, 2))
+            for i in range(batch_size):
+                class_label = np.random.binomial(1, p=0.5, size=1)
+                if class_label == 1:
+                    img_batch[i] = self.sample_fault_patch()
+                    lbl_batch[i] = np.array([0, 1])
+                else:
+                    img_batch[i] = self.sample_nonfault_patch()
+                    lbl_batch[i] = np.array([1, 0])
+            yield img_batch, lbl_batch
