@@ -79,8 +79,9 @@ class KerasTrainer:
         #    print(predictions)
 
     def apply_for_all_patches(self):
-        pathlib.Path('res').mkdir(parents=True, exist_ok=True)
-        for en in range(self.ensemble_size):
+        #pathlib.Path('res').mkdir(parents=True, exist_ok=True)
+        res_im_joint = np.zeros((self.ensemble_size, 22*150, 22*150, 3))
+        for en in trange(self.ensemble_size):
             model = self.model_generator()
             model.load_weights('models/model_{}.h5'.format(en))
             res_im = np.zeros((22*150, 22*150, 3))
@@ -93,11 +94,13 @@ class KerasTrainer:
                 res = model.predict(np.expand_dims(patch, axis=0))
                 res = res[0]
                 if res[0] > res[1]:
-                    res_im[left_border: right_border, top_border: bottom_border] = [255, 0, 0]
-                else:
                     res_im[left_border: right_border, top_border: bottom_border] = [0, 0, 255]
-            res_im_im = Image.fromarray(res_im.astype(np.uint8))
-            res_im_im.save('res/res_{}.tif'.format(en))
+                else:
+                    res_im[left_border: right_border, top_border: bottom_border] = [255, 0, 0]
+            res_im_joint[en] = res_im
+        return res_im_joint
+        #    res_im_im = Image.fromarray(res_im.astype(np.uint8))
+        #    res_im_im.save('res/res_{}.tif'.format(en))
 
     def apply_for_test(self):
         model = cnn_for_mnist_adjust_lr_with_softmax()
@@ -148,15 +151,86 @@ class KerasTrainer:
         print(np.mean(predictions_faults == 'fault'))
         print(np.mean(predictions_nonfaults == 'nonfault'))
 
+    def combine_images_im_memory(self, masks):
+        images = np.zeros((self.ensemble_size, 150, 150, 4))
+        for en in range(self.ensemble_size):
+            mask_np = np.array(Image.fromarray((((masks[en] + 0.5) * 255).astype(np.uint8))).convert('RGBA'))
+            mask_np[:, :, 3] = 60 * np.ones((22 * 150, 22 * 150))
+            mask_a = Image.fromarray(mask_np)
+
+            orig = Image.fromarray(self.data_preprocessor.original_optical_rgb)
+            orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
+
+            images[en] = np.array(Image.alpha_composite(orig_c, mask_a))
+        return images
+
+    def apply_for_sliding_window(self):
+
+        with tf.Session() as sess:
+            res = []
+            for en in trange(self.ensemble_size):
+                model = self.model_generator()
+                model.load_weights('models/model_{}.h5'.format(en))
+
+                stride = 100
+                max_output_size = 50
+                iou_threshold = 0.5
+                score_threshold = float('-inf')
+
+                boxes = []
+                scores = []
+                for top_left_border_x, top_left_border_y in tqdm(
+                        itertools.product(range(0, 21 * 150, stride), range(0, 21 * 150, stride))):
+                    cur_patch = self.data_preprocessor.concatenate_full_patch(
+                                top_left_border_x, top_left_border_x + 150,
+                                top_left_border_y, top_left_border_y + 150)
+
+                    probs = model.predict(np.expand_dims(cur_patch, axis=0))
+                    probs_for_first__in_batch = probs[0]
+                    fault_prob = probs_for_first__in_batch[1]
+                    # todo check if y, x, y, x are correct and not are x, y, x, y
+                    boxes.append([top_left_border_x, top_left_border_y, top_left_border_x + 150, top_left_border_y + 150])
+                    scores.append(fault_prob)
+
+                selected_indices = tf.image.non_max_suppression(
+                    boxes,
+                    scores,
+                    max_output_size=max_output_size,
+                    iou_threshold=iou_threshold,
+                    score_threshold=score_threshold,
+                    name=None
+                )
+
+                boxes_ind = selected_indices.eval(session=sess)
+
+                res_im = np.zeros((22 * 150, 22 * 150, 3))
+                res_im[:, :] = 0, 0, 255
+                for box_ind in boxes_ind:
+                    c_box = boxes[box_ind]
+                    print("box: [{}]".format(c_box))
+                    res_im[c_box[0]:c_box[2],
+                    c_box[1]: c_box[3]] = [255, 0, 0]
+
+                res_im_im = Image.fromarray(res_im.astype(np.uint8))
+                #res_im_im.save('out_slding.tif')
+
+                mask = res_im_im.convert('RGBA')
+                mask_np = np.array(mask)
+                mask_np[:, :, 3] = 60 * np.ones((22 * 150, 22 * 150))
+                mask_a = Image.fromarray(mask_np)
+                orig = Image.fromarray(self.data_preprocessor.original_optical_rgb).convert('RGBA')
+                orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
+                res.append(Image.alpha_composite(orig_c, mask_a))
+            return res
 
 def combine_images():
     mask = Image.open('out.tif').convert('RGBA')
     mask_np = np.array(mask)
     mask_np[:,:,3] = 60*np.ones((22*150, 22*150))
     mask_a = Image.fromarray(mask_np)
-    orig = Image.open(data_dir+'data.tif')
     orig_c = orig.crop((0,0,22*150, 22*150))
     Image.alpha_composite(orig_c, mask_a).save("out_mask.tif")
+
 
 def apply_for_muga_puruo():
     model = cnn_for_mnist_adjust_lr_with_softmax()
@@ -188,64 +262,7 @@ def apply_for_muga_puruo():
     orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
     Image.alpha_composite(orig_c, mask_a).save("out_mask_muga_puruo.tif")
 
-def apply_for_sliding_window():
-    data = DataPreprocessor("../../data/Region 1 - Lopukangri/", backend=Backend.GDAL, filename_prefix="tibet", mode=Mode.TEST)
-    model = cnn_for_mnist_adjust_lr_with_softmax()
-    model.load_weights('model.h5')
 
-    stride = 100
-    max_output_size = 20
-    iou_threshold = 0.5
-    score_threshold = float('-inf')
-
-    boxes = []
-    scores = []
-    for top_left_border_x,top_left_border_y in tqdm(itertools.product(range(0, 21 * 150, stride), range(0, 21 * 150, stride))):
-        cur_patch = data.optical_rgb[top_left_border_x:top_left_border_x+150, top_left_border_y:top_left_border_y+150]
-        #todo move this proc into separate func
-        patch_grsc = Image.fromarray(cur_patch).convert('L')
-        patch_arr = np.array(patch_grsc)
-        patch_prep = np.expand_dims(patch_arr, axis=2)  # add colour
-        patch_prep = np.expand_dims(patch_prep, axis=0)  # add batch
-        patch_resc = patch_prep / 255
-
-        probs = model.predict(patch_resc)
-        probs_for_first__in_batch = probs[0]
-        fault_prob = probs_for_first__in_batch[0]
-        # todo check if y, x, y, x are correct and not are x, y, x, y
-        boxes.append([top_left_border_x,top_left_border_y, top_left_border_x+150, top_left_border_y+150])
-        scores.append(fault_prob)
-
-    selected_indices = tf.image.non_max_suppression(
-        boxes,
-        scores,
-        max_output_size = max_output_size,
-        iou_threshold=iou_threshold,
-        score_threshold=score_threshold,
-        name=None
-    )
-
-    with tf.Session() as sess:
-        boxes_ind = selected_indices.eval(session=sess)
-
-        res_im = np.zeros((22 * 150, 22 * 150, 3))
-        res_im[:,:] = 0, 0, 255
-        for box_ind in boxes_ind:
-            c_box = boxes[box_ind]
-            print("box: [{}]".format(c_box))
-            res_im[c_box[0]:c_box[2],
-            c_box[1]: c_box[3]] = [255, 0, 0]
-
-        res_im_im = Image.fromarray(res_im.astype(np.uint8))
-        res_im_im.save('out_slding.tif')
-
-        mask = Image.open('out_slding.tif').convert('RGBA')
-        mask_np = np.array(mask)
-        mask_np[:, :, 3] = 60 * np.ones((22 * 150, 22 * 150))
-        mask_a = Image.fromarray(mask_np)
-        orig = Image.open(data_dir + 'data.tif')
-        orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
-        Image.alpha_composite(orig_c, mask_a).save("out_mask_sliding.tif")
 
 
 

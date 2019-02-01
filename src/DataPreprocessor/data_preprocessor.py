@@ -90,6 +90,7 @@ class DataPreprocessor:
         self.true_test_classes = None
         self.filename_prefix = filename_prefix
         self.mode = mode
+        self.normalised = False
         self.prepare_folders()
         self.load(backend)
 
@@ -223,14 +224,20 @@ class DataPreprocessor:
             backend.save(array=cur_patch, label=0, path=self.dirs['all_patches'] + "/{}_{}.tif".format(i, j))
 
     def normalise(self):
+        # to protect against evaluation of mean and vars for already normalised data
+        # for example in notebooks where this code can be reused
+
         # todo think how to distribute values: 0-1 or -0.5 - 0.5 as it is different now
-        self.optical_rgb[:, :, 0] = self.optical_rgb[:, :, 0] / 255 - 0.5
-        self.optical_rgb[:, :, 1] = self.optical_rgb[:, :, 1] / 255 - 0.5
-        self.optical_rgb[:, :, 2] = self.optical_rgb[:, :, 2] / 255 - 0.5
+        self.original_optical_rgb = self.optical_rgb
+        self.optical_rgb = self.optical_rgb.astype(np.float32)
+        self.optical_rgb[:, :, 0] = self.optical_rgb[:, :, 0] / 255. - 0.5
+        self.optical_rgb[:, :, 1] = self.optical_rgb[:, :, 1] / 255. - 0.5
+        self.optical_rgb[:, :, 2] = self.optical_rgb[:, :, 2] / 255. - 0.5
         self.elevation_mean = np.mean(self.elevation)
         self.elevation_var = np.var(self.elevation)
         self.elevation = (self.elevation - self.elevation_mean) / self.elevation_var
         self.slope = (self.slope - 45) / 45
+
 
     #todo use as input for tensorflow dataset from generator
     def __iter__(self):
