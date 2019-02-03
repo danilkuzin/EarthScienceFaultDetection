@@ -25,7 +25,7 @@ class PillowBackend(Backend):
 
     def load_features(self, path: str) -> np.array:
         try:
-            features = np.array(Image.open(path))
+            features = np.array(Image.open(path)) - 1
             return features
         except IOError:
             raise FileNotFoundError(path)

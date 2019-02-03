@@ -35,10 +35,10 @@ class Mode(Enum):
     TEST = 2
 
 class FeatureValue(Enum):
-    UNDEFINED = 0
-    FAULT = 1
-    FAULT_LOOKALIKE = 2
-    NONFAULT = 3
+    UNDEFINED = -1
+    FAULT = 0
+    FAULT_LOOKALIKE = 1
+    NONFAULT = 2
 
 class DatasetType(Enum):
     TRAIN = 1,
@@ -250,20 +250,24 @@ class DataPreprocessor:
         self.elevation = (self.elevation - self.elevation_mean) / self.elevation_var
         self.slope = (self.slope - 45) / 45
 
-    def train_generator(self, batch_size):
-        # todo add rotations etc
+    def train_generator(self, batch_size, class_probabilities):
+        # todo add rotations etc with numpy.rot90 and numpy.flip
+        num_classes = class_probabilities.shape[0]
         while True:
             img_batch = np.zeros((batch_size,
                                   self.patch_size[0],
                                   self.patch_size[1],
                                   self.num_channels))
-            lbl_batch = np.zeros((batch_size, 2))
+            lbl_batch = np.zeros((batch_size, num_classes))
+            class_labels = np.random.choice(num_classes, batch_size, p=class_probabilities)
             for i in range(batch_size):
-                class_label = np.random.binomial(1, p=0.5, size=1)
-                if class_label == 1:
+                if class_labels[i] == FeatureValue.FAULT:
                     img_batch[i] = self.sample_fault_patch()
-                    lbl_batch[i] = np.array([0, 1])
-                else:
+                elif class_labels[i] == FeatureValue.FAULT_LOOKALIKE:
+                    img_batch[i] = self.sample_fault_lookalike_patch()
+                elif class_labels[i] == FeatureValue.NONFAULT:
                     img_batch[i] = self.sample_nonfault_patch()
-                    lbl_batch[i] = np.array([1, 0])
+                else:
+                    raise NotImplementedError
+                lbl_batch[i, class_labels[i]] = 1
             yield img_batch, lbl_batch

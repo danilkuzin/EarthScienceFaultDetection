@@ -41,7 +41,7 @@ class GdalBackend(Backend):
         dataset = gdal.Open(path, gdal.GA_ReadOnly)
         if not dataset:
             raise FileNotFoundError(path)
-        return np.array(dataset.ReadAsArray())
+        return np.array(dataset.ReadAsArray() - 1)
 
     def parse_meta_with_gdal(self, path: str):
         """to be used for parsing gdal headers and recreating them in output results

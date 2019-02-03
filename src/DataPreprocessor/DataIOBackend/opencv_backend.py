@@ -25,6 +25,6 @@ class OpencvBackend(Backend):
         return np.dstack((optical_r, optical_g, optical_b))
 
     def load_features(self, path: str) -> np.array:
-        features = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+        features = cv2.imread(path, cv2.IMREAD_UNCHANGED) - 1
         if not features:
             raise FileNotFoundError(path)

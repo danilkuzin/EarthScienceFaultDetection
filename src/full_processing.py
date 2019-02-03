@@ -2,8 +2,8 @@ import logging
 
 from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
 from src.DataPreprocessor.PatchesOutputBackend.h5_backend import H5Backend
-from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Mode, DataOutput
-from src.LearningKeras.net_architecture import cnn_150x150x5
+from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Mode
+from src.LearningKeras.net_architecture import cnn_150x150x5, cnn_150x150x5_3class
 from src.LearningKeras.train import KerasTrainer
 
 import numpy as np
@@ -25,7 +25,7 @@ def process_1_lopukangri():
     #loader.prepare_all_patches(backend=outputbackend)
     loader.normalise()
 
-    model_generator = lambda: cnn_150x150x5()
+    model_generator = lambda: cnn_150x150x5_3class()
     ensemble_size = 5
     batch_size = 5
 
@@ -34,7 +34,7 @@ def process_1_lopukangri():
                            data_preprocessor=loader,
                            batch_size=batch_size)
 
-    train_generator = loader.train_generator(batch_size=batch_size)
+    train_generator = loader.train_generator(batch_size=batch_size, class_probabilities=[0.33, 0.33, 0.33])
     trainer.train(steps_per_epoch=50, epochs=5, train_generator=train_generator)
     trainer.apply_for_all_patches()
 
