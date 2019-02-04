@@ -58,9 +58,12 @@ class DataPreprocessor:
         self.true_test_classes = None
         self.filename_prefix = filename_prefix
         self.mode = mode
-        self.normalised = False
         self.prepare_folders()
         self.load(backend)
+        self.normalised_elevation = None
+        self.normalised_slope = None
+        self.normalised_optical_rgb = None
+        self.normalise()
 
     def prepare_folders(self):
         if self.mode == Mode.TRAIN:
@@ -110,9 +113,9 @@ class DataPreprocessor:
         return left_border, right_border, top_border, bottom_border
 
     def concatenate_full_patch(self, left_border: int, right_border: int, top_border: int, bottom_border: int):
-        return np.concatenate((self.optical_rgb[left_border:right_border, top_border:bottom_border],
-                               np.expand_dims(self.elevation[left_border:right_border, top_border:bottom_border], axis=2),
-                               np.expand_dims(self.slope[left_border:right_border, top_border:bottom_border], axis=2)),
+        return np.concatenate((self.normalised_optical_rgb[left_border:right_border, top_border:bottom_border],
+                               np.expand_dims(self.normalised_elevation[left_border:right_border, top_border:bottom_border], axis=2),
+                               np.expand_dims(self.normalised_slope[left_border:right_border, top_border:bottom_border], axis=2)),
                               axis=2)
 
     def sample_fault_patch(self, patch_size):
@@ -162,7 +165,7 @@ class DataPreprocessor:
             samples_ind = np.random.randint(nonfault_locations.shape[0])
             try:
                 left_border, right_border, top_border, bottom_border = self.borders_from_center(
-                    nonfault_locations[samples_ind])
+                    nonfault_locations[samples_ind], patch_size)
                 logging.info(
                     "trying patch {}:{}, {}:{} as nonfault".format(left_border, right_border, top_border, bottom_border))
                 is_probably_fault = False
@@ -216,19 +219,20 @@ class DataPreprocessor:
             backend.save(array=cur_patch, label=0, path=self.dirs['all_patches'] + "/{}_{}.tif".format(i, j))
 
     def normalise(self):
-        # to protect against evaluation of mean and vars for already normalised data
-        # for example in notebooks where this code can be reused
-
-        # todo compute mean for all normalisations
-        self.original_optical_rgb = self.optical_rgb
-        self.optical_rgb = self.optical_rgb.astype(np.float32)
-        self.optical_rgb[:, :, 0] = self.optical_rgb[:, :, 0] / 255. - 0.5
-        self.optical_rgb[:, :, 1] = self.optical_rgb[:, :, 1] / 255. - 0.5
-        self.optical_rgb[:, :, 2] = self.optical_rgb[:, :, 2] / 255. - 0.5
+        self.normalised_optical_rgb = self.optical_rgb.astype(np.float32)
+        self.normalised_optical_rgb[:, :, 0] = self.optical_rgb[:, :, 0] / 255. - 0.5
+        self.normalised_optical_rgb[:, :, 1] = self.optical_rgb[:, :, 1] / 255. - 0.5
+        self.normalised_optical_rgb[:, :, 2] = self.optical_rgb[:, :, 2] / 255. - 0.5
         self.elevation_mean = np.mean(self.elevation)
         self.elevation_var = np.var(self.elevation)
-        self.elevation = (self.elevation - self.elevation_mean) / self.elevation_var
-        self.slope = (self.slope - 45) / 45
+        self.normalised_elevation = (self.elevation - self.elevation_mean) / self.elevation_var
+        self.normalised_slope = (self.slope - 45) / 45
+
+    def denormalise(self, patch):
+        denormalised_rgb = ((patch[:,:,:3]+0.5) * 255).astype(np.uint8)
+        denormalised_elevation = (patch[:,:,3]*self.elevation_var + self.elevation_mean)
+        denormalised_slope = (patch[:,:,4]*45 + 45)
+        return denormalised_rgb, denormalised_elevation, denormalised_slope
 
     def train_generator(self, batch_size, class_probabilities, patch_size, channels):
         num_classes = class_probabilities.shape[0]

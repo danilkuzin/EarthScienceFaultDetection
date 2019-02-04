@@ -147,63 +147,86 @@ class KerasTrainer:
             images[en] = np.array(Image.alpha_composite(orig_c, mask_a))
         return images
 
-    def apply_for_sliding_window(self, data_preprocessor: DataPreprocessor, stride, max_output_size):
+    def apply_for_sliding_window(self, data_preprocessor: DataPreprocessor, stride):
+        boxes, avg_fault_probs = [], []
+        for top_left_border_x, top_left_border_y in itertools.product(range(0, 21 * 150, stride), range(0, 21 * 150, stride)):
+            boxes.append([top_left_border_x, top_left_border_y, top_left_border_x + 150, top_left_border_y + 150])
 
-        #todo merge ensemble results
+        models = []
+        for en in range(self.ensemble_size):
+            model = self.model_generator()
+            model.load_weights('models/model_{}.h5'.format(en))
+            models.append(model)
+
+        for (index, borders) in enumerate(tqdm(boxes)):
+
+            top_left_x, top_left_y, bottom_right_x, bottom_right_y = borders
+            cur_patch = data_preprocessor.concatenate_full_patch(top_left_x, bottom_right_x, top_left_y, bottom_right_y)
+            probs = []
+            for model in models:
+                model_probs = model.predict(np.expand_dims(cur_patch, axis=0))
+                probs_for_first_in_batch = model_probs[0]
+                fault_prob = probs_for_first_in_batch[1]
+                probs.append(fault_prob)
+            probs_arr = np.array(probs)
+            avg_fault_probs.append(np.mean(probs_arr))
+        return boxes, avg_fault_probs
+
+    def apply_for_sliding_window_non_max_suppression(self, boxes, avg_fault_probs, max_output_size, data_preprocessor: DataPreprocessor):
+        # todo check if y, x, y, x are correct and not are x, y, x, y
+        iou_threshold = 0.5
+        score_threshold = float('-inf')
+
+        scores = avg_fault_probs
+
         with tf.Session() as sess:
-            res = []
-            for en in trange(self.ensemble_size):
-                model = self.model_generator()
-                model.load_weights('models/model_{}.h5'.format(en))
+            selected_indices = tf.image.non_max_suppression(
+                boxes,
+                scores,
+                max_output_size=max_output_size,
+                iou_threshold=iou_threshold,
+                score_threshold=score_threshold,
+                name=None
+            )
 
-                iou_threshold = 0.5
-                score_threshold = float('-inf')
+            boxes_ind = selected_indices.eval(session=sess)
 
-                boxes = []
-                scores = []
-                for top_left_border_x, top_left_border_y in tqdm(
-                        itertools.product(range(0, 21 * 150, stride), range(0, 21 * 150, stride))):
-                    cur_patch = data_preprocessor.concatenate_full_patch(
-                                top_left_border_x, top_left_border_x + 150,
-                                top_left_border_y, top_left_border_y + 150)
+            res_im = np.zeros((22 * 150, 22 * 150, 3))
+            res_im[:, :] = 0, 0, 255
+            for box_ind in boxes_ind:
+                c_box = boxes[box_ind]
+                res_im[c_box[0]:c_box[2],
+                c_box[1]: c_box[3]] = [255, 0, 0]
 
-                    probs = model.predict(np.expand_dims(cur_patch, axis=0))
-                    probs_for_first__in_batch = probs[0]
-                    fault_prob = probs_for_first__in_batch[1]
-                    # todo check if y, x, y, x are correct and not are x, y, x, y
-                    boxes.append([top_left_border_x, top_left_border_y, top_left_border_x + 150, top_left_border_y + 150])
-                    scores.append(fault_prob)
+            res_im_im = Image.fromarray(res_im.astype(np.uint8))
+            #res_im_im.save('out_slding.tif')
 
-                selected_indices = tf.image.non_max_suppression(
-                    boxes,
-                    scores,
-                    max_output_size=max_output_size,
-                    iou_threshold=iou_threshold,
-                    score_threshold=score_threshold,
-                    name=None
-                )
+            mask = res_im_im.convert('RGBA')
+            mask_np = np.array(mask)
+            mask_np[:, :, 3] = 60 * np.ones((22 * 150, 22 * 150))
+            mask_a = Image.fromarray(mask_np)
+            orig = Image.fromarray(data_preprocessor.optical_rgb).convert('RGBA')
+            orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
+        return Image.alpha_composite(orig_c, mask_a)
 
-                boxes_ind = selected_indices.eval(session=sess)
+    def apply_for_sliding_window_heatmaps(self, boxes, avg_fault_probs, data_preprocessor: DataPreprocessor):
+        res_im = np.zeros((22 * 150, 22 * 150, 3), dtype=np.float)
+        res_im[:, :] = 0, 0, 255
+        for (index, borders) in enumerate(tqdm(boxes)):
+            top_left_x, top_left_y, bottom_right_x, bottom_right_y = borders
+            #cur_patch = data_preprocessor.concatenate_full_patch(top_left_x, bottom_right_x, top_left_y, bottom_right_y)
+            for i,j in itertools.product(range(150), range(150)):
+                res_im[top_left_x+i, top_left_y+j][0] = np.max((res_im[top_left_x+i, top_left_y+j][0], avg_fault_probs[index]*255.))
+        res_im_im = Image.fromarray(res_im.astype(np.uint8))
+        mask = res_im_im.convert('RGBA')
+        mask_np = np.array(mask)
+        mask_np[:, :, 3] = 60 * np.ones((22 * 150, 22 * 150))
+        mask_a = Image.fromarray(mask_np)
+        orig = Image.fromarray(data_preprocessor.optical_rgb).convert('RGBA')
+        orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
+        return Image.alpha_composite(orig_c, mask_a)
 
-                res_im = np.zeros((22 * 150, 22 * 150, 3))
-                res_im[:, :] = 0, 0, 255
-                for box_ind in boxes_ind:
-                    c_box = boxes[box_ind]
-                    print("box: [{}]".format(c_box))
-                    res_im[c_box[0]:c_box[2],
-                    c_box[1]: c_box[3]] = [255, 0, 0]
 
-                res_im_im = Image.fromarray(res_im.astype(np.uint8))
-                #res_im_im.save('out_slding.tif')
-
-                mask = res_im_im.convert('RGBA')
-                mask_np = np.array(mask)
-                mask_np[:, :, 3] = 60 * np.ones((22 * 150, 22 * 150))
-                mask_a = Image.fromarray(mask_np)
-                orig = Image.fromarray(data_preprocessor.original_optical_rgb).convert('RGBA')
-                orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
-                res.append(Image.alpha_composite(orig_c, mask_a))
-            return res
 
 def combine_images():
     mask = Image.open('out.tif').convert('RGBA')

@@ -3,7 +3,7 @@ from tempfile import NamedTemporaryFile
 from src.DataPreprocessor.DataIOBackend.backend import Backend
 import numpy as np
 import gdal
-
+import logging
 
 class GdalBackend(Backend):
     def __init__(self):
@@ -41,7 +41,8 @@ class GdalBackend(Backend):
         dataset = gdal.Open(path, gdal.GA_ReadOnly)
         if not dataset:
             raise FileNotFoundError(path)
-        return np.array(dataset.ReadAsArray() - 1)
+        signed_data = np.array(dataset.ReadAsArray()).astype(np.int)
+        return signed_data - 1
 
     def parse_meta_with_gdal(self, path: str):
         """to be used for parsing gdal headers and recreating them in output results
@@ -63,21 +64,21 @@ class GdalBackend(Backend):
         dataset = gdal.Translate(NamedTemporaryFile(delete=False).name, dataset, options=options_string)
 
         # Getting Dataset Information
-        print("Driver: {}/{}".format(dataset.GetDriver().ShortName,
+        logging.info("Driver: {}/{}".format(dataset.GetDriver().ShortName,
                                      dataset.GetDriver().LongName))
         self.gdal_options['driver'] = dataset.GetDriver()
 
-        print("Size is {} x {} x {}".format(dataset.RasterXSize,
+        logging.info("Size is {} x {} x {}".format(dataset.RasterXSize,
                                             dataset.RasterYSize,
                                             dataset.RasterCount))
         self.gdal_options['size'] = [dataset.RasterXSize, dataset.RasterYSize,  dataset.RasterCount]
 
-        print("Projection is {}".format(dataset.GetProjection()))
+        logging.info("Projection is {}".format(dataset.GetProjection()))
         self.gdal_options['projection'] = dataset.GetProjection()
         geotransform = dataset.GetGeoTransform()
         if geotransform:
-            print("Origin = ({}, {})".format(geotransform[0], geotransform[3]))
-            print("Pixel Size = ({}, {})".format(geotransform[1], geotransform[5]))
+            logging.info("Origin = ({}, {})".format(geotransform[0], geotransform[3]))
+            logging.info("Pixel Size = ({}, {})".format(geotransform[1], geotransform[5]))
         self.gdal_options['geotransform'] = geotransform
 
         # Fetching a Raster Band
