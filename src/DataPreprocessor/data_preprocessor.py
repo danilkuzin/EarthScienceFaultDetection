@@ -1,22 +1,9 @@
-from tempfile import NamedTemporaryFile
-
 import itertools
 from enum import Enum
-
 import numpy as np
 import matplotlib.pyplot as plt
-
 import logging
-import os
 import pathlib
-#import gdal
-from osgeo import gdal_array, osr
-import struct
-import tensorflow as tf
-
-from PIL import Image
-
-#TODO rewrite this as some tf.Dataset.from_generator or keras.ImageDataGenerator that feeds data in the same manner
 from tqdm import trange, tqdm
 
 from src.DataPreprocessor.DataIOBackend.backend import Backend
@@ -45,10 +32,6 @@ class DatasetType(Enum):
     VALIDATION = 2,
     TEST = 3
 
-# todo include lookalikes as well
-# todo add random seed
-# todo move each enum into corresponding class with corresponding functions (load im, write dataset, etc)
-# todo class is too big, consider separating classes
 class DataPreprocessor:
     def __init__(self, data_dir: str, backend: Backend, filename_prefix: str, mode, seed: int):
         np.random.seed(seed)
@@ -62,9 +45,6 @@ class DataPreprocessor:
         self.swir2 = None
         self.panchromatic = None
         self.features = None
-        # todo move patch_size to sampling parameters in function
-        self.patch_size = (150, 150)
-        self.center_size = (50, 50)
         self.dirs = dict()
         self.datasets_sizes = dict()
         self.gdal_options = dict()
@@ -115,11 +95,11 @@ class DataPreprocessor:
             self.features = backend.load_features(path=self.data_dir+'feature_categories.tif')
         logging.info('loaded')
 
-    def borders_from_center(self, center):
-        left_border = center[0] - self.patch_size[0] // 2
-        right_border = center[0] + self.patch_size[0] // 2
-        top_border = center[1] - self.patch_size[1] // 2
-        bottom_border = center[1] + self.patch_size[1] // 2
+    def borders_from_center(self, center, patch_size):
+        left_border = center[0] - patch_size[0] // 2
+        right_border = center[0] + patch_size[0] // 2
+        top_border = center[1] - patch_size[1] // 2
+        bottom_border = center[1] + patch_size[1] // 2
 
         if not (0 < left_border < self.optical_rgb.shape[0]
                 and 0 < right_border < self.optical_rgb.shape[0]
@@ -135,7 +115,7 @@ class DataPreprocessor:
                                np.expand_dims(self.slope[left_border:right_border, top_border:bottom_border], axis=2)),
                               axis=2)
 
-    def sample_fault_patch(self):
+    def sample_fault_patch(self, patch_size):
         """if an image patch contains fault bit in the center area than assign it as a fault - go through fault lines
         and sample patches"""
         fault_locations = np.argwhere(self.features == FeatureValue.FAULT.value)
@@ -145,7 +125,7 @@ class DataPreprocessor:
             samples_ind = np.random.randint(fault_locations.shape[0])
             try:
                 left_border, right_border, top_border, bottom_border = self.borders_from_center(
-                    fault_locations[samples_ind])
+                    fault_locations[samples_ind], patch_size)
                 logging.info(
                     "extracting patch {}:{}, {}:{}".format(left_border, right_border, top_border, bottom_border))
                 sampled = True
@@ -154,7 +134,7 @@ class DataPreprocessor:
 
         return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
 
-    def sample_fault_lookalike_patch(self):
+    def sample_fault_lookalike_patch(self, patch_size):
         """if an image patch contains fault lookalike bit in the center area than assign it as a fault - go through
         fault lookalike lines and sample patches"""
         fault_locations = np.argwhere(self.features == FeatureValue.FAULT_LOOKALIKE.value)
@@ -164,7 +144,7 @@ class DataPreprocessor:
             samples_ind = np.random.randint(fault_locations.shape[0])
             try:
                 left_border, right_border, top_border, bottom_border = self.borders_from_center(
-                    fault_locations[samples_ind])
+                    fault_locations[samples_ind], patch_size)
                 logging.info(
                     "extracting patch {}:{}, {}:{}".format(left_border, right_border, top_border, bottom_border))
                 sampled = True
@@ -173,7 +153,7 @@ class DataPreprocessor:
 
         return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
 
-    def sample_nonfault_patch(self):
+    def sample_nonfault_patch(self, patch_size):
         """if an image path contains only nonfault bits, than assign it as a non-fault"""
         nonfault_locations = np.argwhere(self.features == FeatureValue.NONFAULT.value)
         sampled = False
@@ -186,7 +166,7 @@ class DataPreprocessor:
                 logging.info(
                     "trying patch {}:{}, {}:{} as nonfault".format(left_border, right_border, top_border, bottom_border))
                 is_probably_fault = False
-                for i1, i2 in itertools.product(range(self.patch_size[0]), range(self.patch_size[1])):
+                for i1, i2 in itertools.product(range(patch_size[0]), range(patch_size[1])):
                     if self.features[left_border + i1][top_border + i2] != FeatureValue.NONFAULT.value:
                         is_probably_fault = True
                         logging.info("probably fault")
@@ -198,40 +178,40 @@ class DataPreprocessor:
                 sampled = False
         return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
 
-    def sample_patch(self, label):
+    def sample_patch(self, label, patch_size):
         if label==FeatureValue.FAULT:
-            return self.sample_fault_patch()
+            return self.sample_fault_patch(patch_size)
         if label==FeatureValue.FAULT_LOOKALIKE:
-            return self.sample_fault_lookalike_patch()
+            return self.sample_fault_lookalike_patch(patch_size)
         elif label==FeatureValue.NONFAULT:
-            return self.sample_nonfault_patch()
+            return self.sample_nonfault_patch(patch_size)
 
-    def prepare_datasets(self, output_backend):
-        self.prepare_dataset(output_backend, DatasetType.TRAIN, FeatureValue.FAULT)
-        self.prepare_dataset(output_backend, DatasetType.TRAIN, FeatureValue.NONFAULT)
-        self.prepare_dataset(output_backend, DatasetType.TRAIN, FeatureValue.FAULT_LOOKALIKE)
-        self.prepare_dataset(output_backend, DatasetType.VALIDATION, FeatureValue.FAULT)
-        self.prepare_dataset(output_backend, DatasetType.VALIDATION, FeatureValue.NONFAULT)
-        self.prepare_dataset(output_backend, DatasetType.VALIDATION, FeatureValue.FAULT_LOOKALIKE)
-        self.prepare_dataset(output_backend, DatasetType.TEST, FeatureValue.FAULT)
-        self.prepare_dataset(output_backend, DatasetType.TEST, FeatureValue.NONFAULT)
-        self.prepare_dataset(output_backend, DatasetType.TEST, FeatureValue.FAULT_LOOKALIKE)
+    def prepare_datasets(self, output_backend, patch_size):
+        self.prepare_dataset(output_backend, DatasetType.TRAIN, FeatureValue.FAULT, patch_size)
+        self.prepare_dataset(output_backend, DatasetType.TRAIN, FeatureValue.NONFAULT, patch_size)
+        self.prepare_dataset(output_backend, DatasetType.TRAIN, FeatureValue.FAULT_LOOKALIKE, patch_size)
+        self.prepare_dataset(output_backend, DatasetType.VALIDATION, FeatureValue.FAULT, patch_size)
+        self.prepare_dataset(output_backend, DatasetType.VALIDATION, FeatureValue.NONFAULT, patch_size)
+        self.prepare_dataset(output_backend, DatasetType.VALIDATION, FeatureValue.FAULT_LOOKALIKE, patch_size)
+        self.prepare_dataset(output_backend, DatasetType.TEST, FeatureValue.FAULT, patch_size)
+        self.prepare_dataset(output_backend, DatasetType.TEST, FeatureValue.NONFAULT, patch_size)
+        self.prepare_dataset(output_backend, DatasetType.TEST, FeatureValue.FAULT_LOOKALIKE, patch_size)
 
-    def prepare_dataset(self, output_backend: PatchesOutputBackend, data_type, label):
+    def prepare_dataset(self, output_backend: PatchesOutputBackend, data_type, label, patch_size):
         category = data_type.name + "_" + label.name
         arr = np.zeros(
-            (self.datasets_sizes[category], self.patch_size[0], self.patch_size[1], self.num_channels))
+            (self.datasets_sizes[category], patch_size[0], patch_size[1], self.num_channels))
         for i in trange(self.datasets_sizes[category]):
             arr[i] = self.sample_patch(label)
         output_backend.save(arr, label==1 if 0 else 1, self.dirs[category])
 
-    def prepare_all_patches(self, backend: PatchesOutputBackend):
-        for i, j in tqdm(itertools.product(range(self.optical_rgb.shape[0] // self.patch_size[0]),
-                        range(self.optical_rgb.shape[1] // self.patch_size[1]))):
-            left_border = i * self.patch_size[0]
-            right_border = (i + 1) * self.patch_size[0]
-            top_border = j * self.patch_size[0]
-            bottom_border = (j + 1) * self.patch_size[0]
+    def prepare_all_patches(self, backend: PatchesOutputBackend, patch_size):
+        for i, j in tqdm(itertools.product(range(self.optical_rgb.shape[0] // patch_size[0]),
+                        range(self.optical_rgb.shape[1] // patch_size[1]))):
+            left_border = i * patch_size[0]
+            right_border = (i + 1) * patch_size[0]
+            top_border = j * patch_size[0]
+            bottom_border = (j + 1) * patch_size[0]
             cur_patch = self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
             backend.save(array=cur_patch, label=0, path=self.dirs['all_patches'] + "/{}_{}.tif".format(i, j))
 
@@ -250,24 +230,33 @@ class DataPreprocessor:
         self.elevation = (self.elevation - self.elevation_mean) / self.elevation_var
         self.slope = (self.slope - 45) / 45
 
-    def train_generator(self, batch_size, class_probabilities):
-        # todo add rotations etc with numpy.rot90 and numpy.flip
+    def train_generator(self, batch_size, class_probabilities, patch_size, channels):
         num_classes = class_probabilities.shape[0]
         while True:
             img_batch = np.zeros((batch_size,
-                                  self.patch_size[0],
-                                  self.patch_size[1],
-                                  self.num_channels))
+                                  patch_size[0],
+                                  patch_size[1],
+                                  channels.shape[0]))
             lbl_batch = np.zeros((batch_size, num_classes))
             class_labels = np.random.choice(num_classes, batch_size, p=class_probabilities)
+
             for i in range(batch_size):
                 if class_labels[i] == FeatureValue.FAULT:
-                    img_batch[i] = self.sample_fault_patch()
+                    patch = self.sample_fault_patch(patch_size)
                 elif class_labels[i] == FeatureValue.FAULT_LOOKALIKE:
-                    img_batch[i] = self.sample_fault_lookalike_patch()
+                    patch = self.sample_fault_lookalike_patch(patch_size)
                 elif class_labels[i] == FeatureValue.NONFAULT:
-                    img_batch[i] = self.sample_nonfault_patch()
+                    patch = self.sample_nonfault_patch(patch_size)
                 else:
                     raise NotImplementedError
+
+                for _ in range(np.random.randint(0, 4)):
+                    patch = np.rot90(patch, axes=(0, 1))
+                for _ in range(np.random.randint(0, 2)):
+                    patch = np.fliplr(patch)
+                for _ in range(np.random.randint(0, 2)):
+                    patch = np.flipud(patch)
+
+                img_batch[i] = patch[:, :, channels]
                 lbl_batch[i, class_labels[i]] = 1
             yield img_batch, lbl_batch

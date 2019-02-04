@@ -13,6 +13,7 @@ from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Backend, Mo
 data_dir = "../../data/Region 1 - Lopukangri/"
 data_dir_muga_puruo = "../../data/Region 2 - Muga Puruo/"
 
+#todo visualise cnn layers
 class KerasTrainer:
     def __init__(self, model_generator, ensemble_size: int, data_preprocessor: DataPreprocessor, batch_size: int):
         self.model_generator = model_generator
