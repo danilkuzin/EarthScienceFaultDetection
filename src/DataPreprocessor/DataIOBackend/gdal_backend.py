@@ -111,19 +111,36 @@ class GdalBackend(Backend):
 
         dataset = None
 
-    def write_array(self, backend, image):
+    def write_image(self, path, image):
         # image is self.optical_rgb.shape[0] X self.optical_rgb.shape[1] in this case
         driver = self.gdal_options['driver']
-        dst_ds = driver.Create("out_im", xsize=self.optical_rgb.shape[0], ysize=self.optical_rgb.shape[1],
-                                   bands=1, eType=gdal.GDT_Byte)
+        if not driver:
+            raise Exception("driver not created")
+        if image.ndim == 3:
+            bands = image.shape[2]
+        elif image.ndim == 2:
+            bands = 1
+        else:
+            raise Exception("Bands number incorrect")
+        dst_ds = driver.Create(path, xsize=image.shape[0], ysize=image.shape[1], bands=bands, eType=gdal.GDT_Byte)
 
         geotransform = self.gdal_options['geotransform']
         dst_ds.SetGeoTransform(geotransform)
         projection = self.gdal_options['projection']
         dst_ds.SetProjection(projection)
         raster = image.astype(np.uint8)
-        dst_ds.GetRasterBand(1).WriteArray(raster)
+        if image.ndim == 3:
+            for band_ind in range(bands):
+                dst_ds.GetRasterBand(band_ind + 1).WriteArray(raster[:, :, band_ind])
+        elif image.ndim == 2:
+            dst_ds.GetRasterBand(1).WriteArray(raster)
+        dst_ds = None
 
+    def write_dem(self):
+
+        dst_ds_2 = gdal.DEMProcessing("heatmaps_3_colours_tmp2.tif", dst_ds, "color-relief")
+        gdal.Translate('heatmaps_3_colours_tmp2.tif', dst_ds)
+        dst_ds_2 = None
         dst_ds = None
 
     # def save_full(self, path: str, patch: np.array) -> None:

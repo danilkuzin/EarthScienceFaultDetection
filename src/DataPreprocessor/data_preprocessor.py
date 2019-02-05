@@ -32,6 +32,7 @@ class DatasetType(Enum):
     VALIDATION = 2,
     TEST = 3
 
+#todo add option to tormalise based on normalisation features from a different data
 class DataPreprocessor:
     def __init__(self, data_dir: str, backend: Backend, filename_prefix: str, mode, seed: int):
         np.random.seed(seed)
@@ -245,14 +246,14 @@ class DataPreprocessor:
             class_labels = np.random.choice(num_classes, batch_size, p=class_probabilities)
 
             for i in range(batch_size):
-                if class_labels[i] == FeatureValue.FAULT:
+                if class_labels[i] == FeatureValue.FAULT.value:
                     patch = self.sample_fault_patch(patch_size)
-                elif class_labels[i] == FeatureValue.FAULT_LOOKALIKE:
+                elif class_labels[i] == FeatureValue.FAULT_LOOKALIKE.value:
                     patch = self.sample_fault_lookalike_patch(patch_size)
-                elif class_labels[i] == FeatureValue.NONFAULT:
+                elif class_labels[i] == FeatureValue.NONFAULT.value:
                     patch = self.sample_nonfault_patch(patch_size)
                 else:
-                    raise NotImplementedError
+                    raise NotImplementedError("class label {}".format(class_labels[i]))
 
                 for _ in range(np.random.randint(0, 4)):
                     patch = np.rot90(patch, axes=(0, 1))

@@ -36,9 +36,9 @@ def process_1_lopukangri():
                            batch_size=batch_size)
 
     train_generator = loader.train_generator(batch_size=batch_size,
-                                             class_probabilities=[0.33, 0.33, 0.33],
+                                             class_probabilities=np.array([1./3, 1./3, 1./3]),
                                              patch_size=(150, 150),
-                                             channels=[0, 1, 2, 3, 4])
+                                             channels=np.array([0, 1, 2, 3, 4]))
     trainer.train(steps_per_epoch=50, epochs=5, train_generator=train_generator)
     trainer.apply_for_all_patches()
 

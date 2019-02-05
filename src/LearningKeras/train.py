@@ -22,19 +22,19 @@ class KerasTrainer:
         self.batch_size = batch_size
 
     def train(self, steps_per_epoch, epochs, train_generator):
-
+        models = []
         for i in range(self.ensemble_size):
             model = self.model_generator()
-            history = model.fit_generator(train_generator(),
+            history = model.fit_generator(train_generator,
                                           steps_per_epoch=steps_per_epoch,
                                           epochs=epochs,
-                                          validation_data=train_generator(),
+                                          validation_data=train_generator,
                                           validation_steps=5)
             # pydot not working
             # tf.keras.utils.plot_model(model, to_file='model.png')
             # model.save is not working in keras https://github.com/keras-team/keras/issues/11683
-            pathlib.Path('models').mkdir(parents=True, exist_ok=True)
-            model.save_weights('models/model_{}.h5'.format(i))
+            #pathlib.Path('models').mkdir(parents=True, exist_ok=True)
+            #model.save_weights('models/model_{}.h5'.format(i))
             # test_generator.reset()
             # pred = model.predict_generator(test_generator, verbose=1)
             #
@@ -43,6 +43,8 @@ class KerasTrainer:
             # labels = dict((v, k) for k, v in labels.items())
             # predictions = [labels[k] for k in predicted_class_indices]
             # Plot training & validation accuracy values
+            models.append(model)
+
             plt.plot(history.history['acc'])
             plt.plot(history.history['val_acc'])
             plt.title('Model accuracy')
@@ -210,21 +212,28 @@ class KerasTrainer:
         return Image.alpha_composite(orig_c, mask_a)
 
     def apply_for_sliding_window_heatmaps(self, boxes, avg_fault_probs, data_preprocessor: DataPreprocessor):
-        res_im = np.zeros((22 * 150, 22 * 150, 3), dtype=np.float)
-        res_im[:, :] = 0, 0, 255
+        res_im = np.zeros((22 * 150, 22 * 150), dtype=np.float)
         for (index, borders) in enumerate(tqdm(boxes)):
             top_left_x, top_left_y, bottom_right_x, bottom_right_y = borders
-            #cur_patch = data_preprocessor.concatenate_full_patch(top_left_x, bottom_right_x, top_left_y, bottom_right_y)
-            for i,j in itertools.product(range(150), range(150)):
-                res_im[top_left_x+i, top_left_y+j][0] = np.max((res_im[top_left_x+i, top_left_y+j][0], avg_fault_probs[index]*255.))
-        res_im_im = Image.fromarray(res_im.astype(np.uint8))
-        mask = res_im_im.convert('RGBA')
-        mask_np = np.array(mask)
-        mask_np[:, :, 3] = 60 * np.ones((22 * 150, 22 * 150))
-        mask_a = Image.fromarray(mask_np)
-        orig = Image.fromarray(data_preprocessor.optical_rgb).convert('RGBA')
-        orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
-        return Image.alpha_composite(orig_c, mask_a)
+            res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y] = np.maximum(res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y],
+                                                                                      avg_fault_probs[index] * np.ones_like(res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y]))
+
+            #for i,j in itertools.product(range(150), range(150)):
+            #    res_im[top_left_x+i, top_left_y+j] = np.max((res_im[top_left_x+i, top_left_y+j], avg_fault_probs[index]))
+
+        # for (index, borders) in enumerate(tqdm(boxes)):
+        #     top_left_x, top_left_y, bottom_right_x, bottom_right_y = borders
+        #     for i,j in itertools.product(range(150), range(150)):
+        #         res_im[top_left_x+i, top_left_y+j] = np.max((res_im[top_left_x+i, top_left_y+j], avg_fault_probs[index]))
+        # res_im_im = Image.fromarray(res_im.astype(np.uint8))
+        # mask = res_im_im.convert('RGBA')
+        # mask_np = np.array(mask)
+        # mask_np[:, :, 3] = 60 * np.ones((22 * 150, 22 * 150))
+        # mask_a = Image.fromarray(mask_np)
+        # orig = Image.fromarray(data_preprocessor.optical_rgb).convert('RGBA')
+        # orig_c = orig.crop((0, 0, 22 * 150, 22 * 150))
+        # return Image.alpha_composite(orig_c, mask_a)
+        return res_im
 
 
 
