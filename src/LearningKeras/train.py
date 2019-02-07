@@ -8,7 +8,7 @@ from tqdm import tqdm, trange
 import matplotlib.pyplot as plt
 
 from src.DataPreprocessor.PatchesOutputBackend.backend import PatchesOutputBackend
-from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Backend, Mode
+from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Backend, Mode, FeatureValue
 
 data_dir = "../../data/Region 1 - Lopukangri/"
 data_dir_muga_puruo = "../../data/Region 2 - Muga Puruo/"
@@ -195,7 +195,7 @@ class KerasTrainer:
             lookalike_probs = []
             nonfault_probs = []
             for model in models:
-                #todo try to move all patches into one large batch 
+                #todo try to move all patches into one large batch
                 model_probs = model.predict(np.expand_dims(cur_patch, axis=0))
                 probs_for_first_in_batch = model_probs[0]
                 fault_probs.append(probs_for_first_in_batch[0])
@@ -204,6 +204,33 @@ class KerasTrainer:
             avg_fault_probs.append(np.mean(np.array(fault_probs)))
             avg_lookalike_probs.append(np.mean(np.array(lookalike_probs)))
             avg_non_fault_probs.append(np.mean(np.array(nonfault_probs)))
+        return boxes, avg_fault_probs, avg_lookalike_probs, avg_non_fault_probs
+
+    def apply_for_sliding_window_3class_batch(self, data_preprocessor: DataPreprocessor, stride, batch_size):
+        boxes, avg_fault_probs, avg_lookalike_probs, avg_non_fault_probs = [], [], [], []
+        for top_left_border_x, top_left_border_y in itertools.product(range(0, 21 * 150, stride), range(0, 21 * 150, stride)):
+            boxes.append([top_left_border_x, top_left_border_y, top_left_border_x + 150, top_left_border_y + 150])
+
+        images_batch = []
+        for borders in tqdm(boxes):
+            top_left_x, top_left_y, bottom_right_x, bottom_right_y = borders
+            cur_patch = data_preprocessor.concatenate_full_patch(top_left_x, bottom_right_x, top_left_y, bottom_right_y)
+            images_batch.append(cur_patch)
+
+        images_batch = np.array(images_batch)
+
+        probs = np.zeros((self.ensemble_size, images_batch.shape[0], 3))
+        for (ind, model) in enumerate(self.models):
+            for batch_ind in trange(int(images_batch.shape[0] / batch_size)):
+                probs_batch = model.predict(images_batch[batch_ind*batch_size:(batch_ind+1)*batch_size])
+                probs[ind, batch_ind*batch_size:(batch_ind+1)*batch_size] = probs_batch
+
+        #probs = np.array(probs)
+        avg_probs = np.mean(probs, axis=0)
+        avg_fault_probs = avg_probs[:, FeatureValue.FAULT.value].tolist()
+        avg_lookalike_probs = avg_probs[:, FeatureValue.FAULT_LOOKALIKE.value].tolist()
+        avg_non_fault_probs = avg_probs[:, FeatureValue.NONFAULT.value].tolist()
+
         return boxes, avg_fault_probs, avg_lookalike_probs, avg_non_fault_probs
 
     def apply_for_sliding_window_non_max_suppression(self, boxes, avg_fault_probs, max_output_size, data_preprocessor: DataPreprocessor):
