@@ -20,9 +20,10 @@ class KerasTrainer:
         self.ensemble_size = ensemble_size
         self.data_preprocessor = data_preprocessor
         self.batch_size = batch_size
+        self.models = []
 
     def train(self, steps_per_epoch, epochs, train_generator):
-        models = []
+        history_arr = []
         for i in range(self.ensemble_size):
             model = self.model_generator()
             history = model.fit_generator(train_generator,
@@ -43,25 +44,26 @@ class KerasTrainer:
             # labels = dict((v, k) for k, v in labels.items())
             # predictions = [labels[k] for k in predicted_class_indices]
             # Plot training & validation accuracy values
-            models.append(model)
+            self.models.append(model)
+            history_arr.append(history)
 
-            plt.plot(history.history['acc'])
-            plt.plot(history.history['val_acc'])
-            plt.title('Model accuracy')
-            plt.ylabel('Accuracy')
-            plt.xlabel('Epoch')
-            plt.legend(['Train', 'Test'], loc='upper left')
-            plt.show()
-
-            # Plot training & validation loss values
-            plt.plot(history.history['loss'])
-            plt.plot(history.history['val_loss'])
-            plt.title('Model loss')
-            plt.ylabel('Loss')
-            plt.xlabel('Epoch')
-            plt.legend(['Train', 'Test'], loc='upper left')
-            plt.show()
-        #    print(predictions)
+            # plt.plot(history.history['acc'])
+            # plt.plot(history.history['val_acc'])
+            # plt.title('Model accuracy')
+            # plt.ylabel('Accuracy')
+            # plt.xlabel('Epoch')
+            # plt.legend(['Train', 'Test'], loc='upper left')
+            # plt.show()
+            #
+            # # Plot training & validation loss values
+            # plt.plot(history.history['loss'])
+            # plt.plot(history.history['val_loss'])
+            # plt.title('Model loss')
+            # plt.ylabel('Loss')
+            # plt.xlabel('Epoch')
+            # plt.legend(['Train', 'Test'], loc='upper left')
+            # plt.show()
+        return history_arr
 
     def apply_for_all_patches(self):
         #pathlib.Path('res').mkdir(parents=True, exist_ok=True)
@@ -173,6 +175,36 @@ class KerasTrainer:
             probs_arr = np.array(probs)
             avg_fault_probs.append(np.mean(probs_arr))
         return boxes, avg_fault_probs
+
+    def apply_for_sliding_window_3class(self, data_preprocessor: DataPreprocessor, stride):
+        boxes, avg_fault_probs, avg_lookalike_probs, avg_non_fault_probs = [], [], [], []
+        for top_left_border_x, top_left_border_y in itertools.product(range(0, 21 * 150, stride), range(0, 21 * 150, stride)):
+            boxes.append([top_left_border_x, top_left_border_y, top_left_border_x + 150, top_left_border_y + 150])
+
+        models = []
+        for en in range(self.ensemble_size):
+            model = self.model_generator()
+            model.load_weights('models_3class/model_{}.h5'.format(en))
+            models.append(model)
+
+        for (index, borders) in enumerate(tqdm(boxes)):
+
+            top_left_x, top_left_y, bottom_right_x, bottom_right_y = borders
+            cur_patch = data_preprocessor.concatenate_full_patch(top_left_x, bottom_right_x, top_left_y, bottom_right_y)
+            fault_probs = []
+            lookalike_probs = []
+            nonfault_probs = []
+            for model in models:
+                #todo try to move all patches into one large batch 
+                model_probs = model.predict(np.expand_dims(cur_patch, axis=0))
+                probs_for_first_in_batch = model_probs[0]
+                fault_probs.append(probs_for_first_in_batch[0])
+                lookalike_probs.append(probs_for_first_in_batch[1])
+                nonfault_probs.append(probs_for_first_in_batch[2])
+            avg_fault_probs.append(np.mean(np.array(fault_probs)))
+            avg_lookalike_probs.append(np.mean(np.array(lookalike_probs)))
+            avg_non_fault_probs.append(np.mean(np.array(nonfault_probs)))
+        return boxes, avg_fault_probs, avg_lookalike_probs, avg_non_fault_probs
 
     def apply_for_sliding_window_non_max_suppression(self, boxes, avg_fault_probs, max_output_size, data_preprocessor: DataPreprocessor):
         # todo check if y, x, y, x are correct and not are x, y, x, y
