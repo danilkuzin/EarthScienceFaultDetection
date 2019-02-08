@@ -32,6 +32,7 @@ class DatasetType(Enum):
     VALIDATION = 2,
     TEST = 3
 
+#todo maybe add script to convert filenames from drive to standard names without prefixes
 #todo add option to tormalise based on normalisation features from a different data
 class DataPreprocessor:
     def __init__(self, data_dir: str, backend: Backend, filename_prefix: str, mode, seed: int):
