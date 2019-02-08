@@ -236,9 +236,12 @@ class DataPreprocessor:
         denormalised_slope = (patch[:,:,4]*45 + 45)
         return denormalised_rgb, denormalised_elevation, denormalised_slope
 
+    def get_sample(self):
+
     def train_generator(self, batch_size, class_probabilities, patch_size, channels):
         num_classes = class_probabilities.shape[0]
         while True:
+            get_sample()
             img_batch = np.zeros((batch_size,
                                   patch_size[0],
                                   patch_size[1],
