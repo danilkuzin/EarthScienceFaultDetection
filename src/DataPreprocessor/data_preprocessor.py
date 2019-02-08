@@ -93,6 +93,7 @@ class DataPreprocessor:
         self.optical_rgb = backend.load_optical(path_r=self.data_dir + self.filename_prefix + '_R.tif',
                                                 path_g=self.data_dir + self.filename_prefix + '_G.tif',
                                                 path_b=self.data_dir + self.filename_prefix + '_B.tif')
+        #todo make this warning depend on the data and check other frames as well
         logging.warning("optical images are not match in 1-2 pixels in size")
         self.optical_rgb = self.optical_rgb[:self.elevation.shape[0], :self.elevation.shape[1]]
         plt.imsave(self.data_dir+'data.tif', self.optical_rgb)
@@ -236,12 +237,39 @@ class DataPreprocessor:
         denormalised_slope = (patch[:,:,4]*45 + 45)
         return denormalised_rgb, denormalised_elevation, denormalised_slope
 
-    def get_sample(self):
+    def get_sample(self, batch_size, class_probabilities, patch_size, channels):
+        num_classes = class_probabilities.shape[0]
+        img_batch = np.zeros((batch_size,
+                              patch_size[0],
+                              patch_size[1],
+                              channels.shape[0]))
+        lbl_batch = np.zeros((batch_size, num_classes))
+        class_labels = np.random.choice(num_classes, batch_size, p=class_probabilities)
+
+        for i in range(batch_size):
+            if class_labels[i] == FeatureValue.FAULT.value:
+                patch = self.sample_fault_patch(patch_size)
+            elif class_labels[i] == FeatureValue.FAULT_LOOKALIKE.value:
+                patch = self.sample_fault_lookalike_patch(patch_size)
+            elif class_labels[i] == FeatureValue.NONFAULT.value:
+                patch = self.sample_nonfault_patch(patch_size)
+            else:
+                raise NotImplementedError("class label {}".format(class_labels[i]))
+
+            for _ in range(np.random.randint(0, 4)):
+                patch = np.rot90(patch, axes=(0, 1))
+            for _ in range(np.random.randint(0, 2)):
+                patch = np.fliplr(patch)
+            for _ in range(np.random.randint(0, 2)):
+                patch = np.flipud(patch)
+
+            img_batch[i] = patch[:, :, channels]
+            lbl_batch[i, class_labels[i]] = 1
+        return img_batch, lbl_batch
 
     def train_generator(self, batch_size, class_probabilities, patch_size, channels):
         num_classes = class_probabilities.shape[0]
         while True:
-            get_sample()
             img_batch = np.zeros((batch_size,
                                   patch_size[0],
                                   patch_size[1],
@@ -268,4 +296,5 @@ class DataPreprocessor:
 
                 img_batch[i] = patch[:, :, channels]
                 lbl_batch[i, class_labels[i]] = 1
+
             yield img_batch, lbl_batch

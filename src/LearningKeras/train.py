@@ -30,7 +30,9 @@ class KerasTrainer:
                                           steps_per_epoch=steps_per_epoch,
                                           epochs=epochs,
                                           validation_data=train_generator,
-                                          validation_steps=5)
+                                          validation_steps=5,
+                                          workers=0,
+                                          use_multiprocessing=False)
             # pydot not working
             # tf.keras.utils.plot_model(model, to_file='model.png')
             # model.save is not working in keras https://github.com/keras-team/keras/issues/11683
