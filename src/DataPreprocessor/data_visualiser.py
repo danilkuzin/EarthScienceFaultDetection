@@ -15,24 +15,33 @@ class DataVisualiser:
         mask_rgba[:, :, 3] = opacity
         return Image.fromarray(mask_rgba)
 
-    def get_optical_rgb_with_features_mask(self, opacity=60):
+    def get_optical_rgb(self):
+        return Image.fromarray(self.preprocessor.optical_rgb)
+
+    def get_optical_rgb_with_features_mask(self, opacity=60) -> Image:
         features_map = self.get_features_map_transparent(opacity)
-        orig = Image.fromarray(self.preprocessor.optical_rgb).convert('RGBA')
+        orig = self.get_optical_rgb().convert('RGBA')
         return Image.alpha_composite(orig, features_map)
 
-    def get_elevation_with_features_mask(self, opacity=60):
-        features_map = self.get_features_map_transparent(opacity)
+    def get_elevation(self):
         orig = self.preprocessor.elevation.astype(np.float)
         orig = orig - np.min(orig)
         orig = orig * 255. / np.max(orig)
-        orig_im = Image.fromarray(orig.astype(np.uint8)).convert('RGBA')
+        return Image.fromarray(orig.astype(np.uint8))
+
+    def get_elevation_with_features_mask(self, opacity=60):
+        features_map = self.get_features_map_transparent(opacity)
+        orig_im = self.get_elevation().convert('RGBA')
         return Image.alpha_composite(orig_im, features_map)
 
-    def get_slope_with_features_mask(self, opacity=60):
-        features_map = self.get_features_map_transparent(opacity)
+    def get_slope(self):
         orig = self.preprocessor.slope.astype(np.float)
         orig = orig - np.min(orig)
         orig = orig * 255. / np.max(orig)
-        orig_im = Image.fromarray(orig.astype(np.uint8)).convert('RGBA')
+        return Image.fromarray(orig.astype(np.uint8))
+
+    def get_slope_with_features_mask(self, opacity=60):
+        features_map = self.get_features_map_transparent(opacity)
+        orig_im = self.get_slope().convert('RGBA')
         return Image.alpha_composite(orig_im, features_map)
 
