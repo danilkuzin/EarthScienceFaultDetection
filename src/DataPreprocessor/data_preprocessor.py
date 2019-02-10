@@ -61,6 +61,7 @@ class DataPreprocessor:
         self.filename_prefix = filename_prefix
         self.mode = mode
         self.prepare_folders()
+        self.backend = backend
         self.load(backend)
         self.normalised_elevation = None
         self.normalised_slope = None

@@ -13,12 +13,10 @@ from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Backend, Mo
 data_dir = "../../data/Region 1 - Lopukangri/"
 data_dir_muga_puruo = "../../data/Region 2 - Muga Puruo/"
 
-#todo visualise cnn layers
 class KerasTrainer:
-    def __init__(self, model_generator, ensemble_size: int, data_preprocessor: DataPreprocessor, batch_size: int):
+    def __init__(self, model_generator, ensemble_size: int, batch_size: int):
         self.model_generator = model_generator
         self.ensemble_size = ensemble_size
-        self.data_preprocessor = data_preprocessor
         self.batch_size = batch_size
         self.models = []
 
@@ -33,38 +31,9 @@ class KerasTrainer:
                                           validation_steps=5,
                                           workers=0,
                                           use_multiprocessing=False)
-            # pydot not working
-            # tf.keras.utils.plot_model(model, to_file='model.png')
-            # model.save is not working in keras https://github.com/keras-team/keras/issues/11683
-            #pathlib.Path('models').mkdir(parents=True, exist_ok=True)
-            #model.save_weights('models/model_{}.h5'.format(i))
-            # test_generator.reset()
-            # pred = model.predict_generator(test_generator, verbose=1)
-            #
-            # predicted_class_indices = np.argmax(pred, axis=1)
-            # labels = (train_generator.class_indices)
-            # labels = dict((v, k) for k, v in labels.items())
-            # predictions = [labels[k] for k in predicted_class_indices]
-            # Plot training & validation accuracy values
+
             self.models.append(model)
             history_arr.append(history)
-
-            # plt.plot(history.history['acc'])
-            # plt.plot(history.history['val_acc'])
-            # plt.title('Model accuracy')
-            # plt.ylabel('Accuracy')
-            # plt.xlabel('Epoch')
-            # plt.legend(['Train', 'Test'], loc='upper left')
-            # plt.show()
-            #
-            # # Plot training & validation loss values
-            # plt.plot(history.history['loss'])
-            # plt.plot(history.history['val_loss'])
-            # plt.title('Model loss')
-            # plt.ylabel('Loss')
-            # plt.xlabel('Epoch')
-            # plt.legend(['Train', 'Test'], loc='upper left')
-            # plt.show()
         return history_arr
 
     def apply_for_all_patches(self):
