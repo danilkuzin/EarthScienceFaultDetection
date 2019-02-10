@@ -24,7 +24,7 @@ data_preprocessors = [
                      seed=1),
     DataPreprocessor(data_dir="../data/Region 3 - Muggarboibo/",
                      backend=GdalBackend(),
-                     filename_prefix="mpgr",
+                     filename_prefix="gyrc1",
                      mode=Mode.TEST,
                      seed=1)
 ]
@@ -47,14 +47,16 @@ for data_preprocessor in data_preprocessors:
         data_visualiser.get_elevation().save(output_path + "elevation.tif")
         data_visualiser.get_slope().save(output_path + "slope.tif")
 
-    _, axis = plt.subplots(1, 5)
+    f, axis = plt.subplots(1, 5)
     sns.distplot(data_preprocessor.optical_rgb[:, :, 0].flatten(), ax=axis[0])
     sns.distplot(data_preprocessor.optical_rgb[:, :, 1].flatten(), ax=axis[1])
     sns.distplot(data_preprocessor.optical_rgb[:, :, 2].flatten(), ax=axis[2])
     sns.distplot(data_preprocessor.elevation.flatten(), ax=axis[3])
     sns.distplot(data_preprocessor.slope.flatten(), ax=axis[4])
     plt.tight_layout()
-    plt.imsave(output_path + "features_distribution.png")
+    f.savefig(output_path + "features_distribution.png")
+    f.clf()
+    plt.close()
 
     _, axis = plt.subplots(1, 5)
     sns.distplot(data_preprocessor.normalised_optical_rgb[:, :, 0].flatten(), ax=axis[0])
@@ -63,7 +65,9 @@ for data_preprocessor in data_preprocessors:
     sns.distplot(data_preprocessor.normalised_elevation.flatten(), ax=axis[3])
     sns.distplot(data_preprocessor.normalised_slope.flatten(), ax=axis[4])
     plt.tight_layout()
-    plt.imsave(output_path + "normalised_features_distribution.png")
+    f.savefig(output_path + "normalised_features_distribution.png")
+    f.clf()
+    plt.close()
 
     for lbl in [FeatureValue.FAULT, FeatureValue.FAULT_LOOKALIKE, FeatureValue.NONFAULT]:
         patches = np.zeros((num_patches, patch_size[0], patch_size[1], bands))
@@ -73,9 +77,11 @@ for data_preprocessor in data_preprocessors:
         for i in range(num_patches):
             cur_patch = patches[i]
             rgb, elevation, slope = data_preprocessor.denormalise(cur_patch)
-            _, (ax1, ax2, ax3) = plt.subplots(1, 3)
+            f, (ax1, ax2, ax3) = plt.subplots(1, 3)
             ax1.imshow(rgb)
             ax2.imshow(elevation)
             ax3.imshow(slope)
-            plt.tight_layout()
-        plt.imsave(output_path + "examples_{}.png".format(lbl.name))
+            f.tight_layout()
+            f.savefig(output_path + "examples_{}_{}.png".format(lbl.name, i))
+            f.clf()
+            plt.close()
