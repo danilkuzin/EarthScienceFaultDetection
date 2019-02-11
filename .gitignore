@@ -109,3 +109,4 @@ data/
 *.h5
 *.tif
 *.tfrecord
+train_on_2_regions.zip
