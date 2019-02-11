@@ -1,0 +1,78 @@
+from typing import List, Tuple
+
+import numpy as np
+import tensorflow as tf
+import pathlib
+import matplotlib.pyplot as plt
+
+from src.DataPreprocessor.data_generator import DataGenerator
+from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Mode
+from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
+from src.LearningKeras.net_architecture import cnn_150x150x5_3class
+from src.LearningKeras.train import KerasTrainer
+
+
+def train(train_datasets: List[int], class_probabilities: str, batch_size: int, patch_size: Tuple[int, int],
+          channels: List[int], ensemble_size: int):
+    np.random.seed(1)
+    tf.set_random_seed(2)
+
+    preprocessors = []
+    if 1 in train_datasets:
+        preprocessors.append(DataPreprocessor(
+            data_dir="../data/Region 1 - Lopukangri/",
+            backend=GdalBackend(),
+            filename_prefix="tibet",
+            mode=Mode.TRAIN,
+            seed=1)
+        )
+
+    if 2 in train_datasets:
+        preprocessors.append(DataPreprocessor(
+            data_dir="../data/Region 2 - Muga Puruo/",
+            backend=GdalBackend(),
+            filename_prefix="mpgr",
+            mode=Mode.TRAIN,
+            seed=1)
+        )
+
+    if class_probabilities == "equal":
+        class_probabilities_int = np.array([1. / 3, 1. / 3, 1. / 3])
+    else:
+        raise Exception('Not implemented')
+
+    data_generator = DataGenerator(preprocessors=preprocessors)
+    joint_generator = data_generator.generator(batch_size=batch_size,
+                                               class_probabilities=class_probabilities_int,
+                                               patch_size=patch_size,
+                                               channels=np.array(channels))
+
+    trainer = KerasTrainer(model_generator=lambda: cnn_150x150x5_3class(),
+                           ensemble_size=ensemble_size,
+                           batch_size=batch_size)
+
+    history_arr = trainer.train(steps_per_epoch=50, epochs=5, train_generator=joint_generator)
+    for history in history_arr:
+        plt.plot(history.history['acc'])
+        plt.plot(history.history['val_acc'])
+        plt.title('Model accuracy')
+        plt.ylabel('Accuracy')
+        plt.xlabel('Epoch')
+        plt.legend(['Train', 'Test'], loc='upper left')
+        plt.savefig("Model accuracy.png")
+        plt.close()
+
+        # Plot training & validation loss values
+        plt.plot(history.history['loss'])
+        plt.plot(history.history['val_loss'])
+        plt.title('Model loss')
+        plt.ylabel('Loss')
+        plt.xlabel('Epoch')
+        plt.legend(['Train', 'Test'], loc='upper left')
+        plt.savefig("Model loss.png")
+        plt.close()
+
+    for i in range(ensemble_size):
+        dir_name = 'trained_models_{}'.format(''.join(str(i) for i in train_datasets))
+        pathlib.Path(dir_name).mkdir(parents=True, exist_ok=True)
+        trainer.models[i].save_weights(dir_name+'/model_{}.h5'.format(i))
