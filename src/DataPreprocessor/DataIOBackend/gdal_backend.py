@@ -23,7 +23,7 @@ class GdalBackend(Backend):
 
     def load_optical(self, path_r: str, path_g: str, path_b: str) -> np.array:
         opt_string = '-ot Byte -of GTiff -scale 0 65535 0 255'
-        # todo check how to remove tmp file
+        # todo check how to remove tmp file and replace with ''
         dataset_r = gdal.Translate(NamedTemporaryFile(delete=False).name, gdal.Open(path_r, gdal.GA_ReadOnly),
                                    options=opt_string)
         optical_r = np.array(dataset_r.ReadAsArray())
@@ -136,7 +136,7 @@ class GdalBackend(Backend):
             dst_ds.GetRasterBand(1).WriteArray(raster)
         dst_ds = None
 
-    def write_dem(self):
+    def write_dem(self, path, image):
 
         dst_ds_2 = gdal.DEMProcessing("heatmaps_3_colours_tmp2.tif", dst_ds, "color-relief")
         gdal.Translate('heatmaps_3_colours_tmp2.tif', dst_ds)

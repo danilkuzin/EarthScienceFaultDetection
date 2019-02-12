@@ -33,7 +33,9 @@ class DatasetType(Enum):
     TEST = 3
 
 #todo maybe add script to convert filenames from drive to standard names without prefixes
-#todo add option to tormalise based on normalisation features from a different data
+#todo add option to tormalise based on normalisation features from a different data - or this problem is more serious,
+# need to think, look at the distributions, probably we can't convert elevation this way for example
+#todo move output backend into init, add in-memory backend, move the directories outputs to other backends than in-memory
 class DataPreprocessor:
     def __init__(self, data_dir: str, backend: Backend, filename_prefix: str, mode, seed: int):
         np.random.seed(seed)
@@ -238,7 +240,7 @@ class DataPreprocessor:
         denormalised_slope = (patch[:,:,4]*45 + 45)
         return denormalised_rgb, denormalised_elevation, denormalised_slope
 
-    def get_sample(self, batch_size, class_probabilities, patch_size, channels):
+    def get_sample_3class(self, batch_size, class_probabilities, patch_size, channels):
         num_classes = class_probabilities.shape[0]
         img_batch = np.zeros((batch_size,
                               patch_size[0],
@@ -268,34 +270,45 @@ class DataPreprocessor:
             lbl_batch[i, class_labels[i]] = 1
         return img_batch, lbl_batch
 
-    def train_generator(self, batch_size, class_probabilities, patch_size, channels):
+    def get_sample_2class_lookalikes_with_nonfaults(self, batch_size, class_probabilities, patch_size, channels):
         num_classes = class_probabilities.shape[0]
+        img_batch = np.zeros((batch_size,
+                              patch_size[0],
+                              patch_size[1],
+                              channels.shape[0]))
+        lbl_batch = np.zeros((batch_size, 2))
+        class_labels = np.random.choice(num_classes, batch_size, p=class_probabilities)
+
+        for i in range(batch_size):
+            if class_labels[i] == FeatureValue.FAULT.value:
+                patch = self.sample_fault_patch(patch_size)
+            elif class_labels[i] == FeatureValue.FAULT_LOOKALIKE.value:
+                patch = self.sample_fault_lookalike_patch(patch_size)
+            elif class_labels[i] == FeatureValue.NONFAULT.value:
+                patch = self.sample_nonfault_patch(patch_size)
+            else:
+                raise NotImplementedError("class label {}".format(class_labels[i]))
+
+            for _ in range(np.random.randint(0, 4)):
+                patch = np.rot90(patch, axes=(0, 1))
+            for _ in range(np.random.randint(0, 2)):
+                patch = np.fliplr(patch)
+            for _ in range(np.random.randint(0, 2)):
+                patch = np.flipud(patch)
+
+            img_batch[i] = patch[:, :, channels]
+            if class_labels[i] == FeatureValue.NONFAULT.value or class_labels[i] == FeatureValue.FAULT_LOOKALIKE.value:
+                lbl_batch[i, 1] = 1
+            elif  class_labels[i] == FeatureValue.FAULT.value:
+                lbl_batch[i, 0] = 1
+        return img_batch, lbl_batch
+
+    def train_generator_3class(self, batch_size, class_probabilities, patch_size, channels):
         while True:
-            img_batch = np.zeros((batch_size,
-                                  patch_size[0],
-                                  patch_size[1],
-                                  channels.shape[0]))
-            lbl_batch = np.zeros((batch_size, num_classes))
-            class_labels = np.random.choice(num_classes, batch_size, p=class_probabilities)
+            img_batch, lbl_batch = self.get_sample_3class(batch_size, class_probabilities, patch_size, channels)
+            yield img_batch, lbl_batch
 
-            for i in range(batch_size):
-                if class_labels[i] == FeatureValue.FAULT.value:
-                    patch = self.sample_fault_patch(patch_size)
-                elif class_labels[i] == FeatureValue.FAULT_LOOKALIKE.value:
-                    patch = self.sample_fault_lookalike_patch(patch_size)
-                elif class_labels[i] == FeatureValue.NONFAULT.value:
-                    patch = self.sample_nonfault_patch(patch_size)
-                else:
-                    raise NotImplementedError("class label {}".format(class_labels[i]))
-
-                for _ in range(np.random.randint(0, 4)):
-                    patch = np.rot90(patch, axes=(0, 1))
-                for _ in range(np.random.randint(0, 2)):
-                    patch = np.fliplr(patch)
-                for _ in range(np.random.randint(0, 2)):
-                    patch = np.flipud(patch)
-
-                img_batch[i] = patch[:, :, channels]
-                lbl_batch[i, class_labels[i]] = 1
-
+    def train_generator_2class_lookalikes_with_nonfaults(self, batch_size, class_probabilities, patch_size, channels):
+        while True:
+            img_batch, lbl_batch = self.get_sample_2class_lookalikes_with_nonfaults(batch_size, class_probabilities, patch_size, channels)
             yield img_batch, lbl_batch

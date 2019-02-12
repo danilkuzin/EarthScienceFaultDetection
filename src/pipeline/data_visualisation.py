@@ -12,17 +12,17 @@ np.random.seed(1)
 tf.set_random_seed(2)
 
 data_preprocessors = [
-    DataPreprocessor(data_dir="../data/Region 1 - Lopukangri/",
+    DataPreprocessor(data_dir="../../data/Region 1 - Lopukangri/",
                      backend=GdalBackend(),
                      filename_prefix="tibet",
                      mode=Mode.TRAIN,
                      seed=1),
-    DataPreprocessor(data_dir="../data/Region 2 - Muga Puruo/",
+    DataPreprocessor(data_dir="../../data/Region 2 - Muga Puruo/",
                      backend=GdalBackend(),
                      filename_prefix="mpgr",
                      mode=Mode.TRAIN,
                      seed=1),
-    DataPreprocessor(data_dir="../data/Region 3 - Muggarboibo/",
+    DataPreprocessor(data_dir="../../data/Region 3 - Muggarboibo/",
                      backend=GdalBackend(),
                      filename_prefix="gyrc1",
                      mode=Mode.TEST,
@@ -69,19 +69,20 @@ for data_preprocessor in data_preprocessors:
     f.clf()
     plt.close()
 
-    for lbl in [FeatureValue.FAULT, FeatureValue.FAULT_LOOKALIKE, FeatureValue.NONFAULT]:
-        patches = np.zeros((num_patches, patch_size[0], patch_size[1], bands))
-        for i in range(num_patches):
-            patches[i] = data_preprocessor.sample_patch(label=lbl, patch_size=patch_size)
+    if data_preprocessor.mode == Mode.TRAIN:
+        for lbl in [FeatureValue.FAULT, FeatureValue.FAULT_LOOKALIKE, FeatureValue.NONFAULT]:
+            patches = np.zeros((num_patches, patch_size[0], patch_size[1], bands))
+            for i in range(num_patches):
+                patches[i] = data_preprocessor.sample_patch(label=lbl, patch_size=patch_size)
 
-        for i in range(num_patches):
-            cur_patch = patches[i]
-            rgb, elevation, slope = data_preprocessor.denormalise(cur_patch)
-            f, (ax1, ax2, ax3) = plt.subplots(1, 3)
-            ax1.imshow(rgb)
-            ax2.imshow(elevation)
-            ax3.imshow(slope)
-            f.tight_layout()
-            f.savefig(output_path + "examples_{}_{}.png".format(lbl.name, i))
-            f.clf()
-            plt.close()
+            for i in range(num_patches):
+                cur_patch = patches[i]
+                rgb, elevation, slope = data_preprocessor.denormalise(cur_patch)
+                f, (ax1, ax2, ax3) = plt.subplots(1, 3)
+                ax1.imshow(rgb)
+                ax2.imshow(elevation)
+                ax3.imshow(slope)
+                f.tight_layout()
+                f.savefig(output_path + "examples_{}_{}.png".format(lbl.name, i))
+                f.clf()
+                plt.close()
