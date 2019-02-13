@@ -1,5 +1,7 @@
 import itertools
 from enum import Enum
+from typing import List
+
 import numpy as np
 import matplotlib.pyplot as plt
 import logging
@@ -312,3 +314,12 @@ class DataPreprocessor:
         while True:
             img_batch, lbl_batch = self.get_sample_2class_lookalikes_with_nonfaults(batch_size, class_probabilities, patch_size, channels)
             yield img_batch, lbl_batch
+
+    def sequential_pass_generator(self, patch_size: List[int, int]):
+        num_of_patches_vertical
+        for top_left_border_x, top_left_border_y in itertools.product(range(0, 21 * 150, stride),
+                                                                          range(0, 21 * 150, stride)):
+                boxes.append([top_left_border_x, top_left_border_y, top_left_border_x + 150, top_left_border_y + 150])
+                patches.append(self.concatenate_full_patch(left_border, right_border, top_border, bottom_border))
+
+            yield patch_coords_batch, patch_batch

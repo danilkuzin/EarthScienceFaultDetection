@@ -72,15 +72,12 @@ class KerasTrainer:
         boxes, probs = [], []
         #todo maybe create a getter in data_preprocessor that returns shape of the full image, or better iterator that
         # moves for the image with stridwes and returns sequentially, like generator but not random
-        for patch_coords_batch, patch_batch in data_preprocessor.sequential_pass_generator:
+        for patch_coords_batch, patch_batch in data_preprocessor.sequential_pass_generator():
             #returns a batch of images!
             boxes.append(patch_coords_batch)
             probs.append(self.predict_average(patch_batch))
-        probs = np.array(probs)
-        avg_probs =
 
-        for top_left_border_x, top_left_border_y in itertools.product(range(0, 21 * 150, stride), range(0, 21 * 150, stride)):
-            boxes.append([top_left_border_x, top_left_border_y, top_left_border_x + 150, top_left_border_y + 150])
+        return boxes, probs
 
     def apply_for_sliding_window_3class_batch(self, data_preprocessor: DataPreprocessor, stride, batch_size):
         boxes, avg_fault_probs, avg_lookalike_probs, avg_non_fault_probs = [], [], [], []
