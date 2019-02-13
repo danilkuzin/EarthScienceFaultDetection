@@ -5,6 +5,8 @@ import numpy as np
 import gdal
 import logging
 
+import matplotlib.pyplot as plt
+
 class GdalBackend(Backend):
     def __init__(self):
         self.gdal_options = dict()
@@ -136,28 +138,15 @@ class GdalBackend(Backend):
             dst_ds.GetRasterBand(1).WriteArray(raster)
         dst_ds = None
 
-    def write_dem(self, path, image):
-
-        dst_ds_2 = gdal.DEMProcessing("heatmaps_3_colours_tmp2.tif", dst_ds, "color-relief")
-        gdal.Translate('heatmaps_3_colours_tmp2.tif', dst_ds)
-        dst_ds_2 = None
-        dst_ds = None
-
-    # def save_full(self, path: str, patch: np.array) -> None:
-    #     driver = self.gdal_options['driver']
-    #     dst_ds = driver.Create(path, xsize=patch.shape[0], ysize=patch.shape[1], bands=patch.shape[2], eType=gdal.GDT_Float32)
-    #     geotransform = self.gdal_options['geotransform']
-    #     dst_ds.SetGeoTransform(geotransform)
-    #     projection = self.gdal_options['projection']
-    #     dst_ds.SetProjection(projection)
-    #     for band in range(patch.shape[2]):
-    #         raster = patch[:, :, band].astype(np.float32)
-    #         dst_ds.GetRasterBand(band+1).WriteArray(raster) # bands here start from 1
-    #     dst_ds = None
-    #
-    # def load_full(self, path: str) -> np.array:
-    #     dataset = gdal.Open(path, gdal.GA_ReadOnly)
-    #     if not dataset:
-    #         raise FileNotFoundError(path)
-    #     return np.array(dataset.ReadAsArray())
+    def write_surface(self, path, image):
+        #todo use gdal dem
+        # dst_ds_2 = gdal.DEMProcessing("heatmaps_3_colours_tmp2.tif", dst_ds, "color-relief")
+        # gdal.Translate('heatmaps_3_colours_tmp2.tif', dst_ds)
+        # dst_ds_2 = None
+        # dst_ds = None
+        cmap = plt.get_cmap('jet')
+        rgba_img_faults = cmap(image)
+        rgb_img_faults = np.delete(rgba_img_faults, 3, 2)
+        rgb_img_faults=(rgb_img_faults[:, :, :3] * 255).astype(np.uint8)
+        self.write_image(path, rgb_img_faults)
 

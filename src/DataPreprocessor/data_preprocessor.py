@@ -1,6 +1,6 @@
 import itertools
 from enum import Enum
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -315,7 +315,7 @@ class DataPreprocessor:
             img_batch, lbl_batch = self.get_sample_2class_lookalikes_with_nonfaults(batch_size, class_probabilities, patch_size, channels)
             yield img_batch, lbl_batch
 
-    def sequential_pass_generator(self, patch_size: List[int, int], stride: int, batch_size:int):
+    def sequential_pass_generator(self, patch_size: Tuple[int, int], stride: int, batch_size:int):
         """not the different order of indexes in coords and patch ind, this was due to this input in tf non_max_suppression"""
         num_of_patches = ((self.optical_rgb.shape[0] - patch_size[0]) // stride, (self.optical_rgb.shape[1] - patch_size[1]) // stride)
         batch_ind = 0

@@ -17,11 +17,20 @@ print("training on datasets: {}".format(args.train_datasets_numbers))
 #     ensemble_size=2
 # )
 
+# train(
+#     train_datasets=args.train_datasets_numbers,
+#     class_probabilities="two-class",
+#     batch_size=10,
+#     patch_size=(150, 150),
+#     channels=[0, 1, 2, 3, 4],
+#     ensemble_size=2
+# )
+
 train(
     train_datasets=args.train_datasets_numbers,
     class_probabilities="two-class",
     batch_size=10,
     patch_size=(150, 150),
-    channels=[0, 1, 2, 3, 4],
+    channels=[0, 1, 2],
     ensemble_size=2
 )

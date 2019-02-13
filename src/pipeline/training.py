@@ -7,7 +7,8 @@ import tensorflow as tf
 from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
 from src.DataPreprocessor.data_generator import DataGenerator
 from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Mode
-from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5_2class_3convolutions
+from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5_2class_3convolutions, cnn_150x150x5, \
+    cnn_150x150x3, cnn_150x150x1
 from src.LearningKeras.train import KerasTrainer
 
 
@@ -51,7 +52,15 @@ def train(train_datasets: List[int], class_probabilities: str, batch_size: int, 
                                                    class_probabilities=class_probabilities_int,
                                                    patch_size=patch_size,
                                                    channels=np.array(channels))
-        trainer = KerasTrainer(model_generator=lambda: cnn_150x150x5_2class_3convolutions(),
+        if len(channels) == 5:
+            model_generator = lambda: cnn_150x150x5()
+        elif len(channels) == 3:
+            model_generator = lambda: cnn_150x150x3()
+        elif len(channels) == 1:
+            model_generator = lambda: cnn_150x150x1()
+        else:
+            raise Exception()
+        trainer = KerasTrainer(model_generator=model_generator,
                                ensemble_size=ensemble_size)
     else:
         raise Exception('Not implemented')
