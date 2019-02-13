@@ -1,5 +1,5 @@
 import pathlib
-from typing import Tuple
+from typing import Tuple, List
 
 import numpy as np
 from tqdm import trange
@@ -44,7 +44,7 @@ class KerasTrainer:
         res_arr = []
         for model in self.models:
             res_arr.append(model.predict(patch))
-        res_np = np.concatenate(res_arr)
+        res_np = np.array(res_arr)
         res_avg = np.mean(res_np, axis=0)
         return res_avg
 
@@ -65,12 +65,12 @@ class KerasTrainer:
         return np.mean(true_labels == predicted_labels)
 
     def apply_for_sliding_window(self, data_preprocessor: DataPreprocessor, patch_size: Tuple[int, int],
-                                 stride: int, batch_size: int):
+                                 stride: int, batch_size: int, channels:List[int]):
         boxes, probs = [], []
         for patch_coords_batch, patch_batch in data_preprocessor.sequential_pass_generator(
-                patch_size=patch_size, stride=stride, batch_size=batch_size):
-            boxes.append(patch_coords_batch)
-            probs.append(self.predict_average(patch_batch))
-        boxes = np.concatenate(boxes, axis=0)
-        probs = np.concatenate(probs, axis=0)
+                patch_size=patch_size, stride=stride, batch_size=batch_size, channels=channels):
+            boxes.extend(patch_coords_batch)
+            probs.extend(self.predict_average(patch_batch))
+        boxes = np.stack(boxes, axis=0)
+        probs = np.stack(probs, axis=0)
         return boxes, probs

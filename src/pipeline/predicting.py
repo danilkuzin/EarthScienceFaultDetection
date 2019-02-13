@@ -3,7 +3,8 @@ import tensorflow as tf
 
 from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
 from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Mode
-from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5_2class_3convolutions
+from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5_2class_3convolutions, cnn_150x150x5, \
+    cnn_150x150x3, cnn_150x150x1
 from src.LearningKeras.train import KerasTrainer
 from src.postprocessing.postprocessor import PostProcessor
 
@@ -11,7 +12,7 @@ np.random.seed(1)
 tf.set_random_seed(2)
 
 
-def predict(models_folder, ensemble_size, classes):
+def predict(models_folder, ensemble_size, classes, channels):
     data_preprocessor_1 = DataPreprocessor(data_dir="../data/Region 1 - Lopukangri/",
                                            backend=GdalBackend(),
                                            filename_prefix="tibet",
@@ -33,7 +34,14 @@ def predict(models_folder, ensemble_size, classes):
     if classes == 3:
         model_generator = lambda: cnn_150x150x5_3class()
     elif classes == 2:
-        model_generator = lambda: cnn_150x150x5_2class_3convolutions()
+        if len(channels) == 5:
+            model_generator = lambda: cnn_150x150x5()
+        elif len(channels) == 3:
+            model_generator = lambda: cnn_150x150x3()
+        elif len(channels) == 1:
+            model_generator = lambda: cnn_150x150x1()
+        else:
+            raise Exception()
     else:
         raise Exception('not supported')
 
@@ -45,7 +53,7 @@ def predict(models_folder, ensemble_size, classes):
     for (preprocessor_ind, data_preprocessor) in enumerate(
             [data_preprocessor_1, data_preprocessor_2, data_preprocessor_3]):
         boxes, probs = trainer.apply_for_sliding_window(
-            data_preprocessor=data_preprocessor, patch_size=(150, 150), stride=50, batch_size=20)
+            data_preprocessor=data_preprocessor, patch_size=(150, 150), stride=150, batch_size=20, channels=channels)
         original_2dimage_shape = (data_preprocessor.optical_rgb.shape[0], data_preprocessor.optical_rgb.shape[1])
         faults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 0],
                                              original_2dimage_shape=original_2dimage_shape)

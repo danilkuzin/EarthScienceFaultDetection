@@ -315,23 +315,23 @@ class DataPreprocessor:
             img_batch, lbl_batch = self.get_sample_2class_lookalikes_with_nonfaults(batch_size, class_probabilities, patch_size, channels)
             yield img_batch, lbl_batch
 
-    def sequential_pass_generator(self, patch_size: Tuple[int, int], stride: int, batch_size:int):
+    def sequential_pass_generator(self, patch_size: Tuple[int, int], stride: int, batch_size:int, channels:List[int]):
         """not the different order of indexes in coords and patch ind, this was due to this input in tf non_max_suppression"""
         num_of_patches = ((self.optical_rgb.shape[0] - patch_size[0]) // stride, (self.optical_rgb.shape[1] - patch_size[1]) // stride)
         batch_ind = 0
         patch_coords_batch = []
         patch_batch = []
-        for top_left_border_x, top_left_border_y in itertools.product(range(0, num_of_patches[0] * patch_size[0], stride),
-                                                                          range(0, num_of_patches[1] * num_of_patches[1], stride)):
+        for top_left_border_x, top_left_border_y in itertools.product(range(0, self.optical_rgb.shape[0] - patch_size[0], stride),
+                                                                          range(0, self.optical_rgb.shape[1] - patch_size[1], stride)):
 
-            # todo check this func
-            patch_coords_batch.append([top_left_border_x, top_left_border_y, top_left_border_x + patch_size[0],
-                                       top_left_border_y + patch_size[1]])
+            patch_coords_batch.append(np.array([top_left_border_x, top_left_border_y, top_left_border_x + patch_size[0],
+                                       top_left_border_y + patch_size[1]]))
             patch_batch.append(self.concatenate_full_patch(top_left_border_x, top_left_border_x + patch_size[0], top_left_border_y, top_left_border_y + patch_size[1]))
             batch_ind = batch_ind + 1
             if batch_ind >= batch_size:
-                #todo maybe need to convert to numpy here 
-                yield patch_coords_batch, patch_batch
+                patch_coords_batch_np = np.stack(patch_coords_batch, axis=0)
+                patch_batch_np = np.stack(patch_batch, axis=0)
+                yield patch_coords_batch_np, patch_batch_np[:, :, :, channels]
                 batch_ind = 0
                 patch_coords_batch = []
                 patch_batch = []
