@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
+from src.DataPreprocessor.PatchesOutputBackend.in_memory_backend import InMemoryBackend
 from src.DataPreprocessor.data_generator import DataGenerator
 from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Mode
 from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5_2class_3convolutions, cnn_150x150x5, \
@@ -13,7 +14,7 @@ from src.LearningKeras.train import KerasTrainer
 
 
 def train(train_datasets: List[int], class_probabilities: str, batch_size: int, patch_size: Tuple[int, int],
-          channels: List[int], ensemble_size: int):
+          channels: List[int], ensemble_size: int, train_lib="keras"):
     np.random.seed(1)
     tf.set_random_seed(2)
 
@@ -21,7 +22,8 @@ def train(train_datasets: List[int], class_probabilities: str, batch_size: int, 
     if 1 in train_datasets:
         preprocessors.append(DataPreprocessor(
             data_dir="../data/Region 1 - Lopukangri/",
-            backend=GdalBackend(),
+            data_io_backend=GdalBackend(),
+            patches_output_backend=InMemoryBackend(),
             filename_prefix="tibet",
             mode=Mode.TRAIN,
             seed=1)
@@ -30,7 +32,8 @@ def train(train_datasets: List[int], class_probabilities: str, batch_size: int, 
     if 2 in train_datasets:
         preprocessors.append(DataPreprocessor(
             data_dir="../data/Region 2 - Muga Puruo/",
-            backend=GdalBackend(),
+            data_io_backend=GdalBackend(),
+            patches_output_backend=InMemoryBackend(),
             filename_prefix="mpgr",
             mode=Mode.TRAIN,
             seed=1)
@@ -44,8 +47,12 @@ def train(train_datasets: List[int], class_probabilities: str, batch_size: int, 
                                                    class_probabilities=class_probabilities_int,
                                                    patch_size=patch_size,
                                                    channels=np.array(channels))
-        trainer = KerasTrainer(model_generator=lambda: cnn_150x150x5_3class(),
-                               ensemble_size=ensemble_size)
+        if train_lib == "keras":
+            trainer = KerasTrainer(model_generator=lambda: cnn_150x150x5_3class(),
+                                   ensemble_size=ensemble_size)
+        elif train_lib == "tensorflow":
+            trainer = KerasTrainer(model_generator=lambda: cnn_150x150x5_3class(),
+                                   ensemble_size=ensemble_size)
     elif class_probabilities == "two-class":
         class_probabilities_int = np.array([0.5, 0.25, 0.25])
         joint_generator = data_generator.generator_2class_lookalikes_with_nonfaults(batch_size=batch_size,

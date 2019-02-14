@@ -1,23 +1,22 @@
 from PIL import Image
 
-from src.DataPreprocessor.DataIOBackend.backend import Backend
+from src.DataPreprocessor.DataIOBackend.backend import DataIOBackend
 import numpy as np
 
 
-class PillowBackend(Backend):
-    def load_elevation(self, path: str) -> np.array:
+class PillowBackend(DataIOBackend):
+    def __load_1d_raster(self, path: str) -> np.array:
         try:
-            elevation = np.array(Image.open(path))
-            return elevation
+            data = np.array(Image.open(path))
+            return data
         except IOError:
             raise FileNotFoundError(path)
 
+    def load_elevation(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
     def load_slope(self, path: str) -> np.array:
-        try:
-            slope = np.array(Image.open(path))
-            return slope
-        except IOError:
-            raise FileNotFoundError(path)
+        return self.__load_1d_raster(path)
 
     def load_optical(self, path_r: str, path_g: str, path_b: str) -> np.array:
         # todo check this
@@ -29,3 +28,18 @@ class PillowBackend(Backend):
             return features
         except IOError:
             raise FileNotFoundError(path)
+
+    def load_nir(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
+    def load_ir(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
+    def load_swir1(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
+    def load_swir2(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
+    def load_panchromatic(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)

@@ -8,7 +8,7 @@ import logging
 import pathlib
 from tqdm import trange, tqdm
 
-from src.DataPreprocessor.DataIOBackend.backend import Backend
+from src.DataPreprocessor.DataIOBackend.backend import DataIOBackend
 from src.DataPreprocessor.PatchesOutputBackend.backend import PatchesOutputBackend
 
 
@@ -16,12 +16,10 @@ class OutOfBoundsException(Exception):
     pass
 
 
-class GdalFileException(Exception):
-    pass
-
 class Mode(Enum):
     TRAIN = 1
     TEST = 2
+
 
 class FeatureValue(Enum):
     UNDEFINED = -1
@@ -29,17 +27,15 @@ class FeatureValue(Enum):
     FAULT_LOOKALIKE = 1
     NONFAULT = 2
 
-class DatasetType(Enum):
-    TRAIN = 1,
-    VALIDATION = 2,
-    TEST = 3
 
 #todo maybe add script to convert filenames from drive to standard names without prefixes
 #todo add option to tormalise based on normalisation features from a different data - or this problem is more serious,
 # need to think, look at the distributions, probably we can't convert elevation this way for example
 #todo move output backend into init, add in-memory backend, move the directories outputs to other backends than in-memory
+#todo finish adding infrared images
 class DataPreprocessor:
-    def __init__(self, data_dir: str, backend: Backend, filename_prefix: str, mode, seed: int):
+    def __init__(self, data_dir: str, data_io_backend: DataIOBackend, patches_output_backend: PatchesOutputBackend,
+                 filename_prefix: str, mode: Mode, seed: int):
         np.random.seed(seed)
         self.data_dir = data_dir
         self.elevation = None
@@ -51,59 +47,44 @@ class DataPreprocessor:
         self.swir2 = None
         self.panchromatic = None
         self.features = None
-        self.dirs = dict()
-        self.datasets_sizes = dict()
-        self.gdal_options = dict()
-        self.datasets_sizes[DatasetType.TRAIN.name + "_" + FeatureValue.FAULT.name] = 100
-        self.datasets_sizes[DatasetType.TRAIN.name + "_" + FeatureValue.NONFAULT.name] = 100
-        self.datasets_sizes[DatasetType.VALIDATION.name + "_" + FeatureValue.FAULT.name] = 20
-        self.datasets_sizes[DatasetType.VALIDATION.name + "_" + FeatureValue.NONFAULT.name] = 20
-        self.datasets_sizes[DatasetType.TEST.name + "_" + FeatureValue.FAULT.name] = 10
-        self.datasets_sizes[DatasetType.TEST.name + "_" + FeatureValue.NONFAULT.name] = 10
         self.num_channels = 5 # r, g, b, elevation, slope
-        self.true_test_classes = None
         self.filename_prefix = filename_prefix
         self.mode = mode
-        self.prepare_folders()
-        self.backend = backend
-        self.load(backend)
+        self.data_io_backend = data_io_backend
+        self.patches_output_backend = patches_output_backend
+        self.load()
         self.normalised_elevation = None
         self.normalised_slope = None
         self.normalised_optical_rgb = None
         self.normalise()
 
-    def prepare_folders(self):
-        if self.mode == Mode.TRAIN:
-            self.dirs['train_fault'] = self.data_dir + "learn/train/fault/"
-            self.dirs['train_nonfault'] = self.data_dir + "learn/train/nonfault/"
-            self.dirs['valid_fault'] = self.data_dir + "learn/valid/fault/"
-            self.dirs['valid_nonfault'] = self.data_dir + "learn/valid/nonfault/"
-            self.dirs['test_w_labels_fault'] = self.data_dir + "learn/test_with_labels/fault/"
-            self.dirs['test_w_labels_nonfault'] = self.data_dir + "learn/test_with_labels/nonfault/"
-            self.dirs['test'] = self.data_dir + "learn/test/test/"
-            pathlib.Path(self.dirs['train_fault']).mkdir(parents=True, exist_ok=True)
-            pathlib.Path(self.dirs['train_nonfault']).mkdir(parents=True, exist_ok=True)
-            pathlib.Path(self.dirs['valid_fault']).mkdir(parents=True, exist_ok=True)
-            pathlib.Path(self.dirs['valid_nonfault']).mkdir(parents=True, exist_ok=True)
-            pathlib.Path(self.dirs['test_w_labels_fault']).mkdir(parents=True, exist_ok=True)
-            pathlib.Path(self.dirs['test_w_labels_nonfault']).mkdir(parents=True, exist_ok=True)
-            pathlib.Path(self.dirs['test']).mkdir(parents=True, exist_ok=True)
-        self.dirs['all_patches'] = self.data_dir + "all/"
-        pathlib.Path(self.dirs['all_patches']).mkdir(parents=True, exist_ok=True)
+    def check_crop_data(self):
+        #todo consider moving each band into dict of bands so that we can iterate over them here
+        min_size = 0
+        for i in range(2):
+            min_size = min(self.optical_rgb.shape[i], self.elevation.shape[i], self.slope.shape[i])
 
-    def load(self, backend):
+        if min(self.optical_rgb.shape[0], self.optical_rgb.shape[1]) > min_size:
+            logging.warning("optical images are not match in size")
+            self.optical_rgb = self.optical_rgb[:min_size, :min_size]
+        if min(self.elevation.shape[0], self.elevation.shape[1]) > min_size:
+            logging.warning("elevation images are not match in size")
+            self.elevation = self.elevation[:min_size, :min_size]
+        if min(self.slope.shape[0], self.slope.shape[1]) > min_size:
+            logging.warning("slope images are not match in size")
+            self.slope = self.slope[:min_size, :min_size]
+
+    def load(self):
         logging.info('loading...')
-        self.elevation = backend.load_elevation(path=self.data_dir + self.filename_prefix + '_elev.tif')
-        self.slope = backend.load_slope(path=self.data_dir + self.filename_prefix + '_slope.tif')
-        self.optical_rgb = backend.load_optical(path_r=self.data_dir + self.filename_prefix + '_R.tif',
+        self.elevation = self.data_io_backend.load_elevation(path=self.data_dir + self.filename_prefix + '_elev.tif')
+        self.slope = self.data_io_backend.load_slope(path=self.data_dir + self.filename_prefix + '_slope.tif')
+        self.optical_rgb = self.data_io_backend.load_optical(path_r=self.data_dir + self.filename_prefix + '_R.tif',
                                                 path_g=self.data_dir + self.filename_prefix + '_G.tif',
                                                 path_b=self.data_dir + self.filename_prefix + '_B.tif')
-        #todo make this warning depend on the data and check other frames as well
-        logging.warning("optical images are not match in 1-2 pixels in size")
-        self.optical_rgb = self.optical_rgb[:self.elevation.shape[0], :self.elevation.shape[1]]
+        self.check_crop_data()
         plt.imsave(self.data_dir+'data.tif', self.optical_rgb)
         if self.mode == Mode.TRAIN:
-            self.features = backend.load_features(path=self.data_dir+'feature_categories.tif')
+            self.features = self.data_io_backend.load_features(path=self.data_dir+'feature_categories.tif')
         logging.info('loaded')
 
     def borders_from_center(self, center, patch_size):
@@ -197,35 +178,6 @@ class DataPreprocessor:
         elif label==FeatureValue.NONFAULT:
             return self.sample_nonfault_patch(patch_size)
 
-    def prepare_datasets(self, output_backend, patch_size):
-        self.prepare_dataset(output_backend, DatasetType.TRAIN, FeatureValue.FAULT, patch_size)
-        self.prepare_dataset(output_backend, DatasetType.TRAIN, FeatureValue.NONFAULT, patch_size)
-        self.prepare_dataset(output_backend, DatasetType.TRAIN, FeatureValue.FAULT_LOOKALIKE, patch_size)
-        self.prepare_dataset(output_backend, DatasetType.VALIDATION, FeatureValue.FAULT, patch_size)
-        self.prepare_dataset(output_backend, DatasetType.VALIDATION, FeatureValue.NONFAULT, patch_size)
-        self.prepare_dataset(output_backend, DatasetType.VALIDATION, FeatureValue.FAULT_LOOKALIKE, patch_size)
-        self.prepare_dataset(output_backend, DatasetType.TEST, FeatureValue.FAULT, patch_size)
-        self.prepare_dataset(output_backend, DatasetType.TEST, FeatureValue.NONFAULT, patch_size)
-        self.prepare_dataset(output_backend, DatasetType.TEST, FeatureValue.FAULT_LOOKALIKE, patch_size)
-
-    def prepare_dataset(self, output_backend: PatchesOutputBackend, data_type, label, patch_size):
-        category = data_type.name + "_" + label.name
-        arr = np.zeros(
-            (self.datasets_sizes[category], patch_size[0], patch_size[1], self.num_channels))
-        for i in trange(self.datasets_sizes[category]):
-            arr[i] = self.sample_patch(label)
-        output_backend.save(arr, label==1 if 0 else 1, self.dirs[category])
-
-    def prepare_all_patches(self, backend: PatchesOutputBackend, patch_size):
-        for i, j in tqdm(itertools.product(range(self.optical_rgb.shape[0] // patch_size[0]),
-                        range(self.optical_rgb.shape[1] // patch_size[1]))):
-            left_border = i * patch_size[0]
-            right_border = (i + 1) * patch_size[0]
-            top_border = j * patch_size[0]
-            bottom_border = (j + 1) * patch_size[0]
-            cur_patch = self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
-            backend.save(array=cur_patch, label=0, path=self.dirs['all_patches'] + "/{}_{}.tif".format(i, j))
-
     def normalise(self):
         self.normalised_optical_rgb = self.optical_rgb.astype(np.float32)
         self.normalised_optical_rgb[:, :, 0] = self.optical_rgb[:, :, 0] / 255. - 0.5
@@ -316,8 +268,7 @@ class DataPreprocessor:
             yield img_batch, lbl_batch
 
     def sequential_pass_generator(self, patch_size: Tuple[int, int], stride: int, batch_size:int, channels:List[int]):
-        """not the different order of indexes in coords and patch ind, this was due to this input in tf non_max_suppression"""
-        num_of_patches = ((self.optical_rgb.shape[0] - patch_size[0]) // stride, (self.optical_rgb.shape[1] - patch_size[1]) // stride)
+        """note the different order of indexes in coords and patch ind, this was due to this input in tf non_max_suppression"""
         batch_ind = 0
         patch_coords_batch = []
         patch_batch = []

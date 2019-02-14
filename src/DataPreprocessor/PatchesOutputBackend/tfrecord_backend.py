@@ -1,6 +1,7 @@
-from src.DataPreprocessor.PatchesOutputBackend.backend import PatchesOutputBackend
 import numpy as np
 import tensorflow as tf
+
+from src.DataPreprocessor.PatchesOutputBackend.sampled_backend import SampledBackend
 
 
 def _int64_feature(value):
@@ -11,7 +12,7 @@ def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
-class TfrecordBackend(PatchesOutputBackend):
+class TfrecordBackend(SampledBackend):
     def save(self, array: np.array, label:int, path: str):
         with tf.python_io.TFRecordWriter(path + '.tfrecord') as writer:
             for index in range(arr.shape[0]):

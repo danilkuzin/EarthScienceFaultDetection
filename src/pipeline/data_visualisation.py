@@ -1,39 +1,23 @@
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-import tensorflow as tf
 import pathlib
 
-from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Mode, FeatureValue
-from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+import tensorflow as tf
+
+from src.DataPreprocessor.data_preprocessor import Mode, FeatureValue
 from src.DataPreprocessor.data_visualiser import DataVisualiser
+from src.pipeline import global_params
 
 np.random.seed(1)
 tf.set_random_seed(2)
-
-data_preprocessors = [
-    DataPreprocessor(data_dir="../../data/Region 1 - Lopukangri/",
-                     backend=GdalBackend(),
-                     filename_prefix="tibet",
-                     mode=Mode.TRAIN,
-                     seed=1),
-    DataPreprocessor(data_dir="../../data/Region 2 - Muga Puruo/",
-                     backend=GdalBackend(),
-                     filename_prefix="mpgr",
-                     mode=Mode.TRAIN,
-                     seed=1),
-    DataPreprocessor(data_dir="../../data/Region 3 - Muggarboibo/",
-                     backend=GdalBackend(),
-                     filename_prefix="gyrc1",
-                     mode=Mode.TEST,
-                     seed=1)
-]
 
 num_patches = 7
 patch_size = (150, 150)
 bands = 5
 
-for data_preprocessor in data_preprocessors:
+for data_preprocessor_generator in global_params.data_preprocessor_generators_train:
+    data_preprocessor = data_preprocessor_generator()
     output_path = data_preprocessor.data_dir + "/visualisation/"
     pathlib.Path(output_path).mkdir(exist_ok=True)
     data_visualiser = DataVisualiser(data_preprocessor)

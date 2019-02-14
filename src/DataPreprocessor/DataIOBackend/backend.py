@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class Backend:
+class DataIOBackend:
     def load_elevation(self, path: str) -> np.array:
         """elevation map (from the Shuttle Radar Topography Mission), values in meters above sea level"""
         pass
@@ -22,15 +22,30 @@ class Backend:
         """
         pass
 
-    # def load_ir(self, path):
-    #     # todo add support for other backends
-    #     # todo add file exist checks
-    #     nir = cv2.imread(self.data_dir + self.filename_prefix + '_NIR.tif')  # near infrared from Landsat
-    #     ir = cv2.imread(self.data_dir + self.filename_prefix + '_IR.tif')  # infrared from Landsat
-    #     swir1 = cv2.imread(self.data_dir + self.filename_prefix + '_SWIR1.tif')  # shortwave infrared1 from Landsat
+    def load_nir(self, path: str) -> np.array:
+        """near infrared from Landsat"""
+        pass
+
+    def load_ir(self, path: str) -> np.array:
+        """infrared from Landsat"""
+        pass
+
+    def load_swir1(self, path: str) -> np.array:
+        """shortwave infrared1 from Landsat"""
+        pass
+
+    def load_swir2(self, path: str) -> np.array:
+        """shortwave infrared2 from Landsat"""
+        pass
+
+    def load_panchromatic(self, path: str) -> np.array:
+        """panchromatic band from Landsat, essentially just total surface reflectance,
+        like a grayscale image of the ground"""
+        pass
+
+    #     nir = cv2.imread(self.data_dir + self.filename_prefix + '_NIR.tif')  #
+    #     ir = cv2.imread(self.data_dir + self.filename_prefix + '_IR.tif')  #
+    #     swir1 = cv2.imread(self.data_dir + self.filename_prefix + '_SWIR1.tif')  #
     #     swir2 = cv2.imread(self.data_dir + self.filename_prefix + '_SWIR2.tif')  # shortwave infrared2 from Landsat
     #     panchromatic = cv2.imread(
-    #     data_dir + self.filename_prefix + '_P.tif')  # panchromatic band from Landsat, essentially just total surface reflectance, like a grayscale image of the ground
-
-
-
+    #     data_dir + self.filename_prefix + '_P.tif')  #

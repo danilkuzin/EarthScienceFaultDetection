@@ -1,27 +1,28 @@
 from tempfile import NamedTemporaryFile
 
-from src.DataPreprocessor.DataIOBackend.backend import Backend
+from src.DataPreprocessor.DataIOBackend.backend import DataIOBackend
 import numpy as np
 import gdal
 import logging
 
 import matplotlib.pyplot as plt
 
-class GdalBackend(Backend):
+
+class GdalBackend(DataIOBackend):
     def __init__(self):
         self.gdal_options = dict()
 
-    def load_elevation(self, path: str) -> np.array:
+    def __load_1d_raster(self, path: str) -> np.array:
         dataset = gdal.Open(path, gdal.GA_ReadOnly)
         if not dataset:
             raise FileNotFoundError(path)
         return np.array(dataset.ReadAsArray())
 
+    def load_elevation(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
     def load_slope(self, path: str) -> np.array:
-        dataset = gdal.Open(path, gdal.GA_ReadOnly)
-        if not dataset:
-            raise FileNotFoundError(path)
-        return np.array(dataset.ReadAsArray())
+        return self.__load_1d_raster(path)
 
     def load_optical(self, path_r: str, path_g: str, path_b: str) -> np.array:
         opt_string = '-ot Byte -of GTiff -scale 0 65535 0 255'
@@ -38,6 +39,21 @@ class GdalBackend(Backend):
 
         self.parse_meta_with_gdal(path_r) # to save gdal meta for writing
         return np.dstack((optical_r, optical_g, optical_b))
+
+    def load_nir(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
+    def load_ir(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
+    def load_swir1(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
+    def load_swir2(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
+    def load_panchromatic(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
 
     def load_features(self, path: str) -> np.array:
         dataset = gdal.Open(path, gdal.GA_ReadOnly)
