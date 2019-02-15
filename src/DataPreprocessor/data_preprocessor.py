@@ -260,7 +260,7 @@ class DataPreprocessor:
     def train_generator_3class(self, batch_size, class_probabilities, patch_size, channels):
         while True:
             img_batch, lbl_batch = self.get_sample_3class(batch_size, class_probabilities, patch_size, channels)
-            yield img_batch, lbl_batch
+            yield img_batch.astype(np.float32), lbl_batch.astype(np.int32)
 
     def train_generator_2class_lookalikes_with_nonfaults(self, batch_size, class_probabilities, patch_size, channels):
         while True:
