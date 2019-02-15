@@ -156,13 +156,35 @@ class GdalBackend(DataIOBackend):
 
     def write_surface(self, path, image):
         #todo use gdal dem
-        # dst_ds_2 = gdal.DEMProcessing("heatmaps_3_colours_tmp2.tif", dst_ds, "color-relief")
+
+        driver = self.gdal_options['driver']
+        if not driver:
+            raise Exception("driver not created")
+        if image.ndim == 3:
+            bands = image.shape[2]
+        elif image.ndim == 2:
+            bands = 1
+        else:
+            raise Exception("Bands number incorrect")
+        dst_ds = driver.Create(path, xsize=image.shape[0], ysize=image.shape[1], bands=bands, eType=gdal.GDT_Byte)
+
+        geotransform = self.gdal_options['geotransform']
+        dst_ds.SetGeoTransform(geotransform)
+        projection = self.gdal_options['projection']
+        dst_ds.SetProjection(projection)
+        dst_ds.GetRasterBand(1).WriteArray(image)
+
+        opts = gdal.DEMProcessingOptions(colorFilename='gdal_vis_opts.txt')
+        dst_ds2 = gdal.DEMProcessing(destName="gdal_test.tif", srcDS=dst_ds, processing="color-relief", options=opts)
+        opts2 = gdal.TranslateOptions(format='VRT')
+        dst_ds3 = gdal.Translate(destName="gdal_test.vrt", srcDS=dst_ds2, options=opts2)
+        gdal.BuildVRT()
         # gdal.Translate('heatmaps_3_colours_tmp2.tif', dst_ds)
         # dst_ds_2 = None
         # dst_ds = None
-        cmap = plt.get_cmap('jet')
-        rgba_img_faults = cmap(image)
-        rgb_img_faults = np.delete(rgba_img_faults, 3, 2)
-        rgb_img_faults=(rgb_img_faults[:, :, :3] * 255).astype(np.uint8)
-        self.write_image(path, rgb_img_faults)
+        #cmap = plt.get_cmap('jet')
+        #rgba_img_faults = cmap(image)
+        #rgb_img_faults = np.delete(rgba_img_faults, 3, 2)
+        #rgb_img_faults=(rgb_img_faults[:, :, :3] * 255).astype(np.uint8)
+        #self.write_image(path, rgb_img_faults)
 
