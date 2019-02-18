@@ -10,7 +10,7 @@ np.random.seed(1)
 tf.set_random_seed(2)
 
 
-def predict(models_folder, ensemble_size, classes, channels, heatmap_mode="max"):
+def predict(models_folder, ensemble_size, classes, channels, heatmap_mode="max", stride=50, batch_size=20):
 
     if classes == 3:
         model_generator = lambda: cnn_150x150x5_3class()
@@ -34,7 +34,7 @@ def predict(models_folder, ensemble_size, classes, channels, heatmap_mode="max")
     for (preprocessor_ind, data_preprocessor_generator) in enumerate(global_params.data_preprocessor_generators_test):
         data_preprocessor = data_preprocessor_generator()
         boxes, probs = trainer.apply_for_sliding_window(
-            data_preprocessor=data_preprocessor, patch_size=(150, 150), stride=50, batch_size=20, channels=channels)
+            data_preprocessor=data_preprocessor, patch_size=(150, 150), stride=stride, batch_size=batch_size, channels=channels)
         original_2dimage_shape = (data_preprocessor.optical_rgb.shape[0], data_preprocessor.optical_rgb.shape[1])
         faults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 0],
                                              original_2dimage_shape=original_2dimage_shape)

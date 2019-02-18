@@ -2,7 +2,7 @@ import pathlib
 from typing import Tuple, List
 
 import numpy as np
-from tqdm import trange
+from tqdm import trange, tqdm
 
 from src.DataPreprocessor.data_preprocessor import DataPreprocessor
 
@@ -67,8 +67,8 @@ class KerasTrainer:
     def apply_for_sliding_window(self, data_preprocessor: DataPreprocessor, patch_size: Tuple[int, int],
                                  stride: int, batch_size: int, channels:List[int]):
         boxes, probs = [], []
-        for patch_coords_batch, patch_batch in data_preprocessor.sequential_pass_generator(
-                patch_size=patch_size, stride=stride, batch_size=batch_size, channels=channels):
+        for patch_coords_batch, patch_batch in tqdm(data_preprocessor.sequential_pass_generator(
+                patch_size=patch_size, stride=stride, batch_size=batch_size, channels=channels)):
             boxes.extend(patch_coords_batch)
             probs.extend(self.predict_average(patch_batch))
         boxes = np.stack(boxes, axis=0)
