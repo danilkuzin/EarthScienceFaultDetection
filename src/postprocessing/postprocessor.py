@@ -49,10 +49,10 @@ class PostProcessor:
                     res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y],
                     self.probs[index] * np.ones_like(res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y]))
         elif mode == "mean":
-            stride = self.boxes[1, 0] - self.boxes[0, 0]
+            stride = self.boxes[1, 1] - self.boxes[0, 1]
             patch_width = self.boxes[0, 2] - self.boxes[0, 0] #todo this is for square patches only now
 
-            number_of_times_pixel_in_patch = (patch_width / stride) ** 2
+            number_of_times_pixel_in_patch = int((patch_width / stride) ** 2)
             for (index, borders) in enumerate(tqdm(self.boxes)):
                 top_left_x, top_left_y, bottom_right_x, bottom_right_y = borders
                 res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y] \

@@ -10,7 +10,7 @@ np.random.seed(1)
 tf.set_random_seed(2)
 
 
-def predict(models_folder, ensemble_size, classes, channels):
+def predict(models_folder, ensemble_size, classes, channels, heatmap_mode="max"):
 
     if classes == 3:
         model_generator = lambda: cnn_150x150x5_3class()
@@ -38,25 +38,25 @@ def predict(models_folder, ensemble_size, classes, channels):
         original_2dimage_shape = (data_preprocessor.optical_rgb.shape[0], data_preprocessor.optical_rgb.shape[1])
         faults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 0],
                                              original_2dimage_shape=original_2dimage_shape)
-        res_faults = faults_postprocessor.heatmaps(mode="max")
-        data_preprocessor.backend.write_surface("heatmaps_faults_{}.tif".format(preprocessor_ind), res_faults)
+        res_faults = faults_postprocessor.heatmaps(mode=heatmap_mode)
+        data_preprocessor.data_io_backend.write_surface("heatmaps_faults_{}.tif".format(preprocessor_ind), res_faults)
 
         if classes == 3:
             lookalikes_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 1],
                                                      original_2dimage_shape=original_2dimage_shape)
-            res_lookalikes = lookalikes_postprocessor.heatmaps(mode="max")
-            data_preprocessor.backend.write_surface("heatmaps_lookalikes_{}.tif".format(preprocessor_ind),
+            res_lookalikes = lookalikes_postprocessor.heatmaps(mode=heatmap_mode)
+            data_preprocessor.data_io_backend.write_surface("heatmaps_lookalikes_{}.tif".format(preprocessor_ind),
                                                     res_lookalikes)
 
             nonfaults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 2],
                                                     original_2dimage_shape=original_2dimage_shape)
             res_nonfaults = nonfaults_postprocessor.heatmaps(mode="max")
-            data_preprocessor.backend.write_surface("heatmaps_nonfaults_{}.tif".format(preprocessor_ind),
+            data_preprocessor.data_io_backend.write_surface("heatmaps_nonfaults_{}.tif".format(preprocessor_ind),
                                                     res_nonfaults)
 
         elif classes == 2:
             nonfaults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 1],
                                                     original_2dimage_shape=original_2dimage_shape)
-            res_nonfaults = nonfaults_postprocessor.heatmaps(mode="max")
-            data_preprocessor.backend.write_surface("heatmaps_nonfaults_{}.tif".format(preprocessor_ind),
+            res_nonfaults = nonfaults_postprocessor.heatmaps(mode=heatmap_mode)
+            data_preprocessor.data_io_backend.write_surface("heatmaps_nonfaults_{}.tif".format(preprocessor_ind),
                                                     res_nonfaults)

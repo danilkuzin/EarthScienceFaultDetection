@@ -24,19 +24,19 @@ data_preprocessor_generators_train = [
 ]
 
 data_preprocessor_generators_test = [
-    lambda: DataPreprocessor(data_dir="../../data/Region 1 - Lopukangri/",
+    lambda: DataPreprocessor(data_dir="../data/Region 1 - Lopukangri/",
                      data_io_backend=GdalBackend(),
                      patches_output_backend=InMemoryBackend(),
                      filename_prefix="tibet",
                      mode=Mode.TEST,
                      seed=1),
-    lambda: DataPreprocessor(data_dir="../../data/Region 2 - Muga Puruo/",
+    lambda: DataPreprocessor(data_dir="../data/Region 2 - Muga Puruo/",
                      data_io_backend=GdalBackend(),
                      patches_output_backend=InMemoryBackend(),
                      filename_prefix="mpgr",
                      mode=Mode.TEST,
                      seed=1),
-    lambda: DataPreprocessor(data_dir="../../data/Region 3 - Muggarboibo/",
+    lambda: DataPreprocessor(data_dir="../data/Region 3 - Muggarboibo/",
                      data_io_backend=GdalBackend(),
                      patches_output_backend=InMemoryBackend(),
                      filename_prefix="gyrc1",
