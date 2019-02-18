@@ -49,6 +49,7 @@ class PostProcessor:
                     res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y],
                     self.probs[index] * np.ones_like(res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y]))
         elif mode == "mean":
+            # todo use fusion as probs = exp(avg(log(probs)))
             stride = self.boxes[1, 1] - self.boxes[0, 1]
             patch_width = self.boxes[0, 2] - self.boxes[0, 0] #todo this is for square patches only now
 
@@ -58,5 +59,5 @@ class PostProcessor:
                 res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y] \
                     = res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y] \
                       + self.probs[index] * np.ones_like(res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y])
-            res_im = res_im / number_of_times_pixel_in_patch
+            res_im = np.exp(res_im / number_of_times_pixel_in_patch)
         return res_im
