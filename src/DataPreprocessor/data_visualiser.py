@@ -16,7 +16,7 @@ class DataVisualiser:
         return Image.fromarray(mask_rgba)
 
     def get_optical_rgb(self):
-        return Image.fromarray(self.preprocessor.optical_rgb)
+        return Image.fromarray(self.preprocessor.channels['optical_rgb'])
 
     def get_optical_rgb_with_features_mask(self, opacity=60) -> Image:
         features_map = self.get_features_map_transparent(opacity)
@@ -24,7 +24,7 @@ class DataVisualiser:
         return Image.alpha_composite(orig, features_map)
 
     def get_elevation(self):
-        orig = self.preprocessor.elevation.astype(np.float)
+        orig = self.preprocessor.channels['elevation'].astype(np.float)
         orig = orig - np.min(orig)
         orig = orig * 255. / np.max(orig)
         return Image.fromarray(orig.astype(np.uint8))
@@ -35,7 +35,7 @@ class DataVisualiser:
         return Image.alpha_composite(orig_im, features_map)
 
     def get_slope(self):
-        orig = self.preprocessor.slope.astype(np.float)
+        orig = self.preprocessor.channels['slope'].astype(np.float)
         orig = orig - np.min(orig)
         orig = orig * 255. / np.max(orig)
         return Image.fromarray(orig.astype(np.uint8))
@@ -45,3 +45,57 @@ class DataVisualiser:
         orig_im = self.get_slope().convert('RGBA')
         return Image.alpha_composite(orig_im, features_map)
 
+    def get_nir(self):
+        orig = self.preprocessor.channels['nir'].astype(np.float)
+        orig = orig - np.min(orig)
+        orig = orig * 255. / np.max(orig)
+        return Image.fromarray(orig.astype(np.uint8))
+
+    def get_nir_with_features_mask(self, opacity=60):
+        features_map = self.get_features_map_transparent(opacity)
+        orig_im = self.get_nir().convert('RGBA')
+        return Image.alpha_composite(orig_im, features_map)
+
+    def get_ir(self):
+        orig = self.preprocessor.channels['ir'].astype(np.float)
+        orig = orig - np.min(orig)
+        orig = orig * 255. / np.max(orig)
+        return Image.fromarray(orig.astype(np.uint8))
+
+    def get_ir_with_features_mask(self, opacity=60):
+        features_map = self.get_features_map_transparent(opacity)
+        orig_im = self.get_ir().convert('RGBA')
+        return Image.alpha_composite(orig_im, features_map)
+
+    def get_swir1(self):
+        orig = self.preprocessor.channels['swir1'].astype(np.float)
+        orig = orig - np.min(orig)
+        orig = orig * 255. / np.max(orig)
+        return Image.fromarray(orig.astype(np.uint8))
+
+    def get_swir1_with_features_mask(self, opacity=60):
+        features_map = self.get_features_map_transparent(opacity)
+        orig_im = self.get_swir1().convert('RGBA')
+        return Image.alpha_composite(orig_im, features_map)
+
+    def get_swir2(self):
+        orig = self.preprocessor.channels['swir2'].astype(np.float)
+        orig = orig - np.min(orig)
+        orig = orig * 255. / np.max(orig)
+        return Image.fromarray(orig.astype(np.uint8))
+
+    def get_swir2_with_features_mask(self, opacity=60):
+        features_map = self.get_features_map_transparent(opacity)
+        orig_im = self.get_swir2().convert('RGBA')
+        return Image.alpha_composite(orig_im, features_map)
+
+    def get_panchromatic(self):
+        orig = self.preprocessor.channels['panchromatic'].astype(np.float)
+        orig = orig - np.min(orig)
+        orig = orig * 255. / np.max(orig)
+        return Image.fromarray(orig.astype(np.uint8))
+
+    def get_panchromatic_with_features_mask(self, opacity=60):
+        features_map = self.get_features_map_transparent(opacity)
+        orig_im = self.get_panchromatic().convert('RGBA')
+        return Image.alpha_composite(orig_im, features_map)

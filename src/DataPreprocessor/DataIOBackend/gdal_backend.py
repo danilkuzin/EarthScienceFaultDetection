@@ -182,6 +182,8 @@ class GdalBackend(DataIOBackend):
         # # gdal.Translate('heatmaps_3_colours_tmp2.tif', dst_ds)
         # # dst_ds_2 = None
         # # dst_ds = None
+
+        #todo create colorbar in a separate png image
         cmap = plt.get_cmap('jet')
         rgba_img_faults = cmap(image)
         rgb_img_faults = np.delete(rgba_img_faults, 3, 2)
