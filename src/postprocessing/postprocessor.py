@@ -59,6 +59,6 @@ class PostProcessor:
                 top_left_x, top_left_y, bottom_right_x, bottom_right_y = borders
                 res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y] \
                     = res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y] \
-                      + self.probs[index] * np.ones_like(res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y])
+                      + np.log(self.probs[index] * np.ones_like(res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y]))
             res_im = np.exp(res_im / number_of_times_pixel_in_patch)
         return res_im

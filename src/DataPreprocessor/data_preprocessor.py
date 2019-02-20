@@ -28,11 +28,10 @@ class FeatureValue(Enum):
     NONFAULT = 2
 
 
-# todo maybe add script to convert filenames from drive to standard names without prefixes
-# todo add option to tormalise based on normalisation features from a different data - or this problem is more serious,
+# todo add option to normalise based on normalisation features from a different data - or this problem is more serious,
 # need to think, look at the distributions, probably we can't convert elevation this way for example
-# todo move output backend into init, add in-memory backend, move the directories outputs to other backends than in-memory
-# todo finish adding infrared images
+
+# todo consider creating another pipeline - that takes patches and outputs lines, not single probabilities. U-nets?
 class DataPreprocessor:
     def __init__(self, data_dir: str, data_io_backend: DataIOBackend, patches_output_backend: PatchesOutputBackend,
                  filename_prefix: str, mode: Mode, seed: int):
@@ -105,7 +104,12 @@ class DataPreprocessor:
         return np.concatenate(
             (self.normalised_channels['optical_rgb'][left_border:right_border, top_border:bottom_border],
              np.expand_dims(self.normalised_channels['elevation'][left_border:right_border, top_border:bottom_border], axis=2),
-             np.expand_dims(self.normalised_channels['slope'][left_border:right_border, top_border:bottom_border], axis=2)),
+             np.expand_dims(self.normalised_channels['slope'][left_border:right_border, top_border:bottom_border], axis=2),
+             np.expand_dims(self.normalised_channels['nir'][left_border:right_border, top_border:bottom_border], axis=2),
+             np.expand_dims(self.normalised_channels['ir'][left_border:right_border, top_border:bottom_border], axis=2),
+             np.expand_dims(self.normalised_channels['swir1'][left_border:right_border, top_border:bottom_border], axis=2),
+             np.expand_dims(self.normalised_channels['swir2'][left_border:right_border, top_border:bottom_border], axis=2),
+             np.expand_dims(self.normalised_channels['panchromatic'][left_border:right_border, top_border:bottom_border], axis=2)),
             axis=2)
 
     def sample_fault_patch(self, patch_size):
@@ -201,6 +205,16 @@ class DataPreprocessor:
         denormalised_elevation = (patch[:, :, 3] * np.var(self.channels['elevation'].astype(np.float32)) + np.mean(
             self.channels['elevation'].astype(np.float32)))
         denormalised_slope = (patch[:, :, 4] * 45 + 45)
+        denormalised_nir = (patch[:, :, 5] * np.var(self.channels['nir'].astype(np.float32)) + np.mean(
+            self.channels['nir'].astype(np.float32)))
+        denormalised_ir = (patch[:, :, 6] * np.var(self.channels['nir'].astype(np.float32)) + np.mean(
+            self.channels['nir'].astype(np.float32)))
+        denormalised_swir1 = (patch[:, :, 7] * np.var(self.channels['nir'].astype(np.float32)) + np.mean(
+            self.channels['nir'].astype(np.float32)))
+        denormalised_swir2 = (patch[:, :, 8] * np.var(self.channels['nir'].astype(np.float32)) + np.mean(
+            self.channels['nir'].astype(np.float32)))
+        denormalised_panchromatic = (patch[:, :, 9] * np.var(self.channels['nir'].astype(np.float32)) + np.mean(
+            self.channels['nir'].astype(np.float32)))
         return denormalised_rgb, denormalised_elevation, denormalised_slope
 
     def get_sample_3class(self, batch_size, class_probabilities, patch_size, channels):
@@ -282,9 +296,10 @@ class DataPreprocessor:
         batch_ind = 0
         patch_coords_batch = []
         patch_batch = []
+        img_width, img_height, _ = self.get_data_shape()
         for top_left_border_x, top_left_border_y in itertools.product(
-                range(0, self.optical_rgb.shape[0] - patch_size[0], stride),
-                range(0, self.optical_rgb.shape[1] - patch_size[1], stride)):
+                range(0, img_width - patch_size[0], stride),
+                range(0, img_height - patch_size[1], stride)):
 
             patch_coords_batch.append(np.array([top_left_border_x, top_left_border_y, top_left_border_x + patch_size[0],
                                                 top_left_border_y + patch_size[1]]))
@@ -299,3 +314,9 @@ class DataPreprocessor:
                 batch_ind = 0
                 patch_coords_batch = []
                 patch_batch = []
+
+        #yield last patch
+        if len(patch_coords_batch) > 0:
+            patch_coords_batch_np = np.stack(patch_coords_batch, axis=0)
+            patch_batch_np = np.stack(patch_batch, axis=0)
+            yield patch_coords_batch_np, patch_batch_np[:, :, :, channels]

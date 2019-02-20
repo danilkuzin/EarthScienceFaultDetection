@@ -35,7 +35,7 @@ def predict(models_folder, ensemble_size, classes, channels, heatmap_mode="max",
         data_preprocessor = data_preprocessor_generator()
         boxes, probs = trainer.apply_for_sliding_window(
             data_preprocessor=data_preprocessor, patch_size=(150, 150), stride=stride, batch_size=batch_size, channels=channels)
-        original_2dimage_shape = (data_preprocessor.optical_rgb.shape[0], data_preprocessor.optical_rgb.shape[1])
+        original_2dimage_shape = (data_preprocessor.get_data_shape()[0], data_preprocessor.get_data_shape()[1])
         faults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 0],
                                              original_2dimage_shape=original_2dimage_shape)
         res_faults = faults_postprocessor.heatmaps(mode=heatmap_mode)

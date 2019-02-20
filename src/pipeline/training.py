@@ -3,6 +3,7 @@ from typing import List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+import pathlib
 
 from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
 from src.DataPreprocessor.PatchesOutputBackend.in_memory_backend import InMemoryBackend
@@ -14,7 +15,7 @@ from src.LearningKeras.train import KerasTrainer
 
 
 def train(train_datasets: List[int], class_probabilities: str, batch_size: int, patch_size: Tuple[int, int],
-          channels: List[int], ensemble_size: int, train_lib="keras"):
+          channels: List[int], ensemble_size: int, train_lib="keras", output_path=""):
     np.random.seed(1)
     tf.set_random_seed(2)
 
@@ -72,9 +73,10 @@ def train(train_datasets: List[int], class_probabilities: str, batch_size: int, 
     else:
         raise Exception('Not implemented')
 
-    history_arr = trainer.train(steps_per_epoch=100, epochs=10, train_generator=joint_generator)
+    history_arr = trainer.train(steps_per_epoch=50, epochs=5, train_generator=joint_generator)
 
-    trainer.save(output_path='trained_models_{}'.format(''.join(str(i) for i in train_datasets)))
+    pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
+    trainer.save(output_path='{}trained_models_{}'.format(output_path, ''.join(str(i) for i in train_datasets)))
 
     for (hist_ind, history) in enumerate(history_arr):
         plt.plot(history.history['acc'])

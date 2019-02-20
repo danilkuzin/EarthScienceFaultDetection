@@ -14,7 +14,7 @@ tf.set_random_seed(2)
 
 num_patches = 7
 patch_size = (150, 150)
-bands = 5
+bands = 10
 
 for data_preprocessor_generator in global_params.data_preprocessor_generators_train:
     data_preprocessor = data_preprocessor_generator()
@@ -53,13 +53,12 @@ for data_preprocessor_generator in global_params.data_preprocessor_generators_tr
     sns.distplot(data_preprocessor.channels['swir1'].flatten(), ax=axis[1, 2])
     sns.distplot(data_preprocessor.channels['swir2'].flatten(), ax=axis[1, 3])
     sns.distplot(data_preprocessor.channels['panchromatic'].flatten(), ax=axis[1, 4])
-
     plt.tight_layout()
     f.savefig(output_path + "features_distribution.png")
     f.clf()
     plt.close()
 
-    _, axis = plt.subplots(2, 5, figsize=(30, 20))
+    f, axis = plt.subplots(2, 5, figsize=(30, 20))
     sns.distplot(data_preprocessor.normalised_channels['optical_rgb'][:, :, 0].flatten(), ax=axis[0, 0])
     sns.distplot(data_preprocessor.normalised_channels['optical_rgb'][:, :, 1].flatten(), ax=axis[0, 1])
     sns.distplot(data_preprocessor.normalised_channels['optical_rgb'][:, :, 2].flatten(), ax=axis[0, 2])

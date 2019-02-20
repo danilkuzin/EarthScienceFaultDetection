@@ -31,6 +31,7 @@ train(
     class_probabilities="two-class",
     batch_size=10,
     patch_size=(150, 150),
-    channels=[4],
-    ensemble_size=2
+    channels=[5],
+    ensemble_size=2,
+    output_path="feature_nir/"
 )
