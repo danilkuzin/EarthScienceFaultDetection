@@ -172,21 +172,25 @@ class GdalBackend(DataIOBackend):
         # dst_ds.SetGeoTransform(geotransform)
         # projection = self.gdal_options['projection']
         # dst_ds.SetProjection(projection)
-        # dst_ds.GetRasterBand(1).WriteArray(image)
+        # dst_ds.GetRasterBand(1).WriteArray((image * 100).astype(np.int))
         #
         # opts = gdal.DEMProcessingOptions(colorFilename='gdal_vis_opts.txt')
         # dst_ds2 = gdal.DEMProcessing(destName="gdal_test.tif", srcDS=dst_ds, processing="color-relief", options=opts)
         # opts2 = gdal.TranslateOptions(format='VRT')
         # dst_ds3 = gdal.Translate(destName="gdal_test.vrt", srcDS=dst_ds2, options=opts2)
         # gdal.BuildVRT()
-        # # gdal.Translate('heatmaps_3_colours_tmp2.tif', dst_ds)
-        # # dst_ds_2 = None
-        # # dst_ds = None
+        # gdal.Translate('heatmaps_3_colours_tmp2.tif', dst_ds)
+        # dst_ds_2 = None
+        # dst_ds = None
 
-        #todo create colorbar in a separate png image
+        # #todo create colorbar in a separate png image
         cmap = plt.get_cmap('jet')
         rgba_img_faults = cmap(image)
         rgb_img_faults = np.delete(rgba_img_faults, 3, 2)
         rgb_img_faults=(rgb_img_faults[:, :, :3] * 255).astype(np.uint8)
         self.write_image(path, rgb_img_faults)
+
+        im = plt.imshow(image)
+        plt.colorbar(im)  # Create the colorbar
+        plt.savefig('out.jpg')
 

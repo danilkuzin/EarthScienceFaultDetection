@@ -26,3 +26,9 @@ MLP on extracted features
 
 * [USING GENERATIVE ADVERSARIAL NETWORKS TO IMPROVE DEEP LEARNING FAULT INTERPRETATION NETWORKS](https://www.researchgate.net/profile/Ping_Lu10/publication/326758131_Using_generative_adversarial_networks_to_improve_deep-learning_fault_interpretation_networks/links/5b9a627d45851574f7c3b680/Using-generative-adversarial-networks-to-improve-deep-learning-fault-interpretation-networks.pdf)
 GANs for interpolating seismic images
+
+### Lines detection
+* [1](http://openaccess.thecvf.com/content_cvpr_2018/papers/LaLonde_ClusterNet_Detecting_Small_CVPR_2018_paper.pdf)
+* [2](https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Zhang_Cross-Scene_Crowd_Counting_2015_CVPR_paper.pdf)
+* [3](https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/Zhang_Single-Image_Crowd_Counting_CVPR_2016_paper.pdf)
+* [4](http://openaccess.thecvf.com/content_cvpr_2018/papers/Liu_DecideNet_Counting_Varying_CVPR_2018_paper.pdf)

@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-
+#todo change loss to something "stable"  from logits
 def cnn_28x28x1(lr=1e-4):
     cnn_model = tf.keras.models.Sequential()
     cnn_model.add(tf.keras.layers.InputLayer(input_shape=(28, 28, 1)))

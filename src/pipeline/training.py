@@ -13,7 +13,7 @@ from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150
     cnn_150x150x3, cnn_150x150x1
 from src.LearningKeras.train import KerasTrainer
 
-
+# use Pipeline instead
 def train(train_datasets: List[int], class_probabilities: str, batch_size: int, patch_size: Tuple[int, int],
           channels: List[int], ensemble_size: int, train_lib="keras", output_path=""):
     np.random.seed(1)
