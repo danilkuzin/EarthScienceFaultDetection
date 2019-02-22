@@ -293,6 +293,7 @@ class DataPreprocessor:
 
     def sequential_pass_generator(self, patch_size: Tuple[int, int], stride: int, batch_size: int, channels: List[int]):
         """note the different order of indexes in coords and patch ind, this was due to this input in tf non_max_suppression"""
+        #todo consider returning views to reduce required memory. Check sklearn.feature_extraction.image.extract_patches
         batch_ind = 0
         patch_coords_batch = []
         patch_batch = []
