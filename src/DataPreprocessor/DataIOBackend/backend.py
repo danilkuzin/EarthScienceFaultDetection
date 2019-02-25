@@ -52,3 +52,11 @@ class DataIOBackend:
         """panchromatic band from Landsat, essentially just total surface reflectance,
         like a grayscale image of the ground"""
         pass
+
+    @abc.abstractmethod
+    def load_curve(self, path: str) -> np.array:
+        pass
+
+    @abc.abstractmethod
+    def load_erosion(self, path: str) -> np.array:
+        pass

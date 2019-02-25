@@ -32,15 +32,16 @@ class FeatureValue(Enum):
 # need to think, look at the distributions, probably we can't convert elevation this way for example
 
 # todo consider creating another pipeline - that takes patches and outputs lines, not single probabilities. U-nets?
+# todo add test/validation
 class DataPreprocessor:
     def __init__(self, data_dir: str, data_io_backend: DataIOBackend, patches_output_backend: PatchesOutputBackend,
                  filename_prefix: str, mode: Mode, seed: int):
         np.random.seed(seed)
         self.data_dir = data_dir
         self.channels = dict(elevation=None, slope=None, optical_rgb=None, nir=None, ir=None, swir1=None, swir2=None,
-                             panchromatic=None)
+                             panchromatic=None, curve=None, erosion=None)
         self.normalised_channels = dict(elevation=None, slope=None, optical_rgb=None, nir=None, ir=None, swir1=None,
-                                        swir2=None, panchromatic=None)
+                                        swir2=None, panchromatic=None, curve=None, erosion=None)
         self.features = None
         self.filename_prefix = filename_prefix
         self.mode = mode
@@ -76,6 +77,14 @@ class DataPreprocessor:
         self.channels['swir1'] = self.data_io_backend.load_nir(path=self.data_dir + self.filename_prefix + '_SWIR1.tif')
         self.channels['swir2'] = self.data_io_backend.load_nir(path=self.data_dir + self.filename_prefix + '_SWIR2.tif')
         self.channels['panchromatic'] = self.data_io_backend.load_panchromatic(path=self.data_dir + self.filename_prefix + '_P.tif')
+        try:
+            self.channels['curve'] = self.data_io_backend.load_curve(path=self.data_dir + self.filename_prefix + '_curve.tif')
+        except FileNotFoundError as err:
+            logging.warning("Error: {}".format(err))
+        try:
+            self.channels['erosion'] = self.data_io_backend.load_erosion(path=self.data_dir + self.filename_prefix + '_erosion.tif')
+        except FileNotFoundError as err:
+            logging.warning("Error: {}".format(err))
         self.__check_crop_data()
 
         if self.mode == Mode.TRAIN:
@@ -109,7 +118,9 @@ class DataPreprocessor:
              np.expand_dims(self.normalised_channels['ir'][left_border:right_border, top_border:bottom_border], axis=2),
              np.expand_dims(self.normalised_channels['swir1'][left_border:right_border, top_border:bottom_border], axis=2),
              np.expand_dims(self.normalised_channels['swir2'][left_border:right_border, top_border:bottom_border], axis=2),
-             np.expand_dims(self.normalised_channels['panchromatic'][left_border:right_border, top_border:bottom_border], axis=2)),
+             np.expand_dims(self.normalised_channels['panchromatic'][left_border:right_border, top_border:bottom_border], axis=2),
+             np.expand_dims(self.normalised_channels['curve'][left_border:right_border, top_border:bottom_border], axis=2),
+             np.expand_dims(self.normalised_channels['erosion'][left_border:right_border, top_border:bottom_border], axis=2)),
             axis=2)
 
     def sample_fault_patch(self, patch_size):
@@ -185,35 +196,40 @@ class DataPreprocessor:
             return self.sample_nonfault_patch(patch_size)
 
     def __normalise(self):
+        # todo var -> std
         self.normalised_channels['optical_rgb'] = self.channels['optical_rgb'].astype(np.float32) / 255. - 0.5
         self.normalised_channels['elevation'] = (self.channels['elevation'].astype(np.float32) - np.mean(
-            self.channels['elevation'].astype(np.float32))) / np.var(self.channels['elevation'].astype(np.float32))
-        self.normalised_channels['slope'] = (self.channels['slope'].astype(np.float32) - 45) / 45
-        self.normalised_channels['nir'] = (self.channels['nir'].astype( np.float32) - np.mean(
-            self.channels['nir'].astype(np.float32))) / np.var(self.channels['nir'].astype(np.float32))
+            self.channels['elevation'].astype(np.float32))) / np.std(self.channels['elevation'].astype(np.float32))
+        self.normalised_channels['slope'] = (self.channels['slope'].astype(np.float32) - 45.) / 45.
+        self.normalised_channels['nir'] = (self.channels['nir'].astype(np.float32) - np.mean(
+            self.channels['nir'].astype(np.float32))) / np.std(self.channels['nir'].astype(np.float32))
         self.normalised_channels['ir'] = (self.channels['ir'].astype(np.float32) - np.mean(
-            self.channels['ir'].astype(np.float32))) / np.var(self.channels['ir'].astype(np.float32))
+            self.channels['ir'].astype(np.float32))) / np.std(self.channels['ir'].astype(np.float32))
         self.normalised_channels['swir1'] = (self.channels['swir1'].astype(np.float32) - np.mean(
-            self.channels['swir1'].astype(np.float32))) / np.var(self.channels['swir1'].astype(np.float32))
+            self.channels['swir1'].astype(np.float32))) / np.std(self.channels['swir1'].astype(np.float32))
         self.normalised_channels['swir2'] = (self.channels['swir2'].astype(np.float32) - np.mean(
-            self.channels['swir2'].astype(np.float32))) / np.var(self.channels['swir2'].astype(np.float32))
+            self.channels['swir2'].astype(np.float32))) / np.std(self.channels['swir2'].astype(np.float32))
         self.normalised_channels['panchromatic'] = (self.channels['panchromatic'].astype(np.float32) - np.mean(
-            self.channels['panchromatic'].astype(np.float32))) / np.var(self.channels['panchromatic'].astype(np.float32))
+            self.channels['panchromatic'].astype(np.float32))) / np.std(self.channels['panchromatic'].astype(np.float32))
+        self.normalised_channels['curve'] = (self.channels['curve'].astype(np.float32) - np.mean(
+            self.channels['curve'].astype(np.float32))) / np.std(self.channels['curve'].astype(np.float32))
+        self.normalised_channels['erosion'] = (self.channels['erosion'].astype(np.float32) - np.mean(
+            self.channels['erosion'].astype(np.float32))) / np.std(self.channels['erosion'].astype(np.float32))
 
     def denormalise(self, patch):
         denormalised_rgb = ((patch[:, :, :3] + 0.5) * 255).astype(np.uint8)
-        denormalised_elevation = (patch[:, :, 3] * np.var(self.channels['elevation'].astype(np.float32)) + np.mean(
+        denormalised_elevation = (patch[:, :, 3] * np.std(self.channels['elevation'].astype(np.float32)) + np.mean(
             self.channels['elevation'].astype(np.float32)))
         denormalised_slope = (patch[:, :, 4] * 45 + 45)
-        denormalised_nir = (patch[:, :, 5] * np.var(self.channels['nir'].astype(np.float32)) + np.mean(
+        denormalised_nir = (patch[:, :, 5] * np.std(self.channels['nir'].astype(np.float32)) + np.mean(
             self.channels['nir'].astype(np.float32)))
-        denormalised_ir = (patch[:, :, 6] * np.var(self.channels['nir'].astype(np.float32)) + np.mean(
+        denormalised_ir = (patch[:, :, 6] * np.std(self.channels['nir'].astype(np.float32)) + np.mean(
             self.channels['nir'].astype(np.float32)))
-        denormalised_swir1 = (patch[:, :, 7] * np.var(self.channels['nir'].astype(np.float32)) + np.mean(
+        denormalised_swir1 = (patch[:, :, 7] * np.std(self.channels['nir'].astype(np.float32)) + np.mean(
             self.channels['nir'].astype(np.float32)))
-        denormalised_swir2 = (patch[:, :, 8] * np.var(self.channels['nir'].astype(np.float32)) + np.mean(
+        denormalised_swir2 = (patch[:, :, 8] * np.std(self.channels['nir'].astype(np.float32)) + np.mean(
             self.channels['nir'].astype(np.float32)))
-        denormalised_panchromatic = (patch[:, :, 9] * np.var(self.channels['nir'].astype(np.float32)) + np.mean(
+        denormalised_panchromatic = (patch[:, :, 9] * np.std(self.channels['nir'].astype(np.float32)) + np.mean(
             self.channels['nir'].astype(np.float32)))
         return denormalised_rgb, denormalised_elevation, denormalised_slope
 

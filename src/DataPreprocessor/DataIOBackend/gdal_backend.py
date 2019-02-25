@@ -62,6 +62,12 @@ class GdalBackend(DataIOBackend):
         signed_data = np.array(dataset.ReadAsArray()).astype(np.int)
         return signed_data - 1
 
+    def load_curve(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
+    def load_erosion(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
     def parse_meta_with_gdal(self, path: str):
         """to be used for parsing gdal headers and recreating them in output results
            based on https://www.gdal.org/gdal_tutorial.html

@@ -10,7 +10,7 @@ np.random.seed(1)
 tf.set_random_seed(2)
 
 # use Pipeline instead
-def predict(models_folder, ensemble_size, classes, channels, heatmap_mode="max", stride=50, batch_size=20):
+def predict(models_folder, ensemble_size, classes, channels, heatmap_mode="max", stride=25, batch_size=20):
 
     if classes == 3:
         model_generator = lambda: cnn_150x150x5_3class()

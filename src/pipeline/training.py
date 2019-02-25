@@ -73,7 +73,8 @@ def train(train_datasets: List[int], class_probabilities: str, batch_size: int, 
     else:
         raise Exception('Not implemented')
 
-    history_arr = trainer.train(steps_per_epoch=100, epochs=10, train_generator=joint_generator)
+    #todo experiment with regularisation
+    history_arr = trainer.train(steps_per_epoch=50, epochs=20, train_generator=joint_generator)
 
     pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
     trainer.save(output_path='{}trained_models_{}'.format(output_path, ''.join(str(i) for i in train_datasets)))

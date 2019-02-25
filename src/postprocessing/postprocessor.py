@@ -49,7 +49,7 @@ class PostProcessor:
                     res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y],
                     self.probs[index] * np.ones_like(res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y]))
         elif mode == "mean":
-            # todo check why we have a grid-like structure on finer resolution, maybe drop outliers / take median instead of mean, etc
+            # todo add padding of the same pixel values
             stride = self.boxes[1, 1] - self.boxes[0, 1]
             patch_width = self.boxes[0, 2] - self.boxes[0, 0] #todo this is for square patches only now
 
@@ -60,28 +60,28 @@ class PostProcessor:
                     = res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y] \
                       + np.log(self.probs[index] * np.ones_like(res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y]))
             res_im = np.exp(res_im / number_of_times_pixel_in_patch)
-        elif mode == "mean_median":
-            # drop lowest and highest probs for every pixel, store them separately and remove from sum
-            # this does not help at all
-            stride = self.boxes[1, 1] - self.boxes[0, 1]
-            patch_width = self.boxes[0, 2] - self.boxes[0, 0] #todo this is for square patches only now
-            res_im_max = np.zeros(self.original_2dimage_shape,
-                              dtype=np.float)
-            res_im_min = np.ones(self.original_2dimage_shape,
-                              dtype=np.float)
-            number_of_times_pixel_in_patch = int((patch_width / stride) ** 2)
-            for (index, borders) in enumerate(tqdm(self.boxes)):
-                top_left_x, top_left_y, bottom_right_x, bottom_right_y = borders
-                res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y] \
-                    = res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y] \
-                      + np.log(self.probs[index] * np.ones_like(res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y]))
-                res_im_max[top_left_x:bottom_right_x, top_left_y:bottom_right_y] = np.maximum(
-                    res_im_max[top_left_x:bottom_right_x, top_left_y:bottom_right_y],
-                    self.probs[index] * np.ones_like(res_im_max[top_left_x:bottom_right_x, top_left_y:bottom_right_y]))
-                res_im_min[top_left_x:bottom_right_x, top_left_y:bottom_right_y] = np.minimum(
-                    res_im_min[top_left_x:bottom_right_x, top_left_y:bottom_right_y],
-                    self.probs[index] * np.ones_like(res_im_min[top_left_x:bottom_right_x, top_left_y:bottom_right_y]))
-
-            res_im = np.exp((res_im - res_im_max - res_im_min) / (number_of_times_pixel_in_patch-2))
+        # elif mode == "mean_median":
+        #     # drop lowest and highest probs for every pixel, store them separately and remove from sum
+        #     # this does not help at all
+        #     stride = self.boxes[1, 1] - self.boxes[0, 1]
+        #     patch_width = self.boxes[0, 2] - self.boxes[0, 0] #todo this is for square patches only now
+        #     res_im_max = np.zeros(self.original_2dimage_shape,
+        #                       dtype=np.float)
+        #     res_im_min = np.ones(self.original_2dimage_shape,
+        #                       dtype=np.float)
+        #     number_of_times_pixel_in_patch = int((patch_width / stride) ** 2)
+        #     for (index, borders) in enumerate(tqdm(self.boxes)):
+        #         top_left_x, top_left_y, bottom_right_x, bottom_right_y = borders
+        #         res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y] \
+        #             = res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y] \
+        #               + np.log(self.probs[index] * np.ones_like(res_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y]))
+        #         res_im_max[top_left_x:bottom_right_x, top_left_y:bottom_right_y] = np.maximum(
+        #             res_im_max[top_left_x:bottom_right_x, top_left_y:bottom_right_y],
+        #             self.probs[index] * np.ones_like(res_im_max[top_left_x:bottom_right_x, top_left_y:bottom_right_y]))
+        #         res_im_min[top_left_x:bottom_right_x, top_left_y:bottom_right_y] = np.minimum(
+        #             res_im_min[top_left_x:bottom_right_x, top_left_y:bottom_right_y],
+        #             self.probs[index] * np.ones_like(res_im_min[top_left_x:bottom_right_x, top_left_y:bottom_right_y]))
+        #
+        #     res_im = np.exp((res_im - res_im_max - res_im_min) / (number_of_times_pixel_in_patch-2))
 
         return res_im

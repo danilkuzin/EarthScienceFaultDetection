@@ -2,7 +2,7 @@ from src.DataPreprocessor.data_preprocessor import DataPreprocessor, FeatureValu
 import numpy as np
 from PIL import Image
 
-
+#todo this became too repetitive
 class DataVisualiser:
     def __init__(self, preprocessor: DataPreprocessor):
         self.preprocessor = preprocessor
@@ -98,4 +98,26 @@ class DataVisualiser:
     def get_panchromatic_with_features_mask(self, opacity=60):
         features_map = self.get_features_map_transparent(opacity)
         orig_im = self.get_panchromatic().convert('RGBA')
+        return Image.alpha_composite(orig_im, features_map)
+
+    def get_curve(self):
+        orig = self.preprocessor.channels['curve'].astype(np.float)
+        orig = orig - np.min(orig)
+        orig = orig * 255. / np.max(orig)
+        return Image.fromarray(orig.astype(np.uint8))
+
+    def get_curve_with_features_mask(self, opacity=60):
+        features_map = self.get_features_map_transparent(opacity)
+        orig_im = self.get_curve().convert('RGBA')
+        return Image.alpha_composite(orig_im, features_map)
+
+    def get_erosion(self):
+        orig = self.preprocessor.channels['erosion'].astype(np.float)
+        orig = orig - np.min(orig)
+        orig = orig * 255. / np.max(orig)
+        return Image.fromarray(orig.astype(np.uint8))
+
+    def get_erosion_with_features_mask(self, opacity=60):
+        features_map = self.get_features_map_transparent(opacity)
+        orig_im = self.get_erosion().convert('RGBA')
         return Image.alpha_composite(orig_im, features_map)
