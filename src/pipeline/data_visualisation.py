@@ -15,9 +15,12 @@ def visualise(datasets, num_patches, patch_size, bands, plot_distributions):
     np.random.seed(1)
     tf.set_random_seed(2)
 
-    datasets = [global_params.data_preprocessor_generators_train[i] for i in datasets]
-    for data_preprocessor_generator in datasets:
-        data_preprocessor = data_preprocessor_generator()
+    datasets = [global_params.data_preprocessor_generators[i] for i in datasets]
+    for d_gen_ind, data_preprocessor_generator in enumerate(datasets):
+        if datasets[d_gen_ind] in global_params.trainable:
+            data_preprocessor = data_preprocessor_generator(Mode.TRAIN)
+        else:
+            data_preprocessor = data_preprocessor_generator(Mode.TEST)
         output_path = data_preprocessor.data_dir + "/visualisation/"
         pathlib.Path(output_path).mkdir(exist_ok=True)
         data_visualiser = DataVisualiser(data_preprocessor)

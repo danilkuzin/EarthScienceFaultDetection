@@ -1,7 +1,9 @@
 import numpy as np
 import tensorflow as tf
 
-from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5, cnn_150x150x3, cnn_150x150x1
+from src.DataPreprocessor.data_preprocessor import Mode
+from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5, cnn_150x150x3, cnn_150x150x1, \
+    cnn_150x150x12, cnn_150x150x11, cnn_150x150x4
 from src.LearningKeras.train import KerasTrainer
 from src.pipeline import global_params
 from src.postprocessing.postprocessor import PostProcessor
@@ -15,8 +17,14 @@ def predict(models_folder, ensemble_size, classes, channels, heatmap_mode="max",
     if classes == 3:
         model_generator = lambda: cnn_150x150x5_3class()
     elif classes == 2:
-        if len(channels) == 5:
+        if len(channels) == 12:
+            model_generator = lambda: cnn_150x150x12()
+        elif len(channels) == 11:
+            model_generator = lambda: cnn_150x150x11()
+        elif len(channels) == 5:
             model_generator = lambda: cnn_150x150x5()
+        elif len(channels) == 4:
+            model_generator = lambda: cnn_150x150x4()
         elif len(channels) == 3:
             model_generator = lambda: cnn_150x150x3()
         elif len(channels) == 1:
@@ -31,8 +39,8 @@ def predict(models_folder, ensemble_size, classes, channels, heatmap_mode="max",
 
     trainer.load(input_path=models_folder)
 
-    for (preprocessor_ind, data_preprocessor_generator) in enumerate(global_params.data_preprocessor_generators_test):
-        data_preprocessor = data_preprocessor_generator()
+    for (preprocessor_ind, data_preprocessor_generator) in enumerate(global_params.data_preprocessor_generators):
+        data_preprocessor = data_preprocessor_generator(Mode.TEST)
         boxes, probs = trainer.apply_for_sliding_window(
             data_preprocessor=data_preprocessor, patch_size=(150, 150), stride=stride, batch_size=batch_size, channels=channels)
         original_2dimage_shape = (data_preprocessor.get_data_shape()[0], data_preprocessor.get_data_shape()[1])

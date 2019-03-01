@@ -27,12 +27,24 @@ print("training on datasets: {}".format(args.train_datasets_numbers))
 #     output_path="2class_training_trained_models_12_5ens/"
 # )
 
+# train(
+#     train_datasets=args.train_datasets_numbers,
+#     class_probabilities="two-class",
+#     batch_size=10,
+#     patch_size=(150, 150),
+#     channels=[11],
+#     ensemble_size=1,
+#     output_path="feature_erosion/"
+# )
+
 train(
     train_datasets=args.train_datasets_numbers,
     class_probabilities="two-class",
     batch_size=10,
     patch_size=(150, 150),
-    channels=[11],
+    channels=[3, 6, 10, 11],
     ensemble_size=1,
-    output_path="feature_erosion/"
+    output_path="feature_3_6_10_11/",
+    steps_per_epoch=50,
+    epochs=5
 )

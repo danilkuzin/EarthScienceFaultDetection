@@ -78,11 +78,11 @@ class DataPreprocessor:
         self.channels['swir2'] = self.data_io_backend.load_nir(path=self.data_dir + self.filename_prefix + '_SWIR2.tif')
         self.channels['panchromatic'] = self.data_io_backend.load_panchromatic(path=self.data_dir + self.filename_prefix + '_P.tif')
         try:
-            self.channels['curve'] = self.data_io_backend.load_curve(path=self.data_dir + self.filename_prefix + '_curve.tif')
+            self.channels['curve'] = self.data_io_backend.load_curve(path=self.data_dir + self.filename_prefix + '_curv.tif')
         except FileNotFoundError as err:
             logging.warning("Error: {}".format(err))
         try:
-            self.channels['erosion'] = self.data_io_backend.load_erosion(path=self.data_dir + self.filename_prefix + '_erosion.tif')
+            self.channels['erosion'] = self.data_io_backend.load_erosion(path=self.data_dir + self.filename_prefix + '_erode.tif')
         except FileNotFoundError as err:
             logging.warning("Error: {}".format(err))
         self.__check_crop_data()

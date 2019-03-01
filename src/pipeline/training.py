@@ -10,35 +10,40 @@ from src.DataPreprocessor.PatchesOutputBackend.in_memory_backend import InMemory
 from src.DataPreprocessor.data_generator import DataGenerator
 from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Mode
 from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5_2class_3convolutions, cnn_150x150x5, \
-    cnn_150x150x3, cnn_150x150x1
+    cnn_150x150x3, cnn_150x150x1, cnn_150x150x12, cnn_150x150x11, cnn_150x150x4
 from src.LearningKeras.train import KerasTrainer
 
 # use Pipeline instead
+from src.pipeline import global_params
+
+
 def train(train_datasets: List[int], class_probabilities: str, batch_size: int, patch_size: Tuple[int, int],
-          channels: List[int], ensemble_size: int, train_lib="keras", output_path=""):
+          channels: List[int], ensemble_size: int, train_lib="keras", output_path="", steps_per_epoch=50, epochs=5):
     np.random.seed(1)
     tf.set_random_seed(2)
 
     preprocessors = []
     if 1 in train_datasets:
-        preprocessors.append(DataPreprocessor(
-            data_dir="../data/Region 1 - Lopukangri/",
-            data_io_backend=GdalBackend(),
-            patches_output_backend=InMemoryBackend(),
-            filename_prefix="tibet",
-            mode=Mode.TRAIN,
-            seed=1)
-        )
-
+        preprocessors.append(global_params.data_preprocessor_generators[0](Mode.TRAIN))
+    #     preprocessors.append(DataPreprocessor(
+    #         data_dir="../data/Region 1 - Lopukangri/",
+    #         data_io_backend=GdalBackend(),
+    #         patches_output_backend=InMemoryBackend(),
+    #         filename_prefix="lopu",
+    #         mode=Mode.TRAIN,
+    #         seed=1)
+    #     )
+    #
     if 2 in train_datasets:
-        preprocessors.append(DataPreprocessor(
-            data_dir="../data/Region 2 - Muga Puruo/",
-            data_io_backend=GdalBackend(),
-            patches_output_backend=InMemoryBackend(),
-            filename_prefix="mpgr",
-            mode=Mode.TRAIN,
-            seed=1)
-        )
+        preprocessors.append(global_params.data_preprocessor_generators[1](Mode.TRAIN))
+    #     preprocessors.append(DataPreprocessor(
+    #         data_dir="../data/Region 2 - Muga Puruo/",
+    #         data_io_backend=GdalBackend(),
+    #         patches_output_backend=InMemoryBackend(),
+    #         filename_prefix="mpgr",
+    #         mode=Mode.TRAIN,
+    #         seed=1)
+    #     )
 
     data_generator = DataGenerator(preprocessors=preprocessors)
 
@@ -60,8 +65,14 @@ def train(train_datasets: List[int], class_probabilities: str, batch_size: int, 
                                                    class_probabilities=class_probabilities_int,
                                                    patch_size=patch_size,
                                                    channels=np.array(channels))
-        if len(channels) == 5:
+        if len(channels) == 12:
+            model_generator = lambda: cnn_150x150x12()
+        elif len(channels) == 11:
+            model_generator = lambda: cnn_150x150x11()
+        elif len(channels) == 5:
             model_generator = lambda: cnn_150x150x5()
+        elif len(channels) == 4:
+            model_generator = lambda: cnn_150x150x4()
         elif len(channels) == 3:
             model_generator = lambda: cnn_150x150x3()
         elif len(channels) == 1:
@@ -74,7 +85,7 @@ def train(train_datasets: List[int], class_probabilities: str, batch_size: int, 
         raise Exception('Not implemented')
 
     #todo experiment with regularisation
-    history_arr = trainer.train(steps_per_epoch=50, epochs=20, train_generator=joint_generator)
+    history_arr = trainer.train(steps_per_epoch=steps_per_epoch, epochs=epochs, train_generator=joint_generator)
 
     pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
     trainer.save(output_path='{}trained_models_{}'.format(output_path, ''.join(str(i) for i in train_datasets)))

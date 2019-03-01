@@ -189,7 +189,6 @@ class GdalBackend(DataIOBackend):
         # dst_ds_2 = None
         # dst_ds = None
 
-        # #todo create colorbar in a separate png image
         cmap = plt.get_cmap('jet')
         rgba_img_faults = cmap(image)
         rgb_img_faults = np.delete(rgba_img_faults, 3, 2)
@@ -197,6 +196,7 @@ class GdalBackend(DataIOBackend):
         self.write_image(path, rgb_img_faults)
 
         im = plt.imshow(image)
-        plt.colorbar(im)  # Create the colorbar
-        plt.savefig('out.jpg')
+        plt.colorbar(im)
+        plt.savefig('{}.png'.format(path))
+        plt.close('all')
 
