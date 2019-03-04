@@ -110,3 +110,14 @@ data/
 *.tif
 *.tfrecord
 train_on_2_regions.zip
+scripts/2class_training_trained_models_12_5ens.zip
+scripts/Model accuracy_0.png
+scripts/Model accuracy_1.png
+scripts/Model accuracy_2.png
+scripts/Model accuracy_3.png
+scripts/Model accuracy_4.png
+scripts/Model loss_0.png
+scripts/Model loss_1.png
+scripts/Model loss_2.png
+scripts/Model loss_3.png
+scripts/Model loss_4.png
