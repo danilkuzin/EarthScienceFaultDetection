@@ -19,7 +19,7 @@ img_test, lbl_test = test_data_preprocessor.get_sample_2class_lookalikes_with_no
                                                                                           channels=np.array([0, 1, 2, 3, 4]))
 test_lbls = np.argmax(lbl_test, axis=1)
 
-quality_train = []
+quality_test = []
 model = cnn_150x150x5()
 
 train_generator = train_data_preprocessor.train_generator_2class_lookalikes_with_nonfaults(batch_size=50,
@@ -37,7 +37,7 @@ for ep in range(num_epochs):
                               use_multiprocessing=False)
     pred_lbls = np.argmax(model.predict(img_test), axis=1)
 
-    quality_train.append(np.sum(pred_lbls == test_lbls)/lbl_test.shape[0])
+    quality_test.append(np.sum(pred_lbls == test_lbls)/lbl_test.shape[0])
 
-    print(quality_train)
+    print(quality_test)
 
