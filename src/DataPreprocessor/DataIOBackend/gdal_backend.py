@@ -195,7 +195,7 @@ class GdalBackend(DataIOBackend):
         rgb_img_faults=(rgb_img_faults[:, :, :3] * 255).astype(np.uint8)
         self.write_image(path, rgb_img_faults)
 
-        im = plt.imshow(image)
+        im = plt.imshow(image, cmap=cmap)
         plt.colorbar(im)
         plt.savefig('{}.png'.format(path))
         plt.close('all')
