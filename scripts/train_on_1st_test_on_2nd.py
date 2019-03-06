@@ -13,19 +13,20 @@ test_data_preprocessor = global_params.data_preprocessor_generators[1](Mode.TRAI
 
 test_size = 500
 
+channels = np.array([0, 1, 2])
 img_test, lbl_test = test_data_preprocessor.get_sample_2class_lookalikes_with_nonfaults(batch_size=test_size,
                                                                                           class_probabilities=np.array([0.5, 0.25, 0.25]),
                                                                                           patch_size=(150, 150),
-                                                                                          channels=np.array([0, 1, 2, 3, 4]))
+                                                                                          channels=channels)
 test_lbls = np.argmax(lbl_test, axis=1)
 
 quality_test = []
-model = cnn_150x150x5()
+model = cnn_150x150x3()
 
 train_generator = train_data_preprocessor.train_generator_2class_lookalikes_with_nonfaults(batch_size=50,
                                                                                            class_probabilities=np.array([0.5, 0.25, 0.25]),
                                                                                            patch_size=(150, 150),
-                                                                                           channels=np.array([0, 1, 2, 3, 4]))
+                                                                                           channels=channels)
 num_epochs = 50
 for ep in range(num_epochs):
     model.fit_generator(generator=train_generator,
@@ -39,5 +40,6 @@ for ep in range(num_epochs):
 
     quality_test.append(np.sum(pred_lbls == test_lbls)/lbl_test.shape[0])
 
-    print(quality_test)
+with open(f"test_quality_{''.join(str(i) for i in channels.tolist())}.txt", "w") as text_file:
+    print(f"Channels: {channels}, Quality: {quality_test} \n", file=text_file)
 

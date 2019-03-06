@@ -33,6 +33,7 @@ class FeatureValue(Enum):
 
 # todo consider creating another pipeline - that takes patches and outputs lines, not single probabilities. U-nets?
 # todo add test/validation
+# todo consider replacing rgb with 3 separate channels
 class DataPreprocessor:
     def __init__(self, data_dir: str, data_io_backend: DataIOBackend, patches_output_backend: PatchesOutputBackend,
                  filename_prefix: str, mode: Mode, seed: int):
