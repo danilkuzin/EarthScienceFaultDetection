@@ -89,14 +89,14 @@ def _plot_samples(num_patches, patch_size, bands, data_preprocessor, output_path
             plt.close()
 
 
-def visualise(datasets, num_patches, patch_size, bands, plot_distributions):
+def visualise(datasets_ind, num_patches, patch_size, bands, plot_distributions):
     np.random.seed(1)
     tf.set_random_seed(2)
 
-    datasets = [global_params.data_preprocessor_generators[i] for i in datasets]
+    datasets = [global_params.data_preprocessor_generators[i] for i in datasets_ind]
     for d_gen_ind, data_preprocessor_generator in enumerate(datasets):
         logging.info("init data preprocessors")
-        if datasets[d_gen_ind] in global_params.trainable:
+        if datasets_ind[d_gen_ind] in global_params.trainable:
             data_preprocessor = data_preprocessor_generator(Mode.TRAIN)
         else:
             data_preprocessor = data_preprocessor_generator(Mode.TEST)

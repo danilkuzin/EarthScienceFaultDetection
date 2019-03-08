@@ -1,3 +1,8 @@
+from PIL import Image, ImageDraw
+from matplotlib.path import Path
+import matplotlib.patches as patches
+import re
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 from src.DataPreprocessor.DataIOBackend.backend import DataIOBackend
@@ -6,6 +11,8 @@ import gdal
 import logging
 
 import matplotlib.pyplot as plt
+
+from src.DataPreprocessor.data_preprocessor import FeatureValue
 
 
 class GdalBackend(DataIOBackend):
@@ -22,7 +29,12 @@ class GdalBackend(DataIOBackend):
         return self.__load_1d_raster(path)
 
     def load_slope(self, path: str) -> np.array:
-        return self.__load_1d_raster(path)
+        t = self.__load_1d_raster(path)
+        t[0, :] = np.zeros_like(t[0, :])
+        t[-1, :] = np.zeros_like(t[-1, :])
+        t[:, 0] = np.zeros_like(t[:, 0])
+        t[:, -1] = np.zeros_like(t[:, -1])
+        return t
 
     def load_optical(self, path_r: str, path_g: str, path_b: str) -> np.array:
         opt_string = '-ot Byte -of GTiff -scale 0 65535 0 255'
@@ -199,4 +211,73 @@ class GdalBackend(DataIOBackend):
         plt.colorbar(im)
         plt.savefig('{}.png'.format(path))
         plt.close('all')
+
+    def append_additional_features(self, path, features):
+        path = Path(path)
+        if not path.is_dir():
+            logging.warning("additional_features are not specified")
+            return features
+
+        gt = self.gdal_options['geotransform']
+        lookalike_files = list(path.glob('Look_Alike_*.kml.utm'))
+        logging.info(f"found lookalike files: {lookalike_files}")
+        lookalike_patches = []
+        for lookalike_file in lookalike_files:
+            with open(str(lookalike_file)) as f:
+                content = f.readlines()
+
+            coords = []
+            for line in content:
+                rr = re.findall("[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", line)
+                if len(rr) == 3:
+                    coords.append(list(map(float, rr)))
+
+            pixel_coords = []
+
+            for coord in coords:
+                Xpixel = int((coord[0] - gt[0]) / gt[1])
+                Ypixel = int((coord[1] - gt[3]) / gt[5])
+                pixel_coords.append((Xpixel, Ypixel))
+
+            lookalike_patches.append(pixel_coords)
+        logging.info(f"extracted lookalike patches: {lookalike_patches}")
+
+        nonfault_files = list(path.glob('Not_Fault_*.kml.utm'))
+        logging.info(f"found nonfault files: {nonfault_files}")
+        nonfault_patches = []
+        for nonfault_file in nonfault_files:
+            with open(str(nonfault_file)) as f:
+                content = f.readlines()
+
+            coords = []
+            for line in content:
+                rr = re.findall("[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", line)
+                if len(rr) == 3:
+                    coords.append(list(map(float, rr)))
+
+            pixel_coords = []
+
+            for coord in coords:
+                Xpixel = int((coord[0] - gt[0]) / gt[1])
+                Ypixel = int((coord[1] - gt[3]) / gt[5])
+                pixel_coords.append((Xpixel, Ypixel))
+
+            nonfault_patches.append(pixel_coords)
+        logging.info(f"extracted nonfault patches: {nonfault_patches}")
+
+        #todo we assign only normal labelling here, as they are patches, not lines and we cn't sample from patches for
+        # lookalikes - then the probability of important labelled lines will be low
+        for patch in lookalike_patches:
+            img = Image.new('L', (features.shape[0], features.shape[1]), 0)
+            ImageDraw.Draw(img).polygon(patch, outline=1, fill=1)
+            mask = np.array(img)
+            features[mask == 1] = FeatureValue.NONFAULT.value
+
+        for patch in nonfault_patches:
+            img = Image.new('L', (features.shape[0], features.shape[1]), 0)
+            ImageDraw.Draw(img).polygon(patch, outline=1, fill=1)
+            mask = np.array(img)
+            features[mask == 1] = FeatureValue.NONFAULT.value
+
+        return features
 

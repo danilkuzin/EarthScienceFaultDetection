@@ -156,6 +156,50 @@ def cnn_150x150x3(lr=1e-4):
 
     return cnn_model
 
+def alexnet(lr=1e-4):
+    #from https://github.com/tensorflow/tensorflow/blob/master/tensorflow/contrib/slim/python/slim/nets/alexnet.py and
+    # https: // github.com / pytorch / vision / blob / master / torchvision / models / alexnet.py
+    model = tf.keras.models.Sequential()
+    model.add(tf.keras.layers.InputLayer(input_shape=(224, 224, 3)))
+    model.add(tf.keras.layers.Conv2D(filters=64, kernel_size=[11, 11], strides=4, padding='valid'))
+    model.add(tf.keras.layers.ReLU())
+    model.add(tf.keras.layers.MaxPooling2D(pool_size=[3, 3], strides=2))
+    model.add(tf.keras.layers.Conv2D(filters=192, kernel_size=[5, 5]))
+    model.add(tf.keras.layers.ReLU())
+    model.add(tf.keras.layers.MaxPooling2D(pool_size=[3, 3], strides=2))
+    model.add(tf.keras.layers.Conv2D(filters=384, kernel_size=[3, 3]))
+    model.add(tf.keras.layers.ReLU())
+    model.add(tf.keras.layers.Conv2D(filters=256, kernel_size=[3, 3]))
+    model.add(tf.keras.layers.ReLU())
+    model.add(tf.keras.layers.Conv2D(filters=256, kernel_size=[3, 3]))
+    model.add(tf.keras.layers.ReLU())
+    model.add(tf.keras.layers.MaxPooling2D(pool_size=[3, 3], strides=2))
+
+    model.add(tf.keras.layers.Flatten())
+    model.add(tf.keras.layers.Dense(units=4096))
+    model.add(tf.keras.layers.ReLU())
+    model.add(tf.keras.layers.Dropout(0.5))
+    model.add(tf.keras.layers.Dense(units=4096))
+    model.add(tf.keras.layers.ReLU())
+    model.add(tf.keras.layers.Dropout(0.5))
+    model.add(tf.keras.layers.Dense(2))
+    model.add(tf.keras.layers.Activation('softmax'))
+
+    # model.add(tf.keras.layers.Conv2D(filters=4096,  kernel_size=[5, 5], padding='valid'))
+    # model.add(tf.keras.layers.ReLU())
+    # model.add(tf.keras.layers.Dropout(rate=0.5))
+    # model.add(tf.keras.layers.Conv2D(filters=4096, kernel_size=[1, 1]))
+    # model.add(tf.keras.layers.ReLU())
+    # model.add(tf.keras.layers.Dropout(rate=0.5))
+    # model.add(tf.keras.layers.Conv2D(filters=2, kernel_size=[1, 1]))
+
+    adam = tf.keras.optimizers.Adam(lr=lr)
+
+    model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
+
+    return model
+
+
 def cnn_150x150x5_2class_3convolutions(lr=1e-4):
     cnn_model = tf.keras.models.Sequential()
     cnn_model.add(tf.keras.layers.InputLayer(input_shape=(150, 150, 5)))

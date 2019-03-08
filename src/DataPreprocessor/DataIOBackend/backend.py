@@ -60,3 +60,7 @@ class DataIOBackend:
     @abc.abstractmethod
     def load_erosion(self, path: str) -> np.array:
         pass
+
+    @abc.abstractmethod
+    def append_additional_features(self, path, features):
+        pass

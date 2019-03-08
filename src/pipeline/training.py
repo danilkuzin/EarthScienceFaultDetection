@@ -23,27 +23,8 @@ def train(train_datasets: List[int], class_probabilities: str, batch_size: int, 
     tf.set_random_seed(2)
 
     preprocessors = []
-    if 1 in train_datasets:
-        preprocessors.append(global_params.data_preprocessor_generators[0](Mode.TRAIN))
-    #     preprocessors.append(DataPreprocessor(
-    #         data_dir="../data/Region 1 - Lopukangri/",
-    #         data_io_backend=GdalBackend(),
-    #         patches_output_backend=InMemoryBackend(),
-    #         filename_prefix="lopu",
-    #         mode=Mode.TRAIN,
-    #         seed=1)
-    #     )
-    #
-    if 2 in train_datasets:
-        preprocessors.append(global_params.data_preprocessor_generators[1](Mode.TRAIN))
-    #     preprocessors.append(DataPreprocessor(
-    #         data_dir="../data/Region 2 - Muga Puruo/",
-    #         data_io_backend=GdalBackend(),
-    #         patches_output_backend=InMemoryBackend(),
-    #         filename_prefix="mpgr",
-    #         mode=Mode.TRAIN,
-    #         seed=1)
-    #     )
+    for ind in train_datasets:
+        preprocessors.append(global_params.data_preprocessor_generators[ind](Mode.TRAIN))
 
     data_generator = DataGenerator(preprocessors=preprocessors)
 
@@ -56,9 +37,9 @@ def train(train_datasets: List[int], class_probabilities: str, batch_size: int, 
         if train_lib == "keras":
             trainer = KerasTrainer(model_generator=lambda: cnn_150x150x5_3class(),
                                    ensemble_size=ensemble_size)
-        elif train_lib == "tensorflow":
-            trainer = KerasTrainer(model_generator=lambda: cnn_150x150x5_3class(),
-                                   ensemble_size=ensemble_size)
+        # elif train_lib == "tensorflow":
+        #     trainer = KerasTrainer(model_generator=lambda: cnn_150x150x5_3class(),
+        #                            ensemble_size=ensemble_size)
     elif class_probabilities == "two-class":
         class_probabilities_int = np.array([0.5, 0.25, 0.25])
         joint_generator = data_generator.generator_2class_lookalikes_with_nonfaults(batch_size=batch_size,
