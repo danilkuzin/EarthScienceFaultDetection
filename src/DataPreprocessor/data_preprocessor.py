@@ -119,6 +119,10 @@ class DataPreprocessor:
              np.expand_dims(self.normalised_channels['erosion'][left_border:right_border, top_border:bottom_border], axis=2)),
             axis=2)
 
+    def get_full_image(self):
+        full_shape = self.get_data_shape()
+        return self.concatenate_full_patch(left_border=0, right_border=full_shape[0], top_border=0, bottom_border=full_shape[1])
+
     def sample_fault_patch(self, patch_size):
         """if an image patch contains fault bit in the center area than assign it as a fault - go through fault lines
         and sample patches"""

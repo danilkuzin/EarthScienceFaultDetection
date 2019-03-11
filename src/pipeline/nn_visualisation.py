@@ -1,8 +1,8 @@
-import tensorflow as tf
-from tf.keras import models
-from tf.keras import backend as K
+from tensorflow.python.keras import models
+from tensorflow.python.keras import backend as K
 import numpy as np
 import matplotlib.pyplot as plt
+
 
 class NnVisualisation:
     """
@@ -98,7 +98,7 @@ class NnVisualisation:
             iterate = K.function([self.model.input], [loss, grads])
 
             # We start from a gray image with some noise
-            input_img_data = np.random.random((1, size, size, 3)) * 20 + 128.
+            input_img_data = np.random.random((1, size, size, 5))
 
             # Run gradient ascent for 40 steps
             step = 1.
@@ -109,17 +109,17 @@ class NnVisualisation:
             img = input_img_data[0]
             return deprocess_image(img)
 
-        for layer_name in ['block1_conv1', 'block2_conv1', 'block3_conv1', 'block4_conv1']:
-            size = 64
+        for layer_name in ['conv2d', 'conv2d_1']:
+            size = 150
             margin = 5
 
             # This a empty (black) image where we will store our results.
-            results = np.zeros((8 * size + 7 * margin, 8 * size + 7 * margin, 3))
+            results = np.zeros((4 * size + 3 * margin, 4 * size + 3 * margin, 5))
 
-            for i in range(8):  # iterate over the rows of our results grid
-                for j in range(8):  # iterate over the columns of our results grid
+            for i in range(4):  # iterate over the rows of our results grid
+                for j in range(4):  # iterate over the columns of our results grid
                     # Generate the pattern for filter `i + (j * 8)` in `layer_name`
-                    filter_img = generate_pattern(layer_name, i + (j * 8), size=size)
+                    filter_img = generate_pattern(layer_name, i + (j * 4), size=size)
 
                     # Put the result in the square `(i, j)` of the results grid
                     horizontal_start = i * size + i * margin
@@ -130,16 +130,22 @@ class NnVisualisation:
 
             # Display the results grid
             plt.figure(figsize=(20, 20))
-            plt.imshow(results)
+            plt.imshow(results[:, :, 0:3])
+            plt.show()
+            plt.figure(figsize=(20, 20))
+            plt.imshow(results[:,:,3])
+            plt.show()
+            plt.figure(figsize=(20, 20))
+            plt.imshow(results[:,:,4])
             plt.show()
 
     def visualise_heatmaps_activations(self, image):
-        # This is the "african elephant" entry in the prediction vector
-        african_elephant_output = self.model.output[:, 386]
+        # This is the "fault" entry in the prediction vector
+        african_elephant_output = self.model.output[:, 0]
 
-        # The is the output feature map of the `block5_conv3` layer,
+        # The is the output feature map of the `conv2d_1` layer,
         # the last convolutional layer in VGG16
-        last_conv_layer = self.model.get_layer('block5_conv3')
+        last_conv_layer = self.model.get_layer('conv2d_1')
 
         # This is the gradient of the "african elephant" class with regard to
         # the output feature map of `block5_conv3`
@@ -160,7 +166,7 @@ class NnVisualisation:
 
         # We multiply each channel in the feature map array
         # by "how important this channel is" with regard to the elephant class
-        for i in range(512):
+        for i in range(64):
             conv_layer_output_value[:, :, i] *= pooled_grads_value[i]
 
         # The channel-wise mean of the resulting feature map

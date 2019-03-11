@@ -1,3 +1,8 @@
+## Introduction
+
+We consider the deep learning approach for geological faults detection. 
+
+The previous works are
 ### Useful 
 * [Seismic image processing for geologic faults](https://github.com/dhale/ipf)
 Sources for synthetic data generation
