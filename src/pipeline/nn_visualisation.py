@@ -63,7 +63,7 @@ class NnVisualisation:
             plt.grid(False)
             plt.imshow(display_grid, aspect='auto', cmap='viridis')
 
-        plt.show()
+            plt.savefig(f"intermediate_activations_{layer_name}.svg")
 
     def visualise_convnet_filters(self):
 
@@ -129,15 +129,15 @@ class NnVisualisation:
                     results[horizontal_start: horizontal_end, vertical_start: vertical_end, :] = filter_img
 
             # Display the results grid
-            plt.figure(figsize=(20, 20))
+            plt.figure()
             plt.imshow(results[:, :, 0:3])
-            plt.show()
-            plt.figure(figsize=(20, 20))
+            plt.savefig(f"convnet_filters_rgb_{layer_name}.svg")
+            plt.figure()
             plt.imshow(results[:,:,3])
-            plt.show()
-            plt.figure(figsize=(20, 20))
+            plt.savefig(f"convnet_filters_elevation_{layer_name}.svg")
+            plt.figure()
             plt.imshow(results[:,:,4])
-            plt.show()
+            plt.savefig(f"convnet_filters_slope_{layer_name}.svg")
 
     def visualise_heatmaps_activations(self, image):
         # This is the "fault" entry in the prediction vector
@@ -176,7 +176,7 @@ class NnVisualisation:
         heatmap = np.maximum(heatmap, 0)
         heatmap /= np.max(heatmap)
         plt.matshow(heatmap)
-        plt.show()
+        plt.savefig("heatmaps_activations.svg")
 
 
 

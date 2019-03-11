@@ -27,6 +27,6 @@ ax[2].imshow(image[:,:,4])
 plt.show()
 
 image = np.expand_dims(image, axis=0)
-#nn_visualisation.visualise_intermediate_activations(image)
-#nn_visualisation.visualise_convnet_filters()
+nn_visualisation.visualise_intermediate_activations(image)
+nn_visualisation.visualise_convnet_filters()
 nn_visualisation.visualise_heatmaps_activations(image)

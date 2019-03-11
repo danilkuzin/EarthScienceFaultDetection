@@ -11,7 +11,8 @@ from src.DataPreprocessor.data_generator import DataGenerator
 from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Mode
 from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5_2class_3convolutions, cnn_150x150x5, \
     cnn_150x150x3, cnn_150x150x1, cnn_150x150x12, cnn_150x150x11, cnn_150x150x4
-from src.LearningKeras.train import KerasTrainer
+from src.LearningKeras.net_architecture2 import CnnModel150x150x5
+from src.LearningKeras.train2 import KerasTrainer
 
 # use Pipeline instead
 from src.pipeline import global_params
@@ -51,7 +52,7 @@ def train(train_datasets: List[int], class_probabilities: str, batch_size: int, 
         elif len(channels) == 11:
             model_generator = lambda: cnn_150x150x11()
         elif len(channels) == 5:
-            model_generator = lambda: cnn_150x150x5()
+            model_generator = CnnModel150x150x5
         elif len(channels) == 4:
             model_generator = lambda: cnn_150x150x4()
         elif len(channels) == 3:
