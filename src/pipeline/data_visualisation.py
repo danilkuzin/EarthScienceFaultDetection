@@ -74,7 +74,7 @@ def _plot_samples(num_patches, patch_size, bands, data_preprocessor, output_path
     for lbl in [FeatureValue.FAULT, FeatureValue.FAULT_LOOKALIKE, FeatureValue.NONFAULT]:
         patches = np.zeros((num_patches, patch_size[0], patch_size[1], bands))
         for i in range(num_patches):
-            patches[i] = data_preprocessor.sample_patch(label=lbl, patch_size=patch_size)
+            patches[i] = data_preprocessor.sample_patch(label=lbl.value, patch_size=patch_size)
 
         for i in range(num_patches):
             cur_patch = patches[i]
@@ -84,7 +84,7 @@ def _plot_samples(num_patches, patch_size, bands, data_preprocessor, output_path
             ax2.imshow(elevation)
             ax3.imshow(slope)
             f.tight_layout()
-            f.savefig(output_path + "examples_{}_{}.png".format(lbl.name, i))
+            f.savefig(output_path + f"examples_{lbl.name}_{i}.png")
             f.clf()
             plt.close()
 
