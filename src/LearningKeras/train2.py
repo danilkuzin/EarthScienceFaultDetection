@@ -3,7 +3,7 @@ from typing import Tuple, List
 
 import numpy as np
 from tqdm import trange, tqdm
-
+import logging
 from src.DataPreprocessor.data_preprocessor import DataPreprocessor
 import tensorflow as tf
 
@@ -15,24 +15,35 @@ class KerasTrainer:
 
     @staticmethod
     def loss(logits, labels):
-        return tf.losses.softmax_cross_entropy(onehot_labels=labels, logits=logits)
+        return tf.reduce_sum(tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=logits))
 
     def train(self, steps_per_epoch, epochs, train_generator):
-        history_arr = []
+
+        #dataset = tf.data.Dataset.from_generator(lambda: train_generator,
+        #                                         (tf.float32, tf.int32))
+        #iter = dataset.make_one_shot_iterator()
+
+        history_loss = []
         for i in range(self.ensemble_size):
             model = self.model_generator()
-            optimizer = tf.train.AdamOptimizer(0.001)
+            optimizer = tf.train.AdamOptimizer(0.00001)
             for epoch in range(epochs):
+                logging.warning(f"epoch:{epoch}")
                 for step in range(steps_per_epoch):
+                    #data = dataset.batch(batch_size=1)
                     images, labels = next(train_generator)
+                    images = tf.constant(images)
+                    labels = tf.constant(labels)
                     with tf.GradientTape() as tape:
                         logits = model(images)
                         loss_value = KerasTrainer.loss(logits, labels)
+                    logging.warning(f"cur loss:{loss_value.numpy()}")
+                    history_loss.append(loss_value.numpy())
                     grads = tape.gradient(loss_value, model.trainable_variables)
                     optimizer.apply_gradients(zip(grads, model.trainable_variables))
-                self.models.append(model)
-                history_arr.append(history)
-        return history_arr
+            self.models.append(model)
+
+        return history_loss
 
     def save(self, output_path):
         for i in range(self.ensemble_size):

@@ -11,7 +11,6 @@ class OpencvBackend(DataIOBackend):
         return elevation
 
     def load_slope(self, path: str) -> np.array:
-        # todo check why it produces None image
         cv2.imread(path, cv2.IMREAD_LOAD_GDAL)
         raise NotImplementedError("currently not supported")
 

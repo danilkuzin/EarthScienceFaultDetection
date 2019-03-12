@@ -1,0 +1,32 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[backend=biber]{biblatex}
+
+\addbibresource{references.bib}
+\begin{document}
+\title{Fault Detection}
+\author{Danil Kuzin}
+\date{January-March 2019}
+\maketitle
+
+\abstract
+This report presents the results of the work done for geological faults detection with deep learning methods.
+
+
+
+\section{Introduction}
+
+The relevant literature includes: training CNNs on synthetic and real seismic data for faults detection \cite{pochet2018seismic, araya2017automated, xiong2018seismic, chehrazi2013seismic, lu2018using}
+
+The other literature on detection from satellite images includes: detecting roads on pixel level from lots of satellite images and then denoising to get connected nets \cite{mnih2010learning},
+
+The potential extensions of this work can include synthetic data, that is described in \cite{hale2014}
+
+%* Works on lines detection:
+%  * [1](http://openaccess.thecvf.com/content_cvpr_2018/papers/LaLonde_ClusterNet_Detecting_Small_CVPR_2018_paper.pdf)
+%  * [2](https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Zhang_Cross-Scene_Crowd_Counting_2015_CVPR_paper.pdf)
+%  * [3](https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/Zhang_Single-Image_Crowd_Counting_CVPR_2016_paper.pdf)
+%  * [4](http://openaccess.thecvf.com/content_cvpr_2018/papers/Liu_DecideNet_Counting_Varying_CVPR_2018_paper.pdf)
+
+\printbibliography
+
+\end{document}

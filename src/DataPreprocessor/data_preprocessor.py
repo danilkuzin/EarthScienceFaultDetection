@@ -27,7 +27,6 @@ class FeatureValue(Enum):
 
 # todo consider creating another pipeline - that takes patches and outputs lines, not single probabilities. U-nets?
 # todo add test/validation
-# todo add additional features from polygons
 class DataPreprocessor:
     def __init__(self, data_dir: str, data_io_backend: DataIOBackend, patches_output_backend: PatchesOutputBackend,
                  filename_prefix: str, mode: Mode, seed: int):
@@ -198,7 +197,6 @@ class DataPreprocessor:
             raise NotImplementedError(f"class label {label}")
 
     def __normalise(self):
-        # todo var -> std
         self.normalised_channels['optical_rgb'] = self.channels['optical_rgb'].astype(np.float32) / 255. - 0.5
         self.normalised_channels['elevation'] = (self.channels['elevation'].astype(np.float32) - np.mean(
             self.channels['elevation'].astype(np.float32))) / np.std(self.channels['elevation'].astype(np.float32))

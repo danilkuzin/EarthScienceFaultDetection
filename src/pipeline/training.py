@@ -72,25 +72,25 @@ def train(train_datasets: List[int], class_probabilities: str, batch_size: int, 
     pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
     trainer.save(output_path='{}trained_models_{}'.format(output_path, ''.join(str(i) for i in train_datasets)))
 
-    for (hist_ind, history) in enumerate(history_arr):
-        plt.plot(history.history['acc'])
-        plt.plot(history.history['val_acc'])
-        plt.title('Model accuracy')
-        plt.ylabel('Accuracy')
-        plt.xlabel('Epoch')
-        plt.legend(['Train', 'Test'], loc='upper left')
-        plt.savefig("Model accuracy_{}.png".format(hist_ind))
-        plt.close()
-
-        # Plot training & validation loss values
-        plt.plot(history.history['loss'])
-        plt.plot(history.history['val_loss'])
-        plt.title('Model loss')
-        plt.ylabel('Loss')
-        plt.xlabel('Epoch')
-        plt.legend(['Train', 'Test'], loc='upper left')
-        plt.savefig("Model loss_{}.png".format(hist_ind))
-        plt.close()
+    # for (hist_ind, history) in enumerate(history_arr):
+    #     plt.plot(history.history['acc'])
+    #     plt.plot(history.history['val_acc'])
+    #     plt.title('Model accuracy')
+    #     plt.ylabel('Accuracy')
+    #     plt.xlabel('Epoch')
+    #     plt.legend(['Train', 'Test'], loc='upper left')
+    #     plt.savefig("Model accuracy_{}.png".format(hist_ind))
+    #     plt.close()
+    #
+    #     # Plot training & validation loss values
+    #     plt.plot(history.history['loss'])
+    #     plt.plot(history.history['val_loss'])
+    #     plt.title('Model loss')
+    #     plt.ylabel('Loss')
+    #     plt.xlabel('Epoch')
+    #     plt.legend(['Train', 'Test'], loc='upper left')
+    #     plt.savefig("Model loss_{}.png".format(hist_ind))
+    #     plt.close()
 
 
 

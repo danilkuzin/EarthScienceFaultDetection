@@ -19,7 +19,6 @@ class PillowBackend(DataIOBackend):
         return self.__load_1d_raster(path)
 
     def load_optical(self, path_r: str, path_g: str, path_b: str) -> np.array:
-        # todo check this
         raise NotImplementedError("currently not supported")
 
     def load_features(self, path: str) -> np.array:

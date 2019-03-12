@@ -38,7 +38,6 @@ class GdalBackend(DataIOBackend):
 
     def load_optical(self, path_r: str, path_g: str, path_b: str) -> np.array:
         opt_string = '-ot Byte -of GTiff -scale 0 65535 0 255'
-        # todo check how to remove tmp file and replace with ''
         dataset_r = gdal.Translate(NamedTemporaryFile(delete=False).name, gdal.Open(path_r, gdal.GA_ReadOnly),
                                    options=opt_string)
         optical_r = np.array(dataset_r.ReadAsArray())
