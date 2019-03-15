@@ -29,7 +29,7 @@ class FeatureValue(Enum):
 # todo add test/validation
 class DataPreprocessor:
     def __init__(self, data_dir: str, data_io_backend: DataIOBackend, patches_output_backend: PatchesOutputBackend,
-                 filename_prefix: str, mode: Mode, seed: int):
+                 mode: Mode, seed: int):
         np.random.seed(seed)
         self.data_dir = data_dir
         self.channels = dict(elevation=None, slope=None, optical_rgb=None, nir=None, ir=None, swir1=None, swir2=None,
@@ -37,7 +37,6 @@ class DataPreprocessor:
         self.normalised_channels = dict(elevation=None, slope=None, optical_rgb=None, nir=None, ir=None, swir1=None,
                                         swir2=None, panchromatic=None, curve=None, erosion=None)
         self.features = None
-        self.filename_prefix = filename_prefix
         self.mode = mode
         self.data_io_backend = data_io_backend
         self.patches_output_backend = patches_output_backend
@@ -61,28 +60,57 @@ class DataPreprocessor:
 
     def __load(self):
         logging.info('loading...')
-        self.channels['elevation'] = self.data_io_backend.load_elevation(path=self.data_dir + self.filename_prefix + '_elev.tif')
-        self.channels['slope'] = self.data_io_backend.load_slope(path=self.data_dir + self.filename_prefix + '_slope.tif')
-        self.channels['optical_rgb'] = self.data_io_backend.load_optical(path_r=self.data_dir + self.filename_prefix + '_R.tif',
-                                                             path_g=self.data_dir + self.filename_prefix + '_G.tif',
-                                                             path_b=self.data_dir + self.filename_prefix + '_B.tif')
-        self.channels['nir'] = self.data_io_backend.load_nir(path=self.data_dir + self.filename_prefix + '_NIR.tif')
-        self.channels['ir'] = self.data_io_backend.load_nir(path=self.data_dir + self.filename_prefix + '_IR.tif')
-        self.channels['swir1'] = self.data_io_backend.load_nir(path=self.data_dir + self.filename_prefix + '_SWIR1.tif')
-        self.channels['swir2'] = self.data_io_backend.load_nir(path=self.data_dir + self.filename_prefix + '_SWIR2.tif')
-        self.channels['panchromatic'] = self.data_io_backend.load_panchromatic(path=self.data_dir + self.filename_prefix + '_P.tif')
+        self.channels['elevation'] = self.data_io_backend.load_elevation(path=self.data_dir + 'elev.tif')
+        self.channels['slope'] = self.data_io_backend.load_slope(path=self.data_dir + 'slope.tif')
+        self.channels['optical_rgb'] = self.data_io_backend.load_optical(path_r=self.data_dir + 'r.tif',
+                                                             path_g=self.data_dir + 'g.tif',
+                                                             path_b=self.data_dir + 'b.tif')
         try:
-            self.channels['curve'] = self.data_io_backend.load_curve(path=self.data_dir + self.filename_prefix + '_curv.tif')
+            self.channels['nir'] = self.data_io_backend.load_nir(path=self.data_dir + 'nir.tif')
         except FileNotFoundError as err:
+            self.channels['nir'] = np.zeros_like(self.channels['elevation'])
             logging.warning("Error: {}".format(err))
+
         try:
-            self.channels['erosion'] = self.data_io_backend.load_erosion(path=self.data_dir + self.filename_prefix + '_erode.tif')
+            self.channels['ir'] = self.data_io_backend.load_ir(path=self.data_dir + 'o.tif')
         except FileNotFoundError as err:
+            self.channels['ir'] = np.zeros_like(self.channels['elevation'])
             logging.warning("Error: {}".format(err))
+
+        try:
+            self.channels['swir1'] = self.data_io_backend.load_swir1(path=self.data_dir + 'swir1.tif')
+        except FileNotFoundError as err:
+            self.channels['swir1'] = np.zeros_like(self.channels['elevation'])
+            logging.warning("Error: {}".format(err))
+
+        try:
+            self.channels['swir2'] = self.data_io_backend.load_swir2(path=self.data_dir + 'swir2.tif')
+        except FileNotFoundError as err:
+            self.channels['swir2'] = np.zeros_like(self.channels['elevation'])
+            logging.warning("Error: {}".format(err))
+
+        try:
+            self.channels['panchromatic'] = self.data_io_backend.load_panchromatic(path=self.data_dir + 'p.tif')
+        except FileNotFoundError as err:
+            self.channels['panchromatic'] = np.zeros_like(self.channels['elevation'])
+            logging.warning("Error: {}".format(err))
+
+        try:
+            self.channels['curve'] = self.data_io_backend.load_curve(path=self.data_dir + 'curv.tif')
+        except FileNotFoundError as err:
+            self.channels['curve'] = np.zeros_like(self.channels['elevation'])
+            logging.warning("Error: {}".format(err))
+
+        try:
+            self.channels['erosion'] = self.data_io_backend.load_erosion(path=self.data_dir + 'erode.tif')
+        except FileNotFoundError as err:
+            self.channels['erosion'] = np.zeros_like(self.channels['elevation'])
+            logging.warning("Error: {}".format(err))
+
         self.__check_crop_data()
 
         if self.mode == Mode.TRAIN:
-            self.features = self.data_io_backend.load_features(path=self.data_dir + 'feature_categories.tif')
+            self.features = self.data_io_backend.load_features(path=self.data_dir + 'features.tif')
             self.features = self.data_io_backend.append_additional_features(path=self.data_dir + 'additional_data/', features=self.features)
             self.__check_crop_features()
         logging.info('loaded')
@@ -144,14 +172,17 @@ class DataPreprocessor:
     def sample_fault_lookalike_patch(self, patch_size):
         """if an image patch contains fault lookalike bit in the center area than assign it as a fault - go through
         fault lookalike lines and sample patches"""
-        fault_locations = np.argwhere(self.features == FeatureValue.FAULT_LOOKALIKE.value)
+        fault_lookalike_locations = np.argwhere(self.features == FeatureValue.FAULT_LOOKALIKE.value)
+        if fault_lookalike_locations.size == 0:
+            logging.warning("no lookalikes marked, sampling nonfaults instead")
+            return self.sample_nonfault_patch(patch_size)
         sampled = False
         left_border, right_border, top_border, bottom_border = None, None, None, None
         while not sampled:
-            samples_ind = np.random.randint(fault_locations.shape[0])
+            samples_ind = np.random.randint(fault_lookalike_locations.shape[0])
             try:
                 left_border, right_border, top_border, bottom_border = self.__borders_from_center(
-                    fault_locations[samples_ind], patch_size)
+                    fault_lookalike_locations[samples_ind], patch_size)
                 logging.info(
                     "extracting patch {}:{}, {}:{}".format(left_border, right_border, top_border, bottom_border))
                 sampled = True
@@ -163,6 +194,9 @@ class DataPreprocessor:
     def sample_nonfault_patch(self, patch_size):
         """if an image path contains only nonfault bits, than assign it as a non-fault"""
         nonfault_locations = np.argwhere(self.features == FeatureValue.NONFAULT.value)
+        if nonfault_locations.size == 0:
+            logging.warning("no nonfaults marked, sampling undefined instead")
+            return self.sample_undefined_patch(patch_size)
         sampled = False
         left_border, right_border, top_border, bottom_border = None, None, None, None
         while not sampled:
@@ -186,6 +220,35 @@ class DataPreprocessor:
                 sampled = False
         return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
 
+    def sample_undefined_patch(self, patch_size):
+        """if an image patch contains only undefined bits, than assign it as a undefined"""
+        undefined_locations = np.argwhere(self.features == FeatureValue.UNDEFINED.value)
+        if undefined_locations.size == 0:
+            logging.warning("no undefined marked")
+            raise Exception()
+        sampled = False
+        left_border, right_border, top_border, bottom_border = None, None, None, None
+        while not sampled:
+            samples_ind = np.random.randint(undefined_locations.shape[0])
+            try:
+                left_border, right_border, top_border, bottom_border = self.__borders_from_center(
+                    undefined_locations[samples_ind], patch_size)
+                logging.info(
+                    "trying patch {}:{}, {}:{} as nonfault".format(left_border, right_border, top_border,
+                                                                   bottom_border))
+                is_probably_fault = False
+                for i1, i2 in itertools.product(range(patch_size[0]), range(patch_size[1])):
+                    if self.features[left_border + i1][top_border + i2] != FeatureValue.UNDEFINED.value:
+                        is_probably_fault = True
+                        logging.info("probably fault")
+                        break
+                if not is_probably_fault:
+                    logging.info("nonfault")
+                    sampled = True
+            except OutOfBoundsException:
+                sampled = False
+        return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
+
     def sample_patch(self, label, patch_size):
         if label == FeatureValue.FAULT.value:
             return self.sample_fault_patch(patch_size)
@@ -197,24 +260,17 @@ class DataPreprocessor:
             raise NotImplementedError(f"class label {label}")
 
     def __normalise(self):
-        self.normalised_channels['optical_rgb'] = self.channels['optical_rgb'].astype(np.float32) / 255. - 0.5
-        self.normalised_channels['elevation'] = (self.channels['elevation'].astype(np.float32) - np.mean(
-            self.channels['elevation'].astype(np.float32))) / np.std(self.channels['elevation'].astype(np.float32))
-        self.normalised_channels['slope'] = (self.channels['slope'].astype(np.float32) - 45.) / 45.
-        self.normalised_channels['nir'] = (self.channels['nir'].astype(np.float32) - np.mean(
-            self.channels['nir'].astype(np.float32))) / np.std(self.channels['nir'].astype(np.float32))
-        self.normalised_channels['ir'] = (self.channels['ir'].astype(np.float32) - np.mean(
-            self.channels['ir'].astype(np.float32))) / np.std(self.channels['ir'].astype(np.float32))
-        self.normalised_channels['swir1'] = (self.channels['swir1'].astype(np.float32) - np.mean(
-            self.channels['swir1'].astype(np.float32))) / np.std(self.channels['swir1'].astype(np.float32))
-        self.normalised_channels['swir2'] = (self.channels['swir2'].astype(np.float32) - np.mean(
-            self.channels['swir2'].astype(np.float32))) / np.std(self.channels['swir2'].astype(np.float32))
-        self.normalised_channels['panchromatic'] = (self.channels['panchromatic'].astype(np.float32) - np.mean(
-            self.channels['panchromatic'].astype(np.float32))) / np.std(self.channels['panchromatic'].astype(np.float32))
-        self.normalised_channels['curve'] = (self.channels['curve'].astype(np.float32) - np.mean(
-            self.channels['curve'].astype(np.float32))) / np.std(self.channels['curve'].astype(np.float32))
-        self.normalised_channels['erosion'] = (self.channels['erosion'].astype(np.float32) - np.mean(
-            self.channels['erosion'].astype(np.float32))) / np.std(self.channels['erosion'].astype(np.float32))
+        for ch_name, channel in self.channels.items():
+            if ch_name == 'optical_rgb':
+                self.normalised_channels[ch_name] = self.channels[ch_name].astype(np.float32) / 255. - 0.5
+            elif ch_name == 'slope':
+                self.normalised_channels[ch_name] = (self.channels[ch_name].astype(np.float32) - 45.) / 45.
+            else:
+                if np.allclose(np.std(self.channels[ch_name].astype(np.float32)), 0.):
+                    self.normalised_channels[ch_name] = np.zeros_like(self.channels[ch_name].astype(np.float32))
+                else:
+                    self.normalised_channels[ch_name] = (self.channels[ch_name].astype(np.float32) - np.mean(
+                        self.channels[ch_name].astype(np.float32))) / np.std(self.channels[ch_name].astype(np.float32))
 
     def denormalise(self, patch):
         denormalised_rgb = ((patch[:, :, :3] + 0.5) * 255).astype(np.uint8)

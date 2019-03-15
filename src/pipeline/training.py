@@ -11,8 +11,8 @@ from src.DataPreprocessor.data_generator import DataGenerator
 from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Mode
 from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5_2class_3convolutions, cnn_150x150x5, \
     cnn_150x150x3, cnn_150x150x1, cnn_150x150x12, cnn_150x150x11, cnn_150x150x4
-from src.LearningKeras.net_architecture2 import CnnModel150x150x5
-from src.LearningKeras.train2 import KerasTrainer
+#from src.LearningKeras.net_architecture import CnnModel150x150x5
+from src.LearningKeras.train import KerasTrainer
 
 # use Pipeline instead
 from src.pipeline import global_params
@@ -52,7 +52,7 @@ def train(train_datasets: List[int], class_probabilities: str, batch_size: int, 
         elif len(channels) == 11:
             model_generator = lambda: cnn_150x150x11()
         elif len(channels) == 5:
-            model_generator = CnnModel150x150x5
+            model_generator = lambda: cnn_150x150x5()
         elif len(channels) == 4:
             model_generator = lambda: cnn_150x150x4()
         elif len(channels) == 3:
@@ -72,25 +72,25 @@ def train(train_datasets: List[int], class_probabilities: str, batch_size: int, 
     pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
     trainer.save(output_path='{}trained_models_{}'.format(output_path, ''.join(str(i) for i in train_datasets)))
 
-    # for (hist_ind, history) in enumerate(history_arr):
-    #     plt.plot(history.history['acc'])
-    #     plt.plot(history.history['val_acc'])
-    #     plt.title('Model accuracy')
-    #     plt.ylabel('Accuracy')
-    #     plt.xlabel('Epoch')
-    #     plt.legend(['Train', 'Test'], loc='upper left')
-    #     plt.savefig("Model accuracy_{}.png".format(hist_ind))
-    #     plt.close()
-    #
-    #     # Plot training & validation loss values
-    #     plt.plot(history.history['loss'])
-    #     plt.plot(history.history['val_loss'])
-    #     plt.title('Model loss')
-    #     plt.ylabel('Loss')
-    #     plt.xlabel('Epoch')
-    #     plt.legend(['Train', 'Test'], loc='upper left')
-    #     plt.savefig("Model loss_{}.png".format(hist_ind))
-    #     plt.close()
+    for (hist_ind, history) in enumerate(history_arr):
+        plt.plot(history.history['acc'])
+        plt.plot(history.history['val_acc'])
+        plt.title('Model accuracy')
+        plt.ylabel('Accuracy')
+        plt.xlabel('Epoch')
+        plt.legend(['Train', 'Test'], loc='upper left')
+        plt.savefig("Model accuracy_{}.png".format(hist_ind))
+        plt.close()
+
+        # Plot training & validation loss values
+        plt.plot(history.history['loss'])
+        plt.plot(history.history['val_loss'])
+        plt.title('Model loss')
+        plt.ylabel('Loss')
+        plt.xlabel('Epoch')
+        plt.legend(['Train', 'Test'], loc='upper left')
+        plt.savefig("Model loss_{}.png".format(hist_ind))
+        plt.close()
 
 
 

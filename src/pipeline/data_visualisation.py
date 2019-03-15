@@ -13,12 +13,12 @@ from src.pipeline import global_params
 
 def _plot_channels_with_features(data_preprocessor, data_visualiser, output_path):
     for key in data_preprocessor.channels.keys():
-        data_visualiser.get_channel_with_feature_mask(key, opacity=90).save(output_path + f"features_{key}.tif")
+        data_visualiser.write_channel_with_feature_mask(key=key, opacity=90, path=f"{output_path}features_{key}.tif")
 
 
 def _plot_channels(data_preprocessor, data_visualiser, output_path):
     for key in data_preprocessor.channels.keys():
-        data_visualiser.get_channel(key).save(output_path + f"{key}.tif")
+        data_visualiser.write_channel(key=key, path=f"{output_path}{key}.tif")
 
 
 def _plot_distributions(data_preprocessor:DataPreprocessor, output_path:str):
@@ -89,7 +89,7 @@ def _plot_samples(num_patches, patch_size, bands, data_preprocessor, output_path
             plt.close()
 
 
-def visualise(datasets_ind, num_patches, patch_size, bands, plot_distributions):
+def visualise(datasets_ind, num_patches, patch_size, bands, plot_distributions, inp_output_path):
     np.random.seed(1)
     tf.set_random_seed(2)
 
@@ -100,15 +100,16 @@ def visualise(datasets_ind, num_patches, patch_size, bands, plot_distributions):
             data_preprocessor = data_preprocessor_generator(Mode.TRAIN)
         else:
             data_preprocessor = data_preprocessor_generator(Mode.TEST)
-        output_path = data_preprocessor.data_dir + "/visualisation/"
-        pathlib.Path(output_path).mkdir(exist_ok=True)
+        output_path = inp_output_path + str(d_gen_ind) + "/"
+        pathlib.Path(output_path).mkdir(exist_ok=True, parents=True)
         data_visualiser = DataVisualiser(data_preprocessor)
 
         logging.info("plot bands")
         if data_preprocessor.mode == Mode.TRAIN:
+            data_visualiser.write_features(path=f"{output_path}features.tif")
             _plot_channels_with_features(data_preprocessor, data_visualiser, output_path)
-        elif data_preprocessor.mode == Mode.TEST:
-            _plot_channels(data_preprocessor, data_visualiser, output_path)
+        #elif data_preprocessor.mode == Mode.TEST: for new data we can't see anything on fully labelled images, so we plot channels for them as well
+        _plot_channels(data_preprocessor, data_visualiser, output_path)
 
         if plot_distributions:
             logging.info("plot distributions")

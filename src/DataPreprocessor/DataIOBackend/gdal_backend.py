@@ -157,7 +157,7 @@ class GdalBackend(DataIOBackend):
             bands = 1
         else:
             raise Exception("Bands number incorrect")
-        dst_ds = driver.Create(path, xsize=image.shape[0], ysize=image.shape[1], bands=bands, eType=gdal.GDT_Byte)
+        dst_ds = driver.Create(path, xsize=image.shape[1], ysize=image.shape[0], bands=bands, eType=gdal.GDT_Byte)
 
         geotransform = self.gdal_options['geotransform']
         dst_ds.SetGeoTransform(geotransform)

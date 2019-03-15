@@ -19,13 +19,19 @@ The relevant literature includes: training CNNs on synthetic and real seismic da
 
 The other literature on detection from satellite images includes: detecting roads on pixel level from lots of satellite images and then denoising to get connected nets \cite{mnih2010learning},
 
-The potential extensions of this work can include synthetic data, that is described in \cite{hale2014}
+The potential extensions of this work can include synthetic data, that is described in \cite{hale2014}.
 
-%* Works on lines detection:
-%  * [1](http://openaccess.thecvf.com/content_cvpr_2018/papers/LaLonde_ClusterNet_Detecting_Small_CVPR_2018_paper.pdf)
-%  * [2](https://www.cv-foundation.org/openaccess/content_cvpr_2015/papers/Zhang_Cross-Scene_Crowd_Counting_2015_CVPR_paper.pdf)
-%  * [3](https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/Zhang_Single-Image_Crowd_Counting_CVPR_2016_paper.pdf)
-%  * [4](http://openaccess.thecvf.com/content_cvpr_2018/papers/Liu_DecideNet_Counting_Varying_CVPR_2018_paper.pdf)
+\section{Data}
+
+We use the satellite images from the Landsat-8 and elevation data from the Opentopography:  Shuttle Radar Topography Mission (SRTM GL1) Global 30m. The additional band is the slope estimated based on elevation.
+The faults and fault lookalikes were labelled on some of the images.
+
+\section{Neural network}
+We use the LeNet-5 architecture for the problem.
+
+\section{Results}
+
+\section{NN visualisations}
 
 \printbibliography
 
