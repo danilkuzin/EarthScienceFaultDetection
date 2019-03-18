@@ -29,7 +29,7 @@ class FeatureValue(Enum):
 # todo add test/validation
 class DataPreprocessor:
     def __init__(self, data_dir: str, data_io_backend: DataIOBackend, patches_output_backend: PatchesOutputBackend,
-                 mode: Mode, seed: int):
+                 mode: Mode, seed: int, max_shape=None):
         np.random.seed(seed)
         self.data_dir = data_dir
         self.channels = dict(elevation=None, slope=None, optical_rgb=None, nir=None, ir=None, swir1=None, swir2=None,
@@ -40,6 +40,7 @@ class DataPreprocessor:
         self.mode = mode
         self.data_io_backend = data_io_backend
         self.patches_output_backend = patches_output_backend
+        self.max_shape = max_shape
         self.__load()
         self.__normalise()
 
@@ -47,6 +48,9 @@ class DataPreprocessor:
         min_shape = self.get_data_shape()[0], self.get_data_shape()[1]
         for channel in self.channels.values():
             min_shape = min(channel.shape[0], min_shape[0]), min(channel.shape[1], min_shape[1])
+
+        if self.max_shape:
+            min_shape = min(min_shape[0], self.max_shape[0]), min(min_shape[1], self.max_shape[1])
 
         for ch_name, channel in self.channels.items():
             if channel.shape[0] > min_shape[0] or channel.shape[1] > min_shape[1]:

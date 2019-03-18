@@ -1,5 +1,6 @@
 import pathlib
 from typing import Tuple, List
+import tensorflow as tf
 
 import numpy as np
 from tqdm import trange, tqdm
@@ -8,19 +9,21 @@ from src.DataPreprocessor.data_preprocessor import DataPreprocessor
 
 
 class KerasTrainer:
-    def __init__(self, model_generator, ensemble_size: int):
+    #todo the ensembling as a average of outputs is not justified. Maybe remove it, or replace with a merge layer in keras
+    # that merges several parallel CNNs, Now use one ensemble
+    def __init__(self, model_generator):
         self.model_generator = model_generator
         self.ensemble_size = ensemble_size
         self.models = []
 
-    def train(self, steps_per_epoch, epochs, train_generator):
+    def train(self, steps_per_epoch, epochs, train_generator, valid_generator):
         history_arr = []
         for i in range(self.ensemble_size):
             model = self.model_generator()
-            history = model.fit_generator(train_generator,
+            history = model.fit_generator(generator=train_generator,
                                           steps_per_epoch=steps_per_epoch,
                                           epochs=epochs,
-                                          validation_data=train_generator,
+                                          validation_data=valid_generator,
                                           validation_steps=5,
                                           workers=0,
                                           use_multiprocessing=False)
@@ -28,6 +31,26 @@ class KerasTrainer:
             self.models.append(model)
             history_arr.append(history)
         return history_arr
+
+    def train_array(self, x_train, y_train, x_val, y_val):
+        history_arr = []
+        callbacks = [
+            tf.keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=1, batch_size=32, write_graph=True,
+                                           write_grads=True, write_images=True),
+            tf.keras.callbacks.CSVLogger(filename='log.csv', separator=',', append=False)
+        ]
+
+        for i in range(self.ensemble_size):
+            model = self.model_generator()
+            history = model.fit(x=x_train, y=y_train, batch_size=10, epochs=5, verbose=2, callbacks=callbacks,
+                                validation_data=(x_val, y_val), validation_freq=1)
+
+            self.models.append(model)
+            history_arr.append(history)
+        return history_arr
+
+    def evaluate(self):
+        pass
 
     def save(self, output_path):
         for i in range(self.ensemble_size):

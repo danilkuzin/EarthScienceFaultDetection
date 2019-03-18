@@ -15,19 +15,50 @@ This report presents the results of the work done for geological faults detectio
 
 \section{Introduction}
 
-The relevant literature includes: training CNNs on synthetic and real seismic data for faults detection \cite{pochet2018seismic, araya2017automated, xiong2018seismic, chehrazi2013seismic, lu2018using}
+The relevant literature includes: training CNNs on synthetic and real seismic data for faults detection~\cite{pochet2018seismic, araya2017automated, xiong2018seismic, chehrazi2013seismic, lu2018using}
 
 The other literature on detection from satellite images includes: detecting roads on pixel level from lots of satellite images and then denoising to get connected nets \cite{mnih2010learning},
 
-The potential extensions of this work can include synthetic data, that is described in \cite{hale2014}.
+The potential extensions of this work can include synthetic data, that is described in~\cite{hale2014}.
 
 \section{Data}
 
 We use the satellite images from the Landsat-8 and elevation data from the Opentopography:  Shuttle Radar Topography Mission (SRTM GL1) Global 30m. The additional band is the slope estimated based on elevation.
+The full list of features is:
+\begin{itemize}
+\item \textit{Optical R, G, B}
+\item \textit{elevation}
+\item \textit{slope}
+\item \textit{ir}
+\item \textit{nir}
+\item \textit{swir1}
+\item \textit{swir2}
+\item \textit{panchromatic}
+\item \textit{erosion}
+\item \textit{curvature}
+\end{itemize}
 The faults and fault lookalikes were labelled on some of the images.
 
 \section{Neural network}
-We use the LeNet-5 architecture for the problem.
+We base the architecture on the LeNet-5 net~\cite{lecun1998gradient}:
+\begin{enumerate}
+\item \textit{Input Layer} of shape $patch_width \times patch_height \times num-of-features$
+\item \textit{2D convolution} with $32$ filters of $5 \times 5$ kernel size
+\item \textit{Relu} activation
+\item \textit{MaxPooling2D} with $2 \times 2$ pool_size
+\item \textit{2D convolution} with 64 filters of $5 \times 5$ kernel size
+\item \textit{Relu} activation
+\item \textit{MaxPooling2D} with $2 \times 2$ pool_size
+\item \textit{Flatten} layer
+\item \textit{Dense} with $1024$ units
+\item \textit{relu} activation
+\item \textit{Dropout} with $0.5$ rate
+\item \textit{Dense} layer with $2$ units corresponding to output classes
+\item \textit{Softmax} activation
+\end{enumerate}
+Categorical crossentropy is used for loss estimation.
+
+Experiments with higher (up to 5 convolutional) number of layers demonstrated that the current amount of training data is not enough to utilise the advantages of more complex architectures.
 
 \section{Results}
 
