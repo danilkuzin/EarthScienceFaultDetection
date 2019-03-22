@@ -33,8 +33,8 @@ class DataIOBackend:
         pass
 
     @abc.abstractmethod
-    def load_ir(self, path: str) -> np.array:
-        """infrared from Landsat"""
+    def load_ultrablue(self, path: str) -> np.array:
+        """ultrablue from Landsat"""
         pass
 
     @abc.abstractmethod

@@ -31,7 +31,7 @@ class PillowBackend(DataIOBackend):
     def load_nir(self, path: str) -> np.array:
         return self.__load_1d_raster(path)
 
-    def load_ir(self, path: str) -> np.array:
+    def load_ultrablue(self, path: str) -> np.array:
         return self.__load_1d_raster(path)
 
     def load_swir1(self, path: str) -> np.array:

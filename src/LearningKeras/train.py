@@ -11,7 +11,7 @@ from src.DataPreprocessor.data_preprocessor import DataPreprocessor
 class KerasTrainer:
     #todo the ensembling as a average of outputs is not justified. Maybe remove it, or replace with a merge layer in keras
     # that merges several parallel CNNs, Now use one ensemble
-    def __init__(self, model_generator):
+    def __init__(self, model_generator, ensemble_size):
         self.model_generator = model_generator
         self.ensemble_size = ensemble_size
         self.models = []

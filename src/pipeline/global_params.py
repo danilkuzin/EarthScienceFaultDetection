@@ -40,11 +40,13 @@ data_preprocessor_generators = [
                                   patches_output_backend=InMemoryBackend(),
                                   mode=mode,
                                   seed=1,
-                                  max_shape=(5000, 5000)),
+                                  max_shape=(3000, 3000)
+                                  ),
     lambda mode: DataPreprocessor(data_dir="{}/Region 8 - Nevada test/".format(data_path),
                                   data_io_backend=GdalBackend(),
                                   patches_output_backend=InMemoryBackend(),
                                   mode=mode,
                                   seed=1,
-                                  max_shape=(5000, 5000))
+                                  max_shape=(3000, 3000)
+                                  )
 ]

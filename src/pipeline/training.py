@@ -18,7 +18,7 @@ from src.LearningKeras.train import KerasTrainer
 # use Pipeline instead
 from src.pipeline import global_params
 
-
+#todo sample validation set at beginning, once
 def train(train_datasets: List[int], test_datasets: List[int], validation_datasets: List[int], class_probabilities: str,
           batch_size: int, patch_size: Tuple[int, int], channels: List[int], output_path="", steps_per_epoch=50, epochs=5):
     np.random.seed(1)

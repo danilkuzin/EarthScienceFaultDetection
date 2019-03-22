@@ -34,7 +34,7 @@ class OpencvBackend(DataIOBackend):
             raise FileNotFoundError(path)
         return nir
 
-    def load_ir(self, path: str) -> np.array:
+    def load_ultrablue(self, path: str) -> np.array:
         ir = cv2.imread(path, cv2.IMREAD_UNCHANGED)
         if not ir:
             raise FileNotFoundError(path)

@@ -1,6 +1,7 @@
 from PIL import Image, ImageDraw
 from matplotlib.path import Path
 import matplotlib.patches as patches
+import matplotlib.pyplot as plt
 import re
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -54,7 +55,7 @@ class GdalBackend(DataIOBackend):
     def load_nir(self, path: str) -> np.array:
         return self.__load_1d_raster(path)
 
-    def load_ir(self, path: str) -> np.array:
+    def load_ultrablue(self, path: str) -> np.array:
         return self.__load_1d_raster(path)
 
     def load_swir1(self, path: str) -> np.array:
@@ -146,32 +147,37 @@ class GdalBackend(DataIOBackend):
 
         dataset = None
 
-    def write_image(self, path, image):
-        # image is self.optical_rgb.shape[0] X self.optical_rgb.shape[1] in this case
-        driver = self.gdal_options['driver']
-        if not driver:
-            raise Exception("driver not created")
-        if image.ndim == 3:
-            bands = image.shape[2]
-        elif image.ndim == 2:
-            bands = 1
+    def write_image(self, path, image, crop=None):
+        if not crop: 
+            # image is self.optical_rgb.shape[0] X self.optical_rgb.shape[1] in this case
+            driver = self.gdal_options['driver']
+            if not driver:
+                raise Exception("driver not created")
+            if image.ndim == 3:
+                bands = image.shape[2]
+            elif image.ndim == 2:
+                bands = 1
+            else:
+                raise Exception("Bands number incorrect")
+            dst_ds = driver.Create(path+".tif", xsize=image.shape[1], ysize=image.shape[0], bands=bands, eType=gdal.GDT_Byte)
+    
+            geotransform = self.gdal_options['geotransform']
+            dst_ds.SetGeoTransform(geotransform)
+            projection = self.gdal_options['projection']
+            dst_ds.SetProjection(projection)
+            raster = image.astype(np.uint8)
+            if image.ndim == 3:
+                for band_ind in range(bands):
+                    dst_ds.GetRasterBand(band_ind + 1).WriteArray(raster[:, :, band_ind])
+            elif image.ndim == 2:
+                dst_ds.GetRasterBand(1).WriteArray(raster)
+            dst_ds = None
         else:
-            raise Exception("Bands number incorrect")
-        dst_ds = driver.Create(path, xsize=image.shape[1], ysize=image.shape[0], bands=bands, eType=gdal.GDT_Byte)
+            image = image[crop[0]:crop[2], crop[1]:crop[3]]
+            plt.imsave(path+".png", image)
 
-        geotransform = self.gdal_options['geotransform']
-        dst_ds.SetGeoTransform(geotransform)
-        projection = self.gdal_options['projection']
-        dst_ds.SetProjection(projection)
-        raster = image.astype(np.uint8)
-        if image.ndim == 3:
-            for band_ind in range(bands):
-                dst_ds.GetRasterBand(band_ind + 1).WriteArray(raster[:, :, band_ind])
-        elif image.ndim == 2:
-            dst_ds.GetRasterBand(1).WriteArray(raster)
-        dst_ds = None
 
-    def write_surface(self, path, image):
+    def write_surface(self, path, image, crop=None):
         #todo use gdal dem
 
         # driver = self.gdal_options['driver']
@@ -201,14 +207,16 @@ class GdalBackend(DataIOBackend):
         # dst_ds = None
 
         cmap = plt.get_cmap('jet')
-        rgba_img_faults = cmap(image)
-        rgb_img_faults = np.delete(rgba_img_faults, 3, 2)
-        rgb_img_faults=(rgb_img_faults[:, :, :3] * 255).astype(np.uint8)
-        self.write_image(path, rgb_img_faults)
+        if not crop:
+            rgba_img_faults = cmap(image)
+            rgb_img_faults = np.delete(rgba_img_faults, 3, 2)
+            rgb_img_faults=(rgb_img_faults[:, :, :3] * 255).astype(np.uint8)
+            self.write_image(path, rgb_img_faults)
 
+        image = image[crop[0]:crop[2], crop[1]:crop[3]]
         im = plt.imshow(image, cmap=cmap)
         plt.colorbar(im)
-        plt.savefig('{}.png'.format(path))
+        plt.savefig(path+".png")
         plt.close('all')
 
     def append_additional_features(self, path, features):

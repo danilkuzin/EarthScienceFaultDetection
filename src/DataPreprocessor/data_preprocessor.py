@@ -32,9 +32,9 @@ class DataPreprocessor:
                  mode: Mode, seed: int, max_shape=None):
         np.random.seed(seed)
         self.data_dir = data_dir
-        self.channels = dict(elevation=None, slope=None, optical_rgb=None, nir=None, ir=None, swir1=None, swir2=None,
+        self.channels = dict(elevation=None, slope=None, optical_rgb=None, nir=None, ultrablue=None, swir1=None, swir2=None,
                              panchromatic=None, curve=None, erosion=None)
-        self.normalised_channels = dict(elevation=None, slope=None, optical_rgb=None, nir=None, ir=None, swir1=None,
+        self.normalised_channels = dict(elevation=None, slope=None, optical_rgb=None, nir=None, ultrablue=None, swir1=None,
                                         swir2=None, panchromatic=None, curve=None, erosion=None)
         self.features = None
         self.mode = mode
@@ -76,9 +76,9 @@ class DataPreprocessor:
             logging.warning("Error: {}".format(err))
 
         try:
-            self.channels['ir'] = self.data_io_backend.load_ir(path=self.data_dir + 'o.tif')
+            self.channels['ultrablue'] = self.data_io_backend.load_ultrablue(path=self.data_dir + 'o.tif')
         except FileNotFoundError as err:
-            self.channels['ir'] = np.zeros_like(self.channels['elevation'])
+            self.channels['ultrablue'] = np.zeros_like(self.channels['elevation'])
             logging.warning("Error: {}".format(err))
 
         try:
@@ -115,7 +115,7 @@ class DataPreprocessor:
 
         if self.mode == Mode.TRAIN:
             self.features = self.data_io_backend.load_features(path=self.data_dir + 'features.tif')
-            self.features = self.data_io_backend.append_additional_features(path=self.data_dir + 'additional_data/', features=self.features)
+            #self.features = self.data_io_backend.append_additional_features(path=self.data_dir + 'additional_data/', features=self.features)
             self.__check_crop_features()
         logging.info('loaded')
 
@@ -142,7 +142,7 @@ class DataPreprocessor:
              np.expand_dims(self.normalised_channels['elevation'][left_border:right_border, top_border:bottom_border], axis=2),
              np.expand_dims(self.normalised_channels['slope'][left_border:right_border, top_border:bottom_border], axis=2),
              np.expand_dims(self.normalised_channels['nir'][left_border:right_border, top_border:bottom_border], axis=2),
-             np.expand_dims(self.normalised_channels['ir'][left_border:right_border, top_border:bottom_border], axis=2),
+             np.expand_dims(self.normalised_channels['ultrablue'][left_border:right_border, top_border:bottom_border], axis=2),
              np.expand_dims(self.normalised_channels['swir1'][left_border:right_border, top_border:bottom_border], axis=2),
              np.expand_dims(self.normalised_channels['swir2'][left_border:right_border, top_border:bottom_border], axis=2),
              np.expand_dims(self.normalised_channels['panchromatic'][left_border:right_border, top_border:bottom_border], axis=2),
@@ -283,14 +283,14 @@ class DataPreprocessor:
         denormalised_slope = (patch[:, :, 4] * 45 + 45)
         denormalised_nir = (patch[:, :, 5] * np.std(self.channels['nir'].astype(np.float32)) + np.mean(
             self.channels['nir'].astype(np.float32)))
-        denormalised_ir = (patch[:, :, 6] * np.std(self.channels['nir'].astype(np.float32)) + np.mean(
-            self.channels['nir'].astype(np.float32)))
-        denormalised_swir1 = (patch[:, :, 7] * np.std(self.channels['nir'].astype(np.float32)) + np.mean(
-            self.channels['nir'].astype(np.float32)))
-        denormalised_swir2 = (patch[:, :, 8] * np.std(self.channels['nir'].astype(np.float32)) + np.mean(
-            self.channels['nir'].astype(np.float32)))
-        denormalised_panchromatic = (patch[:, :, 9] * np.std(self.channels['nir'].astype(np.float32)) + np.mean(
-            self.channels['nir'].astype(np.float32)))
+        denormalised_ultrablue = (patch[:, :, 6] * np.std(self.channels['ultrablue'].astype(np.float32)) + np.mean(
+            self.channels['ultrablue'].astype(np.float32)))
+        denormalised_swir1 = (patch[:, :, 7] * np.std(self.channels['swir1'].astype(np.float32)) + np.mean(
+            self.channels['swir1'].astype(np.float32)))
+        denormalised_swir2 = (patch[:, :, 8] * np.std(self.channels['swir2'].astype(np.float32)) + np.mean(
+            self.channels['swir2'].astype(np.float32)))
+        denormalised_panchromatic = (patch[:, :, 9] * np.std(self.channels['panchromatic'].astype(np.float32)) + np.mean(
+            self.channels['panchromatic'].astype(np.float32)))
         return denormalised_rgb, denormalised_elevation, denormalised_slope
 
     def sample_batch(self, batch_size, class_labels, patch_size, channels):

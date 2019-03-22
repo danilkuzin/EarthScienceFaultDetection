@@ -1,7 +1,9 @@
+from typing import Tuple
+
 from src.DataPreprocessor.data_preprocessor import DataPreprocessor, FeatureValue
 import numpy as np
 from PIL import Image
-
+import matplotlib.pyplot as plt
 
 class DataVisualiser:
     def __init__(self, preprocessor: DataPreprocessor):
@@ -28,12 +30,12 @@ class DataVisualiser:
         else:
             raise Exception()
 
-    def write_channel(self, key: str, path: str):
+    def write_channel(self, key: str, path: str, crop:Tuple):
         orig = self.preprocessor.channels[key]
         if orig.ndim == 3:
-            self.preprocessor.data_io_backend.write_image(path, orig)
+            self.preprocessor.data_io_backend.write_image(path, orig, crop)
         elif orig.ndim == 2:
-            self.preprocessor.data_io_backend.write_surface(path, orig)
+            self.preprocessor.data_io_backend.write_surface(path, orig, crop)
         else:
             raise Exception()
 
@@ -43,15 +45,15 @@ class DataVisualiser:
         mask_rgb[np.where(self.preprocessor.features == FeatureValue.FAULT.value)] = [250, 0, 0]
         mask_rgb[np.where(self.preprocessor.features == FeatureValue.FAULT_LOOKALIKE.value)] = [0, 250, 0]
         mask_rgb[np.where(self.preprocessor.features == FeatureValue.NONFAULT.value)] = [0, 0, 250]
-        self.preprocessor.data_io_backend.write_image(path, mask_rgb)
+
+        self.preprocessor.data_io_backend.write_image(path, mask_rgb, crop=None)
 
     def get_channel_with_feature_mask(self, key: str, opacity: int) -> Image:
         features_map = self.get_features_map_transparent(opacity)
         orig_im = self.get_channel(key).convert('RGBA')
         return Image.alpha_composite(orig_im, features_map)
 
-    def write_channel_with_feature_mask(self, key: str, opacity: int, path: str):
+    def write_channel_with_feature_mask(self, key: str, opacity: int, path: str, crop:Tuple):
         im = self.get_channel_with_feature_mask(key, opacity)
         im = np.array(im.convert('RGB'))
-        self.preprocessor.data_io_backend.write_image(path, im)
-
+        self.preprocessor.data_io_backend.write_image(path, im, crop)
