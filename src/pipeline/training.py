@@ -20,7 +20,8 @@ from src.pipeline import global_params
 
 #todo sample validation set at beginning, once
 def train(train_datasets: List[int], test_datasets: List[int], validation_datasets: List[int], class_probabilities: str,
-          batch_size: int, patch_size: Tuple[int, int], channels: List[int], output_path="", steps_per_epoch=50, epochs=5):
+          batch_size: int, patch_size: Tuple[int, int], channels: List[int], output_path="", steps_per_epoch=50,
+          epochs=5, valid_size=1000):
     np.random.seed(1)
     tf.set_random_seed(2)
 
@@ -37,7 +38,7 @@ def train(train_datasets: List[int], test_datasets: List[int], validation_datase
                                                    class_probabilities=class_probabilities_int,
                                                    patch_size=patch_size,
                                                    channels=np.array(channels))
-        valid_joint_generator = valid_data_generator.generator_3class(batch_size=batch_size,
+        valid_joint_generator = valid_data_generator.generator_3class(batch_size=valid_size,
                                                                       class_probabilities=class_probabilities_int,
                                                                       patch_size=patch_size,
                                                                       channels=np.array(channels))
@@ -57,7 +58,7 @@ def train(train_datasets: List[int], test_datasets: List[int], validation_datase
                                                    class_probabilities=class_probabilities_int,
                                                    patch_size=patch_size,
                                                    channels=np.array(channels))
-        valid_joint_generator = valid_data_generator.generator_2class_lookalikes_with_nonfaults(batch_size=batch_size,
+        valid_joint_generator = valid_data_generator.generator_2class_lookalikes_with_nonfaults(batch_size=valid_size,
                                                                                                 class_probabilities=class_probabilities_int,
                                                                                                 patch_size=patch_size,
                                                                                                 channels=np.array(
@@ -88,13 +89,16 @@ def train(train_datasets: List[int], test_datasets: List[int], validation_datase
         tf.keras.callbacks.CSVLogger(filename='log.csv', separator=',', append=False)
     ]
 
+    imgs_valid, lbls_valid = next(valid_joint_generator)
+    valid_joint_generator = None # release resources #todo replace with "with"
+    valid_preprocessors = None # release resources
+
     history = model.fit_generator(generator=train_joint_generator,
                                              steps_per_epoch=steps_per_epoch,
                                              epochs=epochs,
                                              verbose=2,
                                              callbacks=callbacks,
-                                             validation_data=valid_joint_generator,
-                                             validation_steps=5,
+                                             validation_data=(imgs_valid, lbls_valid),
                                              workers=0,
                                              use_multiprocessing=False)
 

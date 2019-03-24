@@ -39,7 +39,7 @@ class DataPreprocessor:
         self.features = None
         self.mode = mode
         self.data_io_backend = data_io_backend
-        self.patches_output_backend = patches_output_backend
+        self.patches_output_backend = patches_output_backend # todo remove this, ideologely we only output from generators here and then we can use them to create fixed datasets.
         self.max_shape = max_shape
         self.__load()
         self.__normalise()
