@@ -3,7 +3,7 @@
 #### GDAL
 ##### macos
 ```bash
-brew install gdal
+brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/d850619e6c8dbbb29d9b2349b5b823f0548ab769/Formula/gdal.rb
 gdal-config --version
 <venv_path>/bin/pip install gdal==2.4.0 --global-option=build_ext --global-option="-I/usr/include/gdal/"
 ```
