@@ -9,6 +9,9 @@ import pathlib
 import h5py
 import pandas
 
+import sys
+sys.path.extend(['../../EarthScienceFaultDetection'])
+
 from src.DataPreprocessor.data_generator import DataGenerator
 from src.DataPreprocessor.data_preprocessor import Mode
 from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5, \

@@ -123,3 +123,5 @@ scripts/Model loss_3.png
 scripts/Model loss_4.png
 scripts/log.csv
 *.csv
+*.svg
+*.png

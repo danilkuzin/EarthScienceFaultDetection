@@ -1,11 +1,14 @@
 import pathlib
 import h5py
 
+import sys
+sys.path.extend(['../../EarthScienceFaultDetection'])
+
 from src.DataPreprocessor.data_generator import DataGenerator
 from src.DataPreprocessor.data_preprocessor import Mode
 from src.pipeline import global_params
 
-datasets = [1]
+datasets = [0]
 
 preprocessors = [global_params.data_preprocessor_generators[ind](Mode.TRAIN) for ind in datasets]
 data_generator = DataGenerator(preprocessors=preprocessors)

@@ -1,3 +1,6 @@
+import sys
+sys.path.extend(['../../EarthScienceFaultDetection'])
+
 from src.pipeline.training import train
 import logging
 

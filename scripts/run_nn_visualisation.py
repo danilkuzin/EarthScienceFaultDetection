@@ -1,3 +1,6 @@
+import sys
+sys.path.extend(['../../EarthScienceFaultDetection'])
+
 from src.DataPreprocessor.data_preprocessor import Mode
 from src.LearningKeras.net_architecture import cnn_150x150x5
 from src.pipeline import global_params
@@ -12,7 +15,7 @@ np.random.seed(1)
 tf.set_random_seed(1)
 
 model = cnn_150x150x5()
-model.load_weights('new_labels_all_nonfaults/trained_models_01/model_0.h5')
+model.load_weights('training_on_01_split_validation/model.h5')
 print(model.summary())
 nn_visualisation = NnVisualisation(model=model)
 

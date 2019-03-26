@@ -148,7 +148,7 @@ class GdalBackend(DataIOBackend):
         dataset = None
 
     def write_image(self, path, image, crop=None):
-        if not crop: 
+        if crop is None:
             # image is self.optical_rgb.shape[0] X self.optical_rgb.shape[1] in this case
             driver = self.gdal_options['driver']
             if not driver:
@@ -207,13 +207,13 @@ class GdalBackend(DataIOBackend):
         # dst_ds = None
 
         cmap = plt.get_cmap('jet')
-        if not crop:
+        if crop is None:
             rgba_img_faults = cmap(image)
             rgb_img_faults = np.delete(rgba_img_faults, 3, 2)
             rgb_img_faults=(rgb_img_faults[:, :, :3] * 255).astype(np.uint8)
             self.write_image(path, rgb_img_faults)
-
-        image = image[crop[0]:crop[2], crop[1]:crop[3]]
+        else:
+            image = image[crop[0]:crop[2], crop[1]:crop[3]]
         im = plt.imshow(image, cmap=cmap)
         plt.colorbar(im)
         plt.savefig(path+".png")
