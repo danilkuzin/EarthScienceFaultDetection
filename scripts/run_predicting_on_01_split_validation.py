@@ -10,7 +10,7 @@ from src.postprocessing.postprocessor import PostProcessor
 trainer = KerasTrainer(model_generator=None, ensemble_size=1)
 
 model = cnn_150x150x5()
-model.load_weights('training_on_01_split_validation/model.h5')
+model.load_weights('training_on_01_split_validation/model_additional_features_long.h5')
 trainer.models.append(model)
 
 datasets = list(range(8))
@@ -27,10 +27,10 @@ for (preprocessor_ind, data_preprocessor_generator) in enumerate(global_params.d
     faults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 0],
                                          original_2dimage_shape=original_2dimage_shape)
     res_faults = faults_postprocessor.heatmaps(mode="mean")
-    data_preprocessor.data_io_backend.write_surface("training_on_01_split_validation/heatmaps_faults_{}.tif".format(preprocessor_ind), res_faults)
+    data_preprocessor.data_io_backend.write_surface("training_on_01_split_validation/heatmaps_additional_features_long_faults_{}.tif".format(preprocessor_ind), res_faults)
 
-    nonfaults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 1],
-                                                original_2dimage_shape=original_2dimage_shape)
-    res_nonfaults = nonfaults_postprocessor.heatmaps(mode="mean")
-    data_preprocessor.data_io_backend.write_surface("training_on_01_split_validation/heatmaps_nonfaults_{}.tif".format(preprocessor_ind),
-                                                        res_nonfaults)
+    # nonfaults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 1],
+    #                                             original_2dimage_shape=original_2dimage_shape)
+    # res_nonfaults = nonfaults_postprocessor.heatmaps(mode="mean")
+    # data_preprocessor.data_io_backend.write_surface("training_on_01_split_validation/heatmaps_0_1_train_ratio_0.8_nonfaults_{}.tif".format(preprocessor_ind),
+    #                                                     res_nonfaults)

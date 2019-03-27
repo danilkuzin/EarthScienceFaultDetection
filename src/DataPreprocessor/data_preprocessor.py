@@ -115,7 +115,7 @@ class DataPreprocessor:
 
         if self.mode == Mode.TRAIN:
             self.features = self.data_io_backend.load_features(path=self.data_dir + 'features.tif')
-            #self.features = self.data_io_backend.append_additional_features(path=self.data_dir + 'additional_data/', features=self.features)
+            self.features = self.data_io_backend.append_additional_features(path=self.data_dir + 'additional_data/', features=self.features)
             self.__check_crop_features()
         logging.info('loaded')
 

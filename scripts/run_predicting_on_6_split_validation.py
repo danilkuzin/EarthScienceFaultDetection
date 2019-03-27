@@ -21,7 +21,7 @@ for (preprocessor_ind, data_preprocessor_generator) in enumerate(global_params.d
 
     data_preprocessor = data_preprocessor_generator(Mode.TEST)
     boxes, probs = trainer.apply_for_sliding_window(
-        data_preprocessor=data_preprocessor, patch_size=(150, 150), stride=25, batch_size=16,
+        data_preprocessor=data_preprocessor, patch_size=(150, 150), stride=10, batch_size=16,
         channels=[0, 1, 2, 3, 4])
     original_2dimage_shape = (data_preprocessor.get_data_shape()[0], data_preprocessor.get_data_shape()[1])
     faults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 0],
@@ -29,8 +29,8 @@ for (preprocessor_ind, data_preprocessor_generator) in enumerate(global_params.d
     res_faults = faults_postprocessor.heatmaps(mode="mean")
     data_preprocessor.data_io_backend.write_surface("training_on_6_split_validation/heatmaps_faults_{}.tif".format(preprocessor_ind), res_faults)
 
-    nonfaults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 1],
-                                                original_2dimage_shape=original_2dimage_shape)
-    res_nonfaults = nonfaults_postprocessor.heatmaps(mode="mean")
-    data_preprocessor.data_io_backend.write_surface("training_on_6_split_validation/heatmaps_nonfaults_{}.tif".format(preprocessor_ind),
-                                                        res_nonfaults)
+    # nonfaults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 1],
+    #                                             original_2dimage_shape=original_2dimage_shape)
+    # res_nonfaults = nonfaults_postprocessor.heatmaps(mode="mean")
+    # data_preprocessor.data_io_backend.write_surface("training_on_6_split_validation/heatmaps_nonfaults_{}.tif".format(preprocessor_ind),
+    #                                                     res_nonfaults)

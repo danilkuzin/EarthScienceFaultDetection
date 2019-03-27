@@ -13,6 +13,8 @@ with h5py.File('../train_data/regions_6/data.h5', 'r') as hf:
     imgs = hf['imgs'][:]
     lbls = hf['lbls'][:]
 
+np.random.seed(1000)
+
 permuted_ind = np.random.permutation(imgs.shape[0])
 imgs = imgs[permuted_ind]
 lbls = lbls[permuted_ind]
