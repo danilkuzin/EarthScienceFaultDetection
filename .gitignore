@@ -125,3 +125,5 @@ scripts/log.csv
 *.csv
 *.svg
 *.png
+scripts/logs/events.out.tfevents.1553613456.Scotts-iMac.local
+*.zip

@@ -9,20 +9,11 @@ sys.path.extend(['../../EarthScienceFaultDetection'])
 
 from src.LearningKeras.net_architecture import cnn_150x150x3, cnn_150x150x5
 
-with h5py.File('../train_data/regions_0/data_additional_features.h5', 'r') as hf:
-    imgs_0 = hf['imgs'][:]
-    lbls_0 = hf['lbls'][:]
-
-with h5py.File('../train_data/regions_1/data_additional_features.h5', 'r') as hf:
-    imgs_1 = hf['imgs'][:]
-    lbls_1 = hf['lbls'][:]
+with h5py.File('../train_data/regions_6/data.h5', 'r') as hf:
+    imgs = hf['imgs'][:]
+    lbls = hf['lbls'][:]
 
 np.random.seed(1000)
-
-imgs = np.concatenate((imgs_0, imgs_1), axis=0)
-lbls = np.concatenate((lbls_0, lbls_1), axis=0)
-imgs_0, imgs_1 = None, None
-lbls_0, lbls_1 = None, None
 
 permuted_ind = np.random.permutation(imgs.shape[0])
 imgs = imgs[permuted_ind]
@@ -44,10 +35,10 @@ lbls = None
 model = cnn_150x150x5()
 
 callbacks = [
-    tf.keras.callbacks.CSVLogger(filename='training_on_6_split_validation/log_additional_features_long.csv', separator=',', append=False)
+    tf.keras.callbacks.CSVLogger(filename='training_on_6_split_validation/log.csv', separator=',', append=False)
 ]
 
-output_path = "training_on_01_split_validation"
+output_path = "training_on_6_split_validation"
 pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
 
 history = model.fit(x=imgs_train,
@@ -59,4 +50,4 @@ history = model.fit(x=imgs_train,
                     workers=0,
                     use_multiprocessing=False)
 
-model.save_weights(output_path + '/model_additional_features_long.h5')
+model.save_weights(output_path + '/model.h5')
