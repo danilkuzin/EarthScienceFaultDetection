@@ -90,10 +90,11 @@ def train(train_datasets: List[int], test_datasets: List[int], validation_datase
         tf.keras.callbacks.CSVLogger(filename='log.csv', separator=',', append=False)
     ]
 
-    imgs_valid, lbls_valid = next(valid_joint_generator)
+    imgs_valid, lbls_valid, _ = next(valid_joint_generator)
     valid_joint_generator = None # release resources #todo replace with "with"
     valid_preprocessors = None # release resources
 
+    #todo train_joint_generator may now return 3 arrays instead of two, which is incorrect for fit_generator
     history = model.fit_generator(generator=train_joint_generator,
                                              steps_per_epoch=steps_per_epoch,
                                              epochs=epochs,

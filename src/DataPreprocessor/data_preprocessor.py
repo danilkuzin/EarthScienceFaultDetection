@@ -171,7 +171,8 @@ class DataPreprocessor:
             except OutOfBoundsException:
                 sampled = False
 
-        return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
+        coords = np.array((left_border, right_border, top_border, bottom_border))
+        return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border), coords
 
     def sample_fault_lookalike_patch(self, patch_size):
         """if an image patch contains fault lookalike bit in the center area than assign it as a fault - go through
@@ -193,7 +194,8 @@ class DataPreprocessor:
             except OutOfBoundsException:
                 sampled = False
 
-        return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
+        coords = np.array((left_border, right_border, top_border, bottom_border))
+        return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border), coords
 
     def sample_nonfault_patch(self, patch_size):
         """if an image path contains only nonfault bits, than assign it as a non-fault"""
@@ -222,7 +224,9 @@ class DataPreprocessor:
                     sampled = True
             except OutOfBoundsException:
                 sampled = False
-        return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
+
+        coords = np.array((left_border, right_border, top_border, bottom_border))
+        return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border), coords
 
     def sample_undefined_patch(self, patch_size):
         """if an image patch contains only undefined bits, than assign it as a undefined"""
@@ -251,7 +255,9 @@ class DataPreprocessor:
                     sampled = True
             except OutOfBoundsException:
                 sampled = False
-        return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border)
+
+        coords = np.array((left_border, right_border, top_border, bottom_border))
+        return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border), coords
 
     def sample_patch(self, label, patch_size):
         if label == FeatureValue.FAULT.value:
@@ -300,8 +306,10 @@ class DataPreprocessor:
                               patch_size[1],
                               channels.shape[0]))
 
+        coords_batch = np.zeros((batch_size, 4))
+
         for i in range(batch_size):
-            patch = self.sample_patch(label=class_labels[i], patch_size=patch_size)
+            patch, coords = self.sample_patch(label=class_labels[i], patch_size=patch_size)
 
             for _ in range(np.random.randint(0, 4)):
                 patch = np.rot90(patch, axes=(0, 1))
@@ -314,14 +322,15 @@ class DataPreprocessor:
                 #make optical transforms
 
             img_batch[i] = patch[:, :, channels]
+            coords_batch[i] = coords
 
-        return img_batch
+        return img_batch, coords_batch
 
     def get_sample_3class(self, batch_size, class_probabilities, patch_size, channels):
         lbl_batch = np.zeros((batch_size, 3))
         class_labels = np.random.choice(class_probabilities.shape[0], batch_size, p=class_probabilities)
 
-        img_batch = self.sample_batch(batch_size, class_labels, patch_size, channels)
+        img_batch, coords_batch = self.sample_batch(batch_size, class_labels, patch_size, channels)
 
         for i in range(batch_size):
             lbl_batch[i, class_labels[i]] = 1
@@ -331,26 +340,26 @@ class DataPreprocessor:
         lbl_batch = np.zeros((batch_size, 2))
         class_labels = np.random.choice(class_probabilities.shape[0], batch_size, p=class_probabilities)
 
-        img_batch = self.sample_batch(batch_size, class_labels, patch_size, channels)
+        img_batch, coords_batch = self.sample_batch(batch_size, class_labels, patch_size, channels)
 
         for i in range(batch_size):
             if class_labels[i] == FeatureValue.NONFAULT.value or class_labels[i] == FeatureValue.FAULT_LOOKALIKE.value:
                 lbl_batch[i, 1] = 1
             elif class_labels[i] == FeatureValue.FAULT.value:
                 lbl_batch[i, 0] = 1
-        return img_batch, lbl_batch
+        return img_batch, lbl_batch, coords_batch
 
     def train_generator_3class(self, batch_size, class_probabilities, patch_size, channels):
         while True:
-            img_batch, lbl_batch = self.get_sample_3class(batch_size, class_probabilities, patch_size, channels)
-            yield img_batch.astype(np.float32), lbl_batch.astype(np.int32)
+            img_batch, lbl_batch, coords_batch = self.get_sample_3class(batch_size, class_probabilities, patch_size, channels)
+            yield img_batch.astype(np.float32), lbl_batch.astype(np.int32), coords_batch
 
     def train_generator_2class_lookalikes_with_nonfaults(self, batch_size, class_probabilities, patch_size, channels):
         #todo replace channels as array of ints with array of strings, as we have no explicit mapping of strings to ints
         while True:
-            img_batch, lbl_batch = self.get_sample_2class_lookalikes_with_nonfaults(batch_size, class_probabilities,
+            img_batch, lbl_batch, coords_batch = self.get_sample_2class_lookalikes_with_nonfaults(batch_size, class_probabilities,
                                                                                     patch_size, channels)
-            yield img_batch, lbl_batch
+            yield img_batch, lbl_batch, coords_batch
 
     def sequential_pass_generator(self, patch_size: Tuple[int, int], stride: int, batch_size: int, channels: List[int]):
         """note the different order of indexes in coords and patch ind, this was due to this input in tf non_max_suppression"""
