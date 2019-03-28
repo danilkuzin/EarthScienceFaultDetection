@@ -1,3 +1,4 @@
+import pathlib
 import sys
 sys.path.extend(['../../EarthScienceFaultDetection'])
 
@@ -11,25 +12,27 @@ import tensorflow as tf
 
 import matplotlib.pyplot as plt
 
-np.random.seed(1)
-tf.set_random_seed(1)
-
 model = cnn_150x150x5()
-model.load_weights('training_on_01_split_validation/model.h5')
+model.load_weights('updated_heatmaps_trained_on_6/model.h5')
 print(model.summary())
 nn_visualisation = NnVisualisation(model=model)
+
+output_path = ("../nn_visualisations/")
+pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
 
 data_preprocessor = global_params.data_preprocessor_generators[0](Mode.TRAIN)
 #image = data_preprocessor.get_full_image()[0:5]
 #image = data_preprocessor.sample_fault_patch(patch_size=(150, 150))[:, :, 0:5]
-image = data_preprocessor.sample_nonfault_patch(patch_size=(150, 150))[:, :, 0:5]
-f, ax = plt.subplots(1, 3)
-ax[0].imshow(image[:,:, 0:3])
-ax[1].imshow(image[:,:, 3])
-ax[2].imshow(image[:,:,4])
-plt.show()
+for i in range(6):
+    image, _ = data_preprocessor.sample_fault_patch(patch_size=(150, 150))
+den_rgb, den_elev, den_slope = data_preprocessor.denormalise(image)
 
+plt.imsave(output_path+f"input_image_0_2.png", den_rgb)
+plt.imsave(output_path+f"input_image_3.png", den_elev)
+plt.imsave(output_path+f"input_image_4.png", den_slope)
+
+image=image[:, :, 0:5]
 image = np.expand_dims(image, axis=0)
-nn_visualisation.visualise_intermediate_activations(image)
-nn_visualisation.visualise_convnet_filters()
-nn_visualisation.visualise_heatmaps_activations(image)
+#nn_visualisation.visualise_intermediate_activations(output_path, image)
+nn_visualisation.visualise_convnet_filters(output_path)
+#nn_visualisation.visualise_heatmaps_activations(output_path, image)

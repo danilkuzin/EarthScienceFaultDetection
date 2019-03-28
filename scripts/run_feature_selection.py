@@ -92,7 +92,8 @@ def collect_results(path):
     ind = np.argsort(val_acc_x)
 
     plt.plot(val_acc_x[ind], val_acc_y[ind])
-    plt.show()
+    #plt.show()
+    plt.savefig("feature_selection.png")
 
 
 if __name__ == "__main__":

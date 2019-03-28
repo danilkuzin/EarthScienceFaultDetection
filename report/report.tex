@@ -4,6 +4,7 @@
 \usepackage{subcaption}
 \usepackage{pgfplots}
 \usepackage[top=1in, bottom=1.25in, left=0.5in, right=0.5in]{geometry}
+\usepackage[hidelinks]{hyperref}
 
 \addbibresource{references.bib}
 \pgfplotsset{compat=1.15}
@@ -21,34 +22,79 @@ This report presents the results of the work done for geological faults detectio
 
 
 \section{Introduction}
+Deep learning methods are usually used for the machine learning problems when features of the data are complex and it
+is not possible to extract them manually. This includes speech recognition with different phonemes, text translation
+with different meanings of words depending on the context, or image recognition with a large variety of shapes. Training
+of deep learning models usually requires large datasets, but the trained models can produce results that are better than
+of human experts for these problems.
 
-The relevant literature includes: training CNNs on synthetic and real seismic data for faults detection~\cite{pochet2018seismic, araya2017automated, xiong2018seismic, chehrazi2013seismic, lu2018using}
+We consider the deep learning approach for the problem of geological faults detection. Faults appear as a results of
+land masses moving and can be dangerous to the people leaving nearby as they can cause earthquakes when they continue to
+move. While in some regions, such as US these areas are well-researched, there are large regions remaining, such as Tibet,
+or Iran, that lack the detailed maps of faults.
 
-The other literature on detection from satellite images includes: detecting roads on pixel level from lots of satellite images and then denoising to get connected nets \cite{mnih2010learning},
+We are using only the satellite images of the earth surface, which allows to inexpensively process large amounts of areas
+once the model was trained. The results of training on one of the region can be potentially transferred into other regions
+without, or with little additional training.
 
-The potential extensions of this work can include synthetic data, that is described in~\cite{hale2014}.
+We believe that deep learning approach can automatically recognise image features that are related to faults in a wide
+variety of image bands and may even lead to reconsidering existing on-site approaches for fault detection, like the
+deep-learning AlphaGo system has introduced new strategies in the game of Go even for the professional players.
+
+The relevant literature includes: training CNNs on synthetic and real seismic data for faults
+detection~\cite{pochet2018seismic, araya2017automated, xiong2018seismic, chehrazi2013seismic, lu2018using, hale2014}.
+But most of these works include other data from the seismic images, or don't consider the real data. We are using the
+professionally-mapped real data for training and performance evaluation.
+
+%The other literature on detection from satellite images includes: detecting roads on pixel level from lots of satellite
+%images and then denoising to get connected nets \cite{mnih2010learning},
 
 \section{Data}
 
-We use the satellite images from the Landsat-8 and elevation data from the Opentopography:  Shuttle Radar Topography Mission (SRTM GL1) Global 30m. The additional band is the slope estimated based on elevation.
-The full list of features is:
+We obtained the satellite images from the Landsat-8 satellite and elevation data from the Opentopography: Shuttle Radar
+Topography Mission (SRTM GL1) Global 30m.
+
+The full list of channels is:
 \begin{itemize}
-\item \textit{Optical R, G, B}
-\item \textit{elevation}
-\item \textit{slope}
-\item \textit{ultrablue}
-\item \textit{nir}
-\item \textit{swir1}
-\item \textit{swir2}
-\item \textit{panchromatic}
-\item \textit{erosion}
-\item \textit{curvature}
+\item \textit{Red, Green, Blue} - visible spectrum from Landsat-8
+\item \textit{Elevation} - elevation data from SRTM
+\item \textit{Slope} - estimated based on elevation with Geospatial Data Abstraction Library
+\item \textit{Coastal} - ultrablue band, useful for coastal water and aerosol studies from Landsat-8
+\item \textit{Near Infrared} - useful for biomass content and shorelines from Landsat-8
+\item \textit{Short-wave Infrared 1} - useful for moisture content of soil and vegetation from Landsat-8
+\item \textit{Short-wave Infrared 2} - useful for moisture content from Landsat-8
+\item \textit{Panchromatic} - finer resolution from Landsat-8
+\item \textit{Erosion} - the estimted difference from the smoothed image
+\item \textit{Curvature} - the estimated Hessian of the elevation
+\item \textit{Thermal Infrared 1} - thermal mapping and estimated soil moisture from Landsat-8
+\item \textit{Thermal Infrared 2} - thermal mapping and estimated soil moisture from Landsat-8
 \end{itemize}
-The features are normalised separately for every region.
 
-The faults and fault lookalikes were labelled on some of the regions.
+For neural networks data is usually normalised, so that the input data comes from the same distribution. Given that we
+have different regions, several potential options for normalisation were possible: normalise with mean and variance
+estimated for all images, or for every image independently. In the former case we better estimate the parameters, but
+the latter case allows to sequentially process more data, without reestimating statistics for the previous images. In
+our approach we normalised RGB images with an assumption of uniform distribution in [0, 255] interval
+(the Landsat data was converted to that interval first). For other channels we independently estimated mean and variance.
 
-The examples of labelled data and bands are shown in the \figurename~\ref{fig:features}
+The fault lines and fault lookalikes were labelled on some of the regions. Fault lookalikes are the lines and areas that
+contain the features similar to the real faults but are not faults. Adding this class helps in choosing the right data
+to train and estimating the quality of the training.
+
+The examples of labelled data and channels are shown in the \figurename~\ref{fig:features}.
+
+The whole datasets include:
+\begin{enumerate}
+\item Lopukangri (Tibet) of size $100 km \times 100 km$ --- internal labels of the part of the area
+\item Muga Puruo (Tibet) of size $100 km \times 100 km$ --- internal labels of the part of the area
+\item Muggarboibo (Tibet) of size $100 km \times 100 km$ --- no labels, test data
+\item Austin-Tonopah (US) of size $100 km \times 100 km$ --- no labels, test data
+\item Las Vegas Nevada (US) of size $100 km \times 100 km$ --- no labels, test data
+\item Izmir (Turkey) of size $100 km \times 100 km$ --- no labels, test data
+\item Nevada Training (US) of size $200 km \times 400 km$ --- public labels of the part of the whole area
+\item Nevada Test (US) of size $200 km \times 400 km$ --- public labels of the part of the whole area
+\end{enumerate}
+
 \begin{figure}[t]
     \centering
     \begin{subfigure}[b]{0.18\textwidth}
@@ -71,52 +117,66 @@ The examples of labelled data and bands are shown in the \figurename~\ref{fig:fe
     ~
     \begin{subfigure}[b]{0.18\textwidth}
         \includegraphics[width=\textwidth]{graphics/data/0/features_ultrablue.png}
-        \caption{Ultrablue}
+        \caption{Coastal}
         \label{fig:features_ultrablue}
     \end{subfigure}
     ~
     \begin{subfigure}[b]{0.18\textwidth}
         \includegraphics[width=\textwidth]{graphics/data/0/features_nir.png}
-        \caption{Nir}
+        \caption{NIR}
         \label{fig:features_nir}
     \end{subfigure}
 
     \begin{subfigure}[b]{0.18\textwidth}
         \includegraphics[width=\textwidth]{graphics/data/0/features_swir1.png}
-        \caption{Swir1}
+        \caption{SWIR1}
         \label{fig:features_swir1}
     \end{subfigure}
     ~
     \begin{subfigure}[b]{0.18\textwidth}
         \includegraphics[width=\textwidth]{graphics/data/0/features_swir2.png}
-        \caption{swir2}
+        \caption{SWIR2}
         \label{fig:features_swir2}
     \end{subfigure}
     ~
     \begin{subfigure}[b]{0.18\textwidth}
         \includegraphics[width=\textwidth]{graphics/data/0/features_panchromatic.png}
-        \caption{panchromatic}
+        \caption{Panchromatic}
         \label{fig:features_panchromatic}
     \end{subfigure}
     ~
     \begin{subfigure}[b]{0.18\textwidth}
         \includegraphics[width=\textwidth]{graphics/data/0/features_erosion.png}
-        \caption{erosion}
+        \caption{Erosion}
         \label{fig:features_erosion}
     \end{subfigure}
     ~
     \begin{subfigure}[b]{0.18\textwidth}
         \includegraphics[width=\textwidth]{graphics/data/0/features_curve.png}
-        \caption{curve}
+        \caption{Curvature}
         \label{fig:features_curve}
     \end{subfigure}
-    \caption{Labelled features for a subset of data}\label{fig:features}
+    \caption{Labelled features for a subset of Tibet data}\label{fig:features}
 \end{figure}
 
 \section{Neural network}
-We base the architecture on the LeNet-5 net~\cite{lecun1998gradient}:
+Neural networks consist of a set of layers that transform the input data into the output prediction via simple
+transformation functions and nonlinear functions. A lot of architectures have been developed recently, such as recurrent
+layers to model sequential features, autoencoders to find the most relevant features, or attention mechanisms to focus
+on most relevant areas.
+
+We base the architecture on the LeNet-5 net~\cite{lecun1998gradient}, that was originally used for handwritten digits
+recognition as usually used for benchmarking nowadays. It contains two levels of convolutions that usually can learn to
+detect simple relationships for nearby pixels. The more complex architectures, such as AlexNet, ResNet, VGGNet, Inception
+contain much deeper convolutions that can learn to recognise more difficult structural patters, but they require longer
+training on larger amount of data. Experiments with higher (up to 5 convolutional) number of layers demonstrated that
+the current amount of training data is not enough to utilise the advantages of more complex architectures.
+
+Our architecture is described below. The meaning of each layer can be found in the deep learning literature, such
+as~\cite{cnn-tutorial}.
+
 \begin{enumerate}
-\item \textit{Input Layer} of shape $patch_width \times patch_height \times num-of-features$
+\item \textit{Input Layer} of shape \textit{patch width} $\times$ \textit{patch height} $\times$ \textit{number of features}
 \item \textit{2D convolution} with $32$ filters of $5 \times 5$ kernel size
 \item \textit{Relu} activation
 \item \textit{MaxPooling2D} with $2 \times 2$ pool size
@@ -125,227 +185,346 @@ We base the architecture on the LeNet-5 net~\cite{lecun1998gradient}:
 \item \textit{MaxPooling2D} with $2 \times 2$ pool size
 \item \textit{Flatten} layer
 \item \textit{Dense} with $1024$ units
-\item \textit{relu} activation
+\item \textit{Relu} activation
 \item \textit{Dropout} with $0.5$ rate
 \item \textit{Dense} layer with $2$ units corresponding to output classes
 \item \textit{Softmax} activation
 \end{enumerate}
-Categorical crossentropy is used for loss estimation.
+Categorical crossentropy function is used for loss estimation, it estimates how well predicted labels match given labels.
+Then the gradient of the loss is used to update the layer weights.
 
-Experiments with higher (up to 5 convolutional) number of layers demonstrated that the current amount of training data
-is not enough to utilise the advantages of more complex architectures.
 
 \section{Experiments}
-For training we use the data, sampled randomly from training images. Faults and fault lookalikes are marked with lines,
-we sample random points from these lines and create patches of shape $(150 x 150)$ with centers at these points.
-Non-fault areas are marked with polygons, we sample patches that fully lie within the marked polygon.
+To visualise the predictions we create the heatmaps for fault probabilities at each region. The sequential patches
+taken with stride of 10 pixels from the original images are fed into the neural network, and the fault probabilities are
+recorded for all pixels within that area. Then the fault probabilities are averaged for all pixels as an exp of the
+average log.
 
-During training, we perform 10 epochs of 50 iterations each. At every iteration a minibatch of 10 patches is sampled
-from the regions, randomly rotated and flipped.
 
 \subsection{Train on Tibet data}
-\begin{figure}
-\begin{tikzpicture}
-\begin{axis}[axis lines=left, xlabel=epoch, legend pos=outer north east]
-\addplot[solid, color=orange, mark=*, mark options={solid}] table[x=epoch, y=val_acc, col sep=comma] {graphics/training/train_on_01_features_01234_no_additional/log.csv};
-\addlegendentry{val acc}
-\addplot[dashed, color=orange, mark=*, mark options={solid}] table[x=epoch, y=acc, col sep=comma] {graphics/training/train_on_01_features_01234_no_additional/log.csv};
-\addlegendentry{acc}
-\addplot[solid, color=cyan, mark=*, mark options={solid}] table [x=epoch, y=val_loss, col sep=comma] {graphics/training/train_on_01_features_01234_no_additional/log.csv};
-\addlegendentry{val loss}
-\addplot[dashed, color=cyan, mark=*, mark options={solid}] table [x=epoch, y=loss, col sep=comma] {graphics/training/train_on_01_features_01234_no_additional/log.csv};
-\addlegendentry{loss}
-\end{axis}
-\end{tikzpicture}
-\label{train_on_016_features_01234_no_additional}
-\caption{training on Tibet data and validating on a US region}
-\end{figure}
+For this experiment we sample 2000 patches of size 150x150 pixels (5km x 5km) from each of the Tibet regions 1 and 2,
+randomly rotated and flipped, with probabilities 0.5 from faults, 0.25 from lookalikes, 0.25 from nonfaults, so we have
+approximately 2000 fault patches and 2000 non-fault patches, 80% of which are used for training, 20% for validation.
+
+Faults and fault lookalikes are marked with lines, we sample random points from these lines and create patches with
+centers at these points. Non-fault areas are marked with polygons, we sample patches that fully lie within the marked
+polygon. We fix this dataset in advance and train a neural net on it after that.
+
+We run the training for 30 epochs. At every epoch the whole sampled dataset is divided into minibatches of size 32 and
+they are iteratively fed into the neural network, and the gradient of the classification loss is backpropagated through
+it to update the weights of the neural network.
+
+\figurename~\ref{train_on_01_features_01234_no_additional} presents the performance during training. As after 10th
+iteration the validation score does not considerably improve, we use the weights obtained at this iteration for predictions.
 
 \begin{figure}[t]
-    \centering
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234_no_additional/heatmaps_faults_0.png}
-        \caption{Lopukangri}
-        \label{fig:heatmaps_2_Lopukangri}
+\centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \scalebox{0.9}{
+            \begin{tikzpicture}
+            \begin{axis}[axis lines=left, xlabel=epoch, legend style={at={(0.97,0.6)},anchor=east}]
+            \addplot[solid, color=orange] table[x=epoch, y=val_acc, col sep=comma]
+            {graphics/training/train_on_01_features_01234/log.csv};
+            \addlegendentry{val acc}
+            \addplot[dashed, color=orange] table[x=epoch, y=acc, col sep=comma]
+            {graphics/training/train_on_01_features_01234/log.csv};
+            \addlegendentry{acc}
+            \addplot[solid, color=cyan] table [x=epoch, y=val_loss, col sep=comma]
+            {graphics/training/train_on_01_features_01234/log.csv};
+            \addlegendentry{val loss}
+            \addplot[dashed, color=cyan] table [x=epoch, y=loss, col sep=comma]
+            {graphics/training/train_on_01_features_01234/log.csv};
+            \addlegendentry{loss}
+            \end{axis}
+            \end{tikzpicture}
+        }
+        \caption{Training on Tibet data}
+        \label{train_on_01_features_01234_no_additional}
     \end{subfigure}
     ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234_no_additional/heatmaps_faults_1.png}
-        \caption{Muga Puruo}
-        \label{fig:heatmaps_2_Muga_Puruo}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \scalebox{0.9}{
+            \begin{tikzpicture}
+            \begin{axis}[axis lines=left, xlabel=epoch, legend pos=south west]
+            \addplot[solid, color=orange] table[x=epoch, y=val_acc, col sep=comma]
+            {graphics/training/train_on_6_features_01234/log.csv};
+            \addlegendentry{\scriptsize{valid acc}}
+            \addplot[dashed, color=orange] table[x=epoch, y=acc, col sep=comma]
+            {graphics/training/train_on_6_features_01234/log.csv};
+            \addlegendentry{\scriptsize{train acc}}
+            \addplot[solid, color=cyan] table [x=epoch, y=val_loss, col sep=comma]
+            {graphics/training/train_on_6_features_01234/log.csv};
+            \addlegendentry{\scriptsize{valid loss}}
+            \addplot[dashed, color=cyan] table [x=epoch, y=loss, col sep=comma]
+            {graphics/training/train_on_6_features_01234/log.csv};
+            \addlegendentry{\scriptsize{train loss}}
+            \end{axis}
+            \end{tikzpicture}
+        }
+        \caption{Training on US data}
+        \label{fig:train_on_6_features_01234_no_additional_perf}
     \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234_no_additional/heatmaps_faults_2.png}
-        \caption{Muggarboibo}
-        \label{fig:heatmaps_2_Muggarboibo}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234_no_additional/heatmaps_faults_3.png}
-        \caption{Austin-Tonopah}
-        \label{fig:heatmaps_2_Austin-Tonopah}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234_no_additional/heatmaps_faults_4.png}
-        \caption{Las Vegas Nevada}
-        \label{fig:heatmaps_2_Las_Vegas_Nevada}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234_no_additional/heatmaps_faults_5.png}
-        \caption{Izmir Turkey}
-        \label{fig:heatmaps_2_Izmir_Turkey}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234_no_additional/heatmaps_faults_6.png}
-        \caption{Nevada}
-        \label{fig:heatmaps_2_Nevada}
-    \end{subfigure}
-
-    \caption{Predictions, heatmaps}\label{fig:train_on_01_features_01234_no_additional_im}
+    \caption{Training performance}
 \end{figure}
+
+Figures~\ref{fig:train_on_01_features_01234_no_additional_im} and~\ref{fig:train_on_01_features_01234_no_additional_im_us}
+demonstarte the predictions for all regions.
 
 \subsection{Train on US data}
-\begin{figure}
-\begin{tikzpicture}
-\begin{axis}[axis lines=left, xlabel=epoch, legend pos=outer north east]
-\addplot[solid, color=orange, mark=*, mark options={solid}] table[x=epoch, y=val_acc, col sep=comma] {graphics/training/train_on_6_features_01234_no_additional/log.csv};
-\addlegendentry{val acc}
-\addplot[dashed, color=orange, mark=*, mark options={solid}] table[x=epoch, y=acc, col sep=comma] {graphics/training/train_on_6_features_01234_no_additional/log.csv};
-\addlegendentry{acc}
-\addplot[solid, color=cyan, mark=*, mark options={solid}] table [x=epoch, y=val_loss, col sep=comma] {graphics/training/train_on_6_features_01234_no_additional/log.csv};
-\addlegendentry{val loss}
-\addplot[dashed, color=cyan, mark=*, mark options={solid}] table [x=epoch, y=loss, col sep=comma] {graphics/training/train_on_6_features_01234_no_additional/log.csv};
-\addlegendentry{loss}
-\end{axis}
-\end{tikzpicture}
-\label{train_on_6_features_01234_no_additional}
-\caption{training on US data and validating on a different US region}
-\end{figure}
+In this experiment we train on the US Nevada train region. The faults are mapped using the
+USGS dataset~\cite{usgs_data}, that contains coordinates of fault lines. We mark the remaining area as non-fault and use
+2-class classification model for the area. We sample 2000 patches with equal probability of being fault or non-fault and
+use 80\% for training and 20\% for validation.
 
-\begin{figure}[t]
-    \centering
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_6_features_01234_no_additional/heatmaps_faults_0.png}
-        \caption{Lopukangri}
-        \label{fig:heatmaps_3_Lopukangri}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_6_features_01234_no_additional/heatmaps_faults_1.png}
-        \caption{Muga Puruo}
-        \label{fig:heatmaps_3_Muga_Puruo}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_6_features_01234_no_additional/heatmaps_faults_2.png}
-        \caption{Muggarboibo}
-        \label{fig:heatmaps_3_Muggarboibo}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_6_features_01234_no_additional/heatmaps_faults_3.png}
-        \caption{Austin-Tonopah}
-        \label{fig:heatmaps_3_Austin-Tonopah}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_6_features_01234_no_additional/heatmaps_faults_4.png}
-        \caption{Las Vegas Nevada}
-        \label{fig:heatmaps_3_Las_Vegas_Nevada}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_6_features_01234_no_additional/heatmaps_faults_5.png}
-        \caption{Izmir Turkey}
-        \label{fig:heatmaps_3_Izmir_Turkey}
-    \end{subfigure}
+\figurename~\ref{fig:train_on_6_features_01234_no_additional_perf} demonstrates the
+training performance. The performance on the validation set starts to decrease after the 10th iteration, so we use the
+values for weights obtained at this iteration.
 
+The results for US regions are presented in \figurename~\ref{fig:train_on_6_features_01234_no_additional_im_us}. We
+additionally perform testing on other datasets as well. All predictions are presented in
+\figurename~\ref{fig:train_on_6_features_01234_no_additional_im}.
 
-    \caption{Predictions, heatmaps}\label{fig:train_on_6_features_01234_no_additional_im}
-\end{figure}
-
-
-\subsection{Training on Tibet and US data jointly}
-\begin{figure}
-\begin{tikzpicture}
-\begin{axis}[axis lines=left, xlabel=epoch, legend pos=outer north east]
-\addplot[solid, color=orange, mark=*, mark options={solid}] table[x=epoch, y=val_acc, col sep=comma] {graphics/training/train_on_016_features_01234_no_additional/log.csv};
-\addlegendentry{val acc}
-\addplot[dashed, color=orange, mark=*, mark options={solid}] table[x=epoch, y=acc, col sep=comma] {graphics/training/train_on_016_features_01234_no_additional/log.csv};
-\addlegendentry{acc}
-\addplot[solid, color=cyan, mark=*, mark options={solid}] table [x=epoch, y=val_loss, col sep=comma] {graphics/training/train_on_016_features_01234_no_additional/log.csv};
-\addlegendentry{val loss}
-\addplot[dashed, color=cyan, mark=*, mark options={solid}] table [x=epoch, y=loss, col sep=comma] {graphics/training/train_on_016_features_01234_no_additional/log.csv};
-\addlegendentry{loss}
-\end{axis}
-\end{tikzpicture}
-\label{train_on_016_features_01234_no_additional}
-\caption{training on tibet and US data and validating on a different US region}
-\end{figure}
-
-\figurename~\ref{train_on_016_features_01234_no_additional} contains the quality metrics during training,
-\figurename~\ref{fig:train_on_016_features_01234_no_additional_im} contains the example predictions for different regions
-
-\begin{figure}[t]
-    \centering
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_016_features_01234_no_additional/heatmaps_faults_0.png}
-        \caption{Lopukangri}
-        \label{fig:heatmaps_1_Lopukangri}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_016_features_01234_no_additional/heatmaps_faults_1.png}
-        \caption{Muga Puruo}
-        \label{fig:heatmaps_1_Muga_Puruo}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_016_features_01234_no_additional/heatmaps_faults_2.png}
-        \caption{Muggarboibo}
-        \label{fig:heatmaps_1_Muggarboibo}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_016_features_01234_no_additional/heatmaps_faults_3.png}
-        \caption{Austin-Tonopah}
-        \label{fig:heatmaps_1_Austin-Tonopah}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_016_features_01234_no_additional/heatmaps_faults_4.png}
-        \caption{Las Vegas Nevada}
-        \label{fig:heatmaps_1_Las_Vegas_Nevada}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_016_features_01234_no_additional/heatmaps_faults_5.png}
-        \caption{Izmir Turkey}
-        \label{fig:heatmaps_1_Izmir_Turkey}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/training/train_on_016_features_01234_no_additional/heatmaps_faults_6.png}
-        \caption{Nevada}
-        \label{fig:heatmaps_1_Nevada}
-    \end{subfigure}
-
-    \caption{Predictions, heatmaps}\label{fig:train_on_016_features_01234_no_additional_im}
-\end{figure}
+The predictions are different for the models, for example, training on Tibet area detects less mountain range fronts falsely.
+This can be explained by the manual selection of the training areas in Tibet areas, opposed to the training on the full
+dataset in US that does not contain lookalikes.
 
 \section{NN visualisations}
+We consider several ways of visualising the learnt neural network, based on~\cite[Chapter 5, Section 4]{francois2017deep}.
+\subsection{Intermediate activations}
+Here we feed an image patch into the network and output the activations of layers. The example image in presented in \figurename~\ref{fig:nn_vis_input}
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[b]{0.12\textwidth}
+        \includegraphics[width=\textwidth]{graphics/nn_visualisation/input_image_0_2.png}
+        \caption{optical}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[b]{0.12\textwidth}
+        \includegraphics[width=\textwidth]{graphics/nn_visualisation/input_image_3.png}
+        \caption{elevation}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[b]{0.12\textwidth}
+        \includegraphics[width=\textwidth]{graphics/nn_visualisation/input_image_4.png}
+        \caption{slope}
+    \end{subfigure}
+
+    \caption{Sampled fault patch from the Tibet region for the intermediate activations visualisation}
+    \label{fig:nn_vis_input}
+\end{figure}
+
+The \figurename~\ref{fig:nn_vis_input_act} presents the activations of every filter for each convolutional layer for the
+input image. Different filters encode detectors for different features.
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[b]{\textwidth}
+        \includegraphics[width=\textwidth]{graphics/nn_visualisation/intermediate_activations_conv2d.png}
+        \caption{optical}
+    \end{subfigure}
+
+    \begin{subfigure}[b]{\textwidth}
+        \includegraphics[width=\textwidth]{graphics/nn_visualisation/intermediate_activations_conv2d_1.png}
+        \caption{elevation}
+    \end{subfigure}
+
+    \caption{Activations of convolutional layers}
+    \label{fig:nn_vis_input_act}
+\end{figure}
+
+\subsection{Convolutional filters}
+For this visualisation we optimise the input image to maximise the response of some convolutional filter. The
+optimisation of optical filters is noisy, so we provide the results for other bands in \figurename~\ref{fig:nn_vis_conv_filters}
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[b]{0.2\textwidth}
+        \includegraphics[width=\textwidth]{graphics/nn_visualisation/convnet_filters_elevation_conv2d.png}
+        \caption{elevation, conv1}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[b]{0.2\textwidth}
+        \includegraphics[width=\textwidth]{graphics/nn_visualisation/convnet_filters_elevation_conv2d_1.png}
+        \caption{elevation, conv2}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[b]{0.2\textwidth}
+        \includegraphics[width=\textwidth]{graphics/nn_visualisation/convnet_filters_slope_conv2d.png}
+        \caption{slope, conv1}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[b]{0.2\textwidth}
+        \includegraphics[width=\textwidth]{graphics/nn_visualisation/convnet_filters_slope_conv2d_1.png}
+        \caption{slope, conv2}
+    \end{subfigure}
+
+    \caption{Maximisations of convolutional layers responses}
+    \label{fig:nn_vis_conv_filters}
+\end{figure}
+
+\subsection{Heatmaps of class activation}
+In this approach we optimise the location of the image that lead to the final classification.
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[b]{0.3\textwidth}
+        \includegraphics[width=\textwidth]{graphics/nn_visualisation/heatmaps_activations.png}
+        \caption{Activation}
+    \end{subfigure}
+
+    \caption{Class activation map for the classification as fault}
+    \label{fig:nn_vis_conv_filters}
+\end{figure}
+
+\section{Feature selection}
+For this experiment we test the value of features. Here we generate 1000 images from the Nevada training dataset, 250
+images from the Nevada test dataset. We train the model with three optical bands only, then we train the model with
+four bands by adding and then removing each remaining band. The validation accuracy is plotted in \figurename~\ref{fig:feature_selection}
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[b]{0.3\textwidth}
+        \includegraphics[width=\textwidth]{graphics/feature_selection.png}
+        \caption{Features}
+    \end{subfigure}
+
+    \caption{Feature selection results. Features numbers correspond to the sequence in earlier chapter.}
+    \label{fig:feature_selection}
+\end{figure}
+
 
 \section{Future work}
 \begin{itemize}
 \item Increasing the amount of data that we have may allow to increase the architecture of the network, receptive
 fields of the convolutions on later layers may provide more meaningful visualisations.
-\item preprocessing can include further random transformations: well-established optical transforms, such as changing
-brightness and contrast, cropping. For other bands the methods are not explored in the literature.
+\item Preprocessing can include further random transformations: well-established optical transforms, such as changing
+brightness and contrast, cropping. For other channels the methods are not explored in the literature.
+\item The training with lookalikes is an interesting way to use GANs by feeding faults and lookalikes and trying to
+distinguish between them.
+\item There are different classes of faults ampped in the US region, such the ones in the valleys. Potentially,
+they should be separated into a different class.
+\item Postprocessing of predictions to get the connected lines, that can be potentially achieved with Gaussian processes,
+or denoising autoencoders.
+\item Automatically evaluate quality of mapped labels / learning from different labels for the same area (as in
+crowdsourcing with BCC)
+\item Different architecture to predict lines opposite to heatmaps. This is not well-research topic in machine learning.
+\item Predicting the physical parameters that describe the fault process.
 \end{itemize}
+
 \printbibliography
+
+\section{Appendix A. Heatmaps of the predictions}
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234/heatmaps_faults_0.png}
+        \caption{Lopukangri}
+        \label{fig:heatmaps_2_Lopukangri}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234/heatmaps_faults_1.png}
+        \caption{Muga Puruo}
+        \label{fig:heatmaps_2_Muga_Puruo}
+    \end{subfigure}
+
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234/heatmaps_faults_2.png}
+        \caption{Muggarboibo}
+        \label{fig:heatmaps_2_Muggarboibo}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234/heatmaps_faults_3.png}
+        \caption{Austin-Tonopah}
+        \label{fig:heatmaps_2_Austin-Tonopah}
+    \end{subfigure}
+
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234/heatmaps_faults_4.png}
+        \caption{Las Vegas Nevada}
+        \label{fig:heatmaps_2_Las_Vegas_Nevada}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234/heatmaps_faults_5.png}
+        \caption{Izmir Turkey}
+        \label{fig:heatmaps_2_Izmir_Turkey}
+    \end{subfigure}
+
+    \caption{Predictions based on training performed on the two Tibet regions}
+    \label{fig:train_on_01_features_01234_no_additional_im}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[b]{0.75\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234/heatmaps_faults_6.png}
+        \caption{Nevada train}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[b]{0.75\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_01_features_01234/heatmaps_faults_7.png}
+        \caption{Nevada test}
+    \end{subfigure}
+    \caption{Predictions for US regions based on training performed on the two Tibet regions}
+    \label{fig:train_on_01_features_01234_no_additional_im_us}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_6_features_01234/heatmaps_faults_0.png}
+        \caption{Lopukangri}
+        \label{fig:heatmaps_3_Lopukangri}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_6_features_01234/heatmaps_faults_1.png}
+        \caption{Muga Puruo}
+        \label{fig:heatmaps_3_Muga_Puruo}
+    \end{subfigure}
+
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_6_features_01234/heatmaps_faults_2.png}
+        \caption{Muggarboibo}
+        \label{fig:heatmaps_3_Muggarboibo}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_6_features_01234/heatmaps_faults_3.png}
+        \caption{Austin-Tonopah}
+        \label{fig:heatmaps_3_Austin-Tonopah}
+    \end{subfigure}
+
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_6_features_01234/heatmaps_faults_4.png}
+        \caption{Las Vegas Nevada}
+        \label{fig:heatmaps_3_Las_Vegas_Nevada}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_6_features_01234/heatmaps_faults_5.png}
+        \caption{Izmir Turkey}
+        \label{fig:heatmaps_3_Izmir_Turkey}
+    \end{subfigure}
+    \caption{Predictions based on training performed on the US Nevada train region}
+    \label{fig:train_on_6_features_01234_no_additional_im}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[b]{0.75\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_6_features_01234/heatmaps_faults_6.png}
+        \caption{Nevada train}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[b]{0.75\textwidth}
+        \includegraphics[width=\textwidth]{graphics/training/train_on_6_features_01234/heatmaps_faults_7.png}
+        \caption{Nevada test}
+    \end{subfigure}
+    \caption{Predictions for US regions based on training performed on the US Nevada train region}
+    \label{fig:train_on_6_features_01234_no_additional_im_us}
+\end{figure}
+
 
 \end{document}

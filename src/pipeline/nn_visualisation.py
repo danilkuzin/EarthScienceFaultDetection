@@ -11,7 +11,7 @@ class NnVisualisation:
     def __init__(self, model):
         self.model = model
 
-    def visualise_intermediate_activations(self, image):
+    def visualise_intermediate_activations(self, output_path, image):
         layer_before_flatten_ind = 6
 
         # Extracts the outputs of the top layers:
@@ -62,10 +62,11 @@ class NnVisualisation:
             plt.title(layer_name)
             plt.grid(False)
             plt.imshow(display_grid, aspect='auto', cmap='viridis')
+            plt.colorbar()
 
-            plt.savefig(f"intermediate_activations_{layer_name}.svg")
+            plt.savefig(f"{output_path}intermediate_activations_{layer_name}.png")
 
-    def visualise_convnet_filters(self):
+    def visualise_convnet_filters(self, output_path):
 
         def deprocess_image(x):
             # normalize tensor: center on 0., ensure std is 0.1
@@ -81,6 +82,10 @@ class NnVisualisation:
             x *= 255
             x = np.clip(x, 0, 255).astype('uint8')
             return x
+
+        # def deprocess_image2(x):
+        #     x[:, :, :3] = ((x[:, :, :3] + 0.5) * 255).astype(np.uint8)
+        #     return x
 
         def generate_pattern(layer_name, filter_index, size=150):
             # Build a loss function that maximizes the activation
@@ -101,13 +106,16 @@ class NnVisualisation:
             input_img_data = np.random.random((1, size, size, 5))
 
             # Run gradient ascent for 40 steps
-            step = 1.
-            for i in range(40):
+            step = 0.1
+            for i in range(50):
                 loss_value, grads_value = iterate([input_img_data])
                 input_img_data += grads_value * step
 
             img = input_img_data[0]
-            return deprocess_image(img)
+            img[:, :, :3] = deprocess_image(img[:, :, :3])
+            img[:, :, 3] = deprocess_image(img[:, :, 3])
+            img[:, :, 4] = deprocess_image(img[:, :, 4])
+            return img
 
         for layer_name in ['conv2d', 'conv2d_1']:
             size = 150
@@ -128,18 +136,22 @@ class NnVisualisation:
                     vertical_end = vertical_start + size
                     results[horizontal_start: horizontal_end, vertical_start: vertical_end, :] = filter_img
 
+            res_rgb = results[:, :, 0:3]
+            rgb_nonzero_idx = res_rgb > 0.1
+            min_rgb = np.min(res_rgb[rgb_nonzero_idx])
+            res_rgb = np.where(results[:, :, 0:3] < 0.1, min_rgb, results[:, :, 0:3])
             # Display the results grid
             plt.figure()
-            plt.imshow(results[:, :, 0:3])
-            plt.savefig(f"convnet_filters_rgb_{layer_name}.svg")
+            plt.imshow(res_rgb)
+            plt.savefig(f"{output_path}convnet_filters_rgb_{layer_name}.png")
             plt.figure()
             plt.imshow(results[:,:,3])
-            plt.savefig(f"convnet_filters_elevation_{layer_name}.svg")
+            plt.savefig(f"{output_path}convnet_filters_elevation_{layer_name}.png")
             plt.figure()
             plt.imshow(results[:,:,4])
-            plt.savefig(f"convnet_filters_slope_{layer_name}.svg")
+            plt.savefig(f"{output_path}convnet_filters_slope_{layer_name}.png")
 
-    def visualise_heatmaps_activations(self, image):
+    def visualise_heatmaps_activations(self, output_path, image):
         # This is the "fault" entry in the prediction vector
         african_elephant_output = self.model.output[:, 0]
 
@@ -176,7 +188,7 @@ class NnVisualisation:
         heatmap = np.maximum(heatmap, 0)
         heatmap /= np.max(heatmap)
         plt.matshow(heatmap)
-        plt.savefig("heatmaps_activations.svg")
+        plt.savefig(f"{output_path}heatmaps_activations.png")
 
 
 
