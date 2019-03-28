@@ -4,7 +4,7 @@ import numpy as np
 from src.DataPreprocessor.data_preprocessor import Mode
 from src.pipeline import global_params
 
-dataset = 0
+dataset = 1
 with h5py.File(f'../train_data/regions_{dataset}/data.h5', 'r') as hf:
     lbls = hf['lbls'][:]
 
@@ -13,7 +13,7 @@ with h5py.File(f'../train_data/regions_{dataset}/data_coords.h5', 'r') as hf:
 
 coords = coords.astype(np.int)
 lbls = lbls.astype(np.int)
-data_preprocessor = global_params.data_preprocessor_generators[0](Mode.TRAIN)
+data_preprocessor = global_params.data_preprocessor_generators[dataset](Mode.TRAIN)
 im_w, im_h, _ = data_preprocessor.get_data_shape()
 
 mask_0 = np.zeros((im_w, im_h))
