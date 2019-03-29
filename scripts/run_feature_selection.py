@@ -23,7 +23,6 @@ import matplotlib.pyplot as plt
 # use Pipeline instead
 from src.pipeline import global_params
 
-# todo sample validation set at beginning, once
 def run(class_probabilities: str, start_channels: List[int], add_channels:List[int], output_path="", epochs=5):
     np.random.seed(1)
     tf.set_random_seed(2)

@@ -34,5 +34,5 @@ plt.imsave(output_path+f"input_image_4.png", den_slope)
 image=image[:, :, 0:5]
 image = np.expand_dims(image, axis=0)
 #nn_visualisation.visualise_intermediate_activations(output_path, image)
-nn_visualisation.visualise_convnet_filters(output_path)
-#nn_visualisation.visualise_heatmaps_activations(output_path, image)
+#nn_visualisation.visualise_convnet_filters(output_path)
+nn_visualisation.visualise_heatmaps_activations(output_path, image)

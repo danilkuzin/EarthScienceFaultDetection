@@ -187,7 +187,13 @@ class NnVisualisation:
 
         heatmap = np.maximum(heatmap, 0)
         heatmap /= np.max(heatmap)
-        plt.matshow(heatmap)
+
+        fig = plt.figure(frameon=False)
+        fig.set_size_inches(150, 150)
+        ax = plt.Axes(fig, [0., 0., 1., 1.])
+        ax.set_axis_off()
+        fig.add_axes(ax)
+        ax.matshow(heatmap, aspect='auto')
         plt.savefig(f"{output_path}heatmaps_activations.png")
 
 

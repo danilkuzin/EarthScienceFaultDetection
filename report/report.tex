@@ -12,7 +12,7 @@
 \begin{document}
 
 \title{Fault Detection}
-\author{Danil Kuzin}
+\author{Danil Kuzin \\ \texttt{danilkuzin@gmail.com}}
 \date{January-March 2019}
 \maketitle
 
@@ -289,32 +289,49 @@ This can be explained by the manual selection of the training areas in Tibet are
 dataset in US that does not contain lookalikes.
 
 \section{NN visualisations}
-We consider several ways of visualising the learnt neural network, based on~\cite[Chapter 5, Section 4]{francois2017deep}.
+We consider several ways of visualising the learnt convolutional neural network, based on~\cite{francois2017deep}.
+We use the model trained on the Nevada training region.
+
 \subsection{Intermediate activations}
-Here we feed an image patch into the network and output the activations of layers. The example image in presented in \figurename~\ref{fig:nn_vis_input}
+First, we feed an image patch (The channels are presented in Figures~\ref{fig:nn_vis_conv_filters_inp_1},
+~\ref{fig:nn_vis_conv_filters_inp_2},~\ref{fig:nn_vis_conv_filters_inp_3}) into the network and check how it is processed
+by the convolutional layers.
+
 \begin{figure}[t]
     \centering
-    \begin{subfigure}[b]{0.12\textwidth}
+    \begin{subfigure}[b]{0.25\textwidth}
         \includegraphics[width=\textwidth]{graphics/nn_visualisation/input_image_0_2.png}
         \caption{optical}
+        \label{fig:nn_vis_conv_filters_inp_1}
     \end{subfigure}
     ~
-    \begin{subfigure}[b]{0.12\textwidth}
+    \begin{subfigure}[b]{0.25\textwidth}
         \includegraphics[width=\textwidth]{graphics/nn_visualisation/input_image_3.png}
         \caption{elevation}
-    \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.12\textwidth}
-        \includegraphics[width=\textwidth]{graphics/nn_visualisation/input_image_4.png}
-        \caption{slope}
+        \label{fig:nn_vis_conv_filters_inp_2}
     \end{subfigure}
 
-    \caption{Sampled fault patch from the Tibet region for the intermediate activations visualisation}
+    \begin{subfigure}[b]{0.25\textwidth}
+        \includegraphics[width=\textwidth]{graphics/nn_visualisation/input_image_4.png}
+        \caption{slope}
+        \label{fig:nn_vis_conv_filters_inp_3}
+    \end{subfigure}
+    ~
+    \begin{subfigure}[b]{0.25\textwidth}
+        \includegraphics[width=\textwidth]{graphics/nn_visualisation/heatmaps_activations.png}
+        \caption{Fault class activation map}
+        \label{fig:nn_vis_conv_filters_cam}
+    \end{subfigure}
+
+    \caption{Sampled fault patch from the Tibet region for the convolutions visualisation}
     \label{fig:nn_vis_input}
 \end{figure}
 
-The \figurename~\ref{fig:nn_vis_input_act} presents the activations of every filter for each convolutional layer for the
-input image. Different filters encode detectors for different features.
+The \figurename~\ref{fig:nn_vis_input_act} presents the outputs of every filter for each convolutional layer for the
+input patch. This demonstrates different features of the input patch that these filters were learnt to detect. The current
+two layers detect specific features, formed by nerby pixels. Potentially, due to hierarchical nature of convolutions,
+deeper convolutional layers would detect more abstract features, such as relationships between areas in different parts
+of the patch.
 
 \begin{figure}[t]
     \centering
@@ -333,27 +350,30 @@ input image. Different filters encode detectors for different features.
 \end{figure}
 
 \subsection{Convolutional filters}
-For this visualisation we optimise the input image to maximise the response of some convolutional filter. The
-optimisation of optical filters is noisy, so we provide the results for other bands in \figurename~\ref{fig:nn_vis_conv_filters}
+For this visualisation we optimise the input image to maximise the response of convolutional filters. Such
+optimisations are usually used for deeper convolutions only due to the locality of patterns learn by first convolutions.
+Nevertheless, we provide the results for elevation and slope channels of the input patches that maximise some of the
+convolutional layers outputs in \figurename~\ref{fig:nn_vis_conv_filters}. Potentially, this demonstrates that the data
+size should be increased to produce more meaningful maximising images even for the initial layers.
 
 \begin{figure}[t]
     \centering
-    \begin{subfigure}[b]{0.2\textwidth}
+    \begin{subfigure}[b]{0.4\textwidth}
         \includegraphics[width=\textwidth]{graphics/nn_visualisation/convnet_filters_elevation_conv2d.png}
         \caption{elevation, conv1}
     \end{subfigure}
     ~
-    \begin{subfigure}[b]{0.2\textwidth}
+    \begin{subfigure}[b]{0.4\textwidth}
         \includegraphics[width=\textwidth]{graphics/nn_visualisation/convnet_filters_elevation_conv2d_1.png}
         \caption{elevation, conv2}
     \end{subfigure}
-    ~
-    \begin{subfigure}[b]{0.2\textwidth}
+
+    \begin{subfigure}[b]{0.4\textwidth}
         \includegraphics[width=\textwidth]{graphics/nn_visualisation/convnet_filters_slope_conv2d.png}
         \caption{slope, conv1}
     \end{subfigure}
     ~
-    \begin{subfigure}[b]{0.2\textwidth}
+    \begin{subfigure}[b]{0.4\textwidth}
         \includegraphics[width=\textwidth]{graphics/nn_visualisation/convnet_filters_slope_conv2d_1.png}
         \caption{slope, conv2}
     \end{subfigure}
@@ -363,22 +383,31 @@ optimisation of optical filters is noisy, so we provide the results for other ba
 \end{figure}
 
 \subsection{Heatmaps of class activation}
-In this approach we optimise the location of the image that lead to the final classification.
-\begin{figure}[t]
-    \centering
-    \begin{subfigure}[b]{0.3\textwidth}
-        \includegraphics[width=\textwidth]{graphics/nn_visualisation/heatmaps_activations.png}
-        \caption{Activation}
-    \end{subfigure}
+In this approach we optimise the location of the patch that lead to the final classification. We compute the gradients
+of the predicted class label w.r.t. the output of the every filter at the last convolutional layer, and multiply them by
+the output of the corresponding filter. Averaging the resulting values by all filters produces the heatmap presented in
+\figurename~\ref{fig:nn_vis_conv_filters_cam}.
 
-    \caption{Class activation map for the classification as fault}
-    \label{fig:nn_vis_conv_filters}
-\end{figure}
+This approach can be used to determine which areas of the input patch are most meaningful for the prediction as fault
+and more arguably, where the fault is located. For this specific example it can be noticed that the neural network focuses
+too much on the mountain areas and too little on the actual fault area and potentially the training set should more diverse
+mountain areas, so that the actual fault area would be more important for classification.
 
-\section{Feature selection}
-For this experiment we test the value of features. Here we generate 1000 images from the Nevada training dataset, 250
-images from the Nevada test dataset. We train the model with three optical bands only, then we train the model with
-four bands by adding and then removing each remaining band. The validation accuracy is plotted in \figurename~\ref{fig:feature_selection}
+\section{Channel selection}
+For this experiment we test the importance of each input channel. Though it is not widely used for deep learning that is
+usually used for problems with visible spectrum only, for satellite images we have a lot of different bands form satellites
+in addition to the features extracted from these channels, that are used in earth science. For interpretability of the
+results it is important to choose a few of the channels that are the most important for the predictions. The usual data
+science approach is to greedily add the most valuable or remove the least valuable channel. In deep learning the alternative
+approach is to choose the channels that maximise the gradients of the correct predictions. We choose the first approach
+and run a simple experiment with addition of one channel only. This setup does not take into account the relationships
+between different channels.
+
+Here we generate 1000 images from the Nevada training dataset, 250 images from the Nevada test dataset. We first train
+the model with three optical channels only, then we train the model with four channels by adding and then removing each
+remaining channel. The validation accuracy is plotted in \figurename~\ref{fig:feature_selection}. Though the validation
+accuracy for two class classification is low, this scenario is considerably more difficult than previous, where the
+validation data was sampled from the same images as the training data.
 
 \begin{figure}[t]
     \centering
@@ -387,28 +416,58 @@ four bands by adding and then removing each remaining band. The validation accur
         \caption{Features}
     \end{subfigure}
 
-    \caption{Feature selection results. Features numbers correspond to the sequence in earlier chapter.}
+    \caption{Channel selection results. Channel numbers correspond to the sequence: elevation, slope, NIR, coastal,
+    SWIR1, SWIR2, panchromatic}
     \label{fig:feature_selection}
 \end{figure}
 
+\section{Implementation}
+The code is available in private repository \url{https://github.com/danilkuzin/EarthScienceFaultDetection/}
+(email \texttt{danilkuzin@gmail.com} to be added). It is
+implemented in python with tensorflow libraries for deep learning.
 
 \section{Future work}
+\subsection{Quality}
+    \begin{itemize}
+        \item Increasing the amount of data that we have may allow to increase the architecture of the network, receptive
+            fields of the convolutions on later layers may provide more meaningful visualisations.
+        \item There are different classes of faults mapped in the US region, such the ones in the valleys. Potentially,
+            they should be separated into a different class.
+        \item Predicting the physical parameters that describe the fault process.
+        \item Improving the transfer learning, by training models on one area and only fine-tuning the last layer with
+            the minimal data to adapt for new regions.
+    \end{itemize}
+\subsection{Machine learning}
+    \begin{itemize}
+        \item The training with lookalikes is an interesting way to use GANs by feeding faults and lookalikes and trying to
+            distinguish between them.
+        \item Postprocessing of predictions to get the connected lines, that can be potentially achieved with Gaussian processes,
+            or denoising autoencoders.
+        \item Automatically evaluate quality of mapped labels / learning from different labels for the same area (as in
+            crowdsourcing with BCC)
+        \item Different architecture to predict lines opposite to heatmaps. This is not well-research topic in machine learning.
+    \end{itemize}
+\subsection{Technical}
+    \begin{itemize}
+        \item Selection of the training data from the labelled image can be reassessed, for example how to sample
+            uniformly from labelled lines and patches, or if it is necessary to sample from faults and lookalikes without
+            intesection.
+        \item Currently sampled data is stored in memory, which should be updated to loading data chunks from HDD by request.
+        \item Preprocessing can include further random transformations: well-established optical transforms, such as changing
+            brightness and contrast, cropping. For other channels the methods are not explored in the literature.
+    \end{itemize}
+
+\section{Conclusion}
+We have demonstrated how the deep learning methods can be applied to the fault detection problem. Even with the LeNet-5
+architecture we achieve the following important results:
 \begin{itemize}
-\item Increasing the amount of data that we have may allow to increase the architecture of the network, receptive
-fields of the convolutions on later layers may provide more meaningful visualisations.
-\item Preprocessing can include further random transformations: well-established optical transforms, such as changing
-brightness and contrast, cropping. For other channels the methods are not explored in the literature.
-\item The training with lookalikes is an interesting way to use GANs by feeding faults and lookalikes and trying to
-distinguish between them.
-\item There are different classes of faults ampped in the US region, such the ones in the valleys. Potentially,
-they should be separated into a different class.
-\item Postprocessing of predictions to get the connected lines, that can be potentially achieved with Gaussian processes,
-or denoising autoencoders.
-\item Automatically evaluate quality of mapped labels / learning from different labels for the same area (as in
-crowdsourcing with BCC)
-\item Different architecture to predict lines opposite to heatmaps. This is not well-research topic in machine learning.
-\item Predicting the physical parameters that describe the fault process.
+    \item The model trained on Tibet regions with carefully drawn training labels can be applied to the similar
+    nearby regions, providing good performance.
+    \item The model trained on one of the regions can be applied to the areas in a different parts of the world,
+    detecting some major faults.
+    \item The model trained on the publicly available fault lines without lookalikes can detect some major faults in other regions.
 \end{itemize}
+There are different ways to continue the research as outlined in the future work section.
 
 \printbibliography
 
