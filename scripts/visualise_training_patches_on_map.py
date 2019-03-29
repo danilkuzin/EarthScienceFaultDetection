@@ -4,7 +4,7 @@ import numpy as np
 from src.DataPreprocessor.data_preprocessor import Mode
 from src.pipeline import global_params
 
-dataset = 1
+dataset = 6
 with h5py.File(f'../train_data/regions_{dataset}/data.h5', 'r') as hf:
     lbls = hf['lbls'][:]
 
@@ -33,8 +33,8 @@ for n in range(coords.shape[0]):
 mask_0 = mask_0 / np.max(mask_0)
 mask_1 = mask_1 / np.max(mask_1)
 
-data_preprocessor.data_io_backend.write_surface(f'../train_data/regions_{dataset}/data_patches_0.tif', mask_0)
-data_preprocessor.data_io_backend.write_surface(f'../train_data/regions_{dataset}/data_patches_1.tif', mask_1)
+data_preprocessor.data_io_backend.write_surface(f'../train_data/regions_{dataset}/data_patches_faults.tif', mask_0)
+data_preprocessor.data_io_backend.write_surface(f'../train_data/regions_{dataset}/data_patches_non_faults.tif', mask_1)
 
 
 
