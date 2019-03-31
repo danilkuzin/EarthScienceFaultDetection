@@ -17,9 +17,7 @@
 \maketitle
 
 \abstract
-This report presents the results of the work done for geological faults detection with deep learning methods.
-
-
+This report presents the results of the work done for geological faults detection with deep learning methods. The work was done during the internship at Machine Learning Research Group jointly with Department of Earth Sciences of the University of Oxford.
 
 \section{Introduction}
 Deep learning methods are usually used for the machine learning problems when features of the data are complex and it
@@ -28,7 +26,7 @@ with different meanings of words depending on the context, or image recognition 
 of deep learning models usually requires large datasets, but the trained models can produce results that are better than
 of human experts for these problems.
 
-We consider the deep learning approach for the problem of geological faults detection. Faults appear as a results of
+We consider the deep learning approach for the problem of geological faults detection. Faults appear as results of
 land masses moving and can be dangerous to the people leaving nearby as they can cause earthquakes when they continue to
 move. While in some regions, such as US these areas are well-researched, there are large regions remaining, such as Tibet,
 or Iran, that lack the detailed maps of faults.
@@ -41,33 +39,29 @@ We believe that deep learning approach can automatically recognise image feature
 variety of image bands and may even lead to reconsidering existing on-site approaches for fault detection, like the
 deep-learning AlphaGo system has introduced new strategies in the game of Go even for the professional players.
 
-The relevant literature includes: training CNNs on synthetic and real seismic data for faults
+The relevant literature includes: training convolutional neural networks on synthetic and real seismic data for faults
 detection~\cite{pochet2018seismic, araya2017automated, xiong2018seismic, chehrazi2013seismic, lu2018using, hale2014}.
-But most of these works include other data from the seismic images, or don't consider the real data. We are using the
+But most of these works include other types of data from the seismic images, or don't consider the real data. We are using the
 professionally-mapped real data for training and performance evaluation.
 
-%The other literature on detection from satellite images includes: detecting roads on pixel level from lots of satellite
-%images and then denoising to get connected nets \cite{mnih2010learning},
-
 \section{Data}
-
 We obtained the satellite images from the Landsat-8 satellite and elevation data from the Opentopography: Shuttle Radar
-Topography Mission (SRTM GL1) Global 30m.
+Topography Mission (SRTM GL1) Global 30m dataset.
 
 The full list of channels is:
 \begin{itemize}
-\item \textit{Red, Green, Blue} - visible spectrum from Landsat-8
-\item \textit{Elevation} - elevation data from SRTM
-\item \textit{Slope} - estimated based on elevation with Geospatial Data Abstraction Library
-\item \textit{Coastal} - ultrablue band, useful for coastal water and aerosol studies from Landsat-8
+\item \textit{Red, Green, Blue} --- visible spectrum from Landsat-8
+\item \textit{Elevation} --- elevation data from SRTM
+\item \textit{Slope} --- estimated based on elevation with Geospatial Data Abstraction Library
+\item \textit{Coastal} --- ultrablue band, useful for coastal water and aerosol studies from Landsat-8
 \item \textit{Near Infrared} - useful for biomass content and shorelines from Landsat-8
-\item \textit{Short-wave Infrared 1} - useful for moisture content of soil and vegetation from Landsat-8
-\item \textit{Short-wave Infrared 2} - useful for moisture content from Landsat-8
-\item \textit{Panchromatic} - finer resolution from Landsat-8
-\item \textit{Erosion} - the estimted difference from the smoothed image
-\item \textit{Curvature} - the estimated Hessian of the elevation
-\item \textit{Thermal Infrared 1} - thermal mapping and estimated soil moisture from Landsat-8
-\item \textit{Thermal Infrared 2} - thermal mapping and estimated soil moisture from Landsat-8
+\item \textit{Short-wave Infrared 1} --- useful for moisture content of soil and vegetation from Landsat-8
+\item \textit{Short-wave Infrared 2} --- useful for moisture content from Landsat-8
+\item \textit{Panchromatic} --- finer resolution from Landsat-8
+\item \textit{Erosion} --- the estimated difference from the smoothed image
+\item \textit{Curvature} --- the estimated Hessian of the elevation
+\item \textit{Thermal Infrared 1} --- thermal mapping and estimated soil moisture from Landsat-8
+\item \textit{Thermal Infrared 2} --- thermal mapping and estimated soil moisture from Landsat-8
 \end{itemize}
 
 For neural networks data is usually normalised, so that the input data comes from the same distribution. Given that we
@@ -197,14 +191,13 @@ Then the gradient of the loss is used to update the layer weights.
 \section{Experiments}
 To visualise the predictions we create the heatmaps for fault probabilities at each region. The sequential patches
 taken with stride of 10 pixels from the original images are fed into the neural network, and the fault probabilities are
-recorded for all pixels within that area. Then the fault probabilities are averaged for all pixels as an exp of the
-average log.
+recorded for all pixels within that area. Then the fault probabilities are averaged for all pixels as the geometric average.
 
 
 \subsection{Train on Tibet data}
 For this experiment we sample 2000 patches of size 150x150 pixels (5km x 5km) from each of the Tibet regions 1 and 2,
 randomly rotated and flipped, with probabilities 0.5 from faults, 0.25 from lookalikes, 0.25 from nonfaults, so we have
-approximately 2000 fault patches and 2000 non-fault patches, 80% of which are used for training, 20% for validation.
+approximately 2000 fault patches and 2000 non-fault patches, 80\% of which are used for training, 20\% for validation.
 
 Faults and fault lookalikes are marked with lines, we sample random points from these lines and create patches with
 centers at these points. Non-fault areas are marked with polygons, we sample patches that fully lie within the marked
@@ -431,7 +424,7 @@ implemented in python with tensorflow libraries for deep learning.
     \begin{itemize}
         \item Increasing the amount of data that we have may allow to increase the architecture of the network, receptive
             fields of the convolutions on later layers may provide more meaningful visualisations.
-        \item There are different classes of faults mapped in the US region, such the ones in the valleys. Potentially,
+        \item There are different classes of faults mapped in the US region, such as the ones in the valleys. Potentially,
             they should be separated into a different class.
         \item Predicting the physical parameters that describe the fault process.
         \item Improving the transfer learning, by training models on one area and only fine-tuning the last layer with
@@ -439,19 +432,19 @@ implemented in python with tensorflow libraries for deep learning.
     \end{itemize}
 \subsection{Machine learning}
     \begin{itemize}
-        \item The training with lookalikes is an interesting way to use GANs by feeding faults and lookalikes and trying to
+        \item The training with lookalikes is an interesting way to use generative modelling by feeding faults and lookalikes and trying to
             distinguish between them.
         \item Postprocessing of predictions to get the connected lines, that can be potentially achieved with Gaussian processes,
             or denoising autoencoders.
-        \item Automatically evaluate quality of mapped labels / learning from different labels for the same area (as in
-            crowdsourcing with BCC)
-        \item Different architecture to predict lines opposite to heatmaps. This is not well-research topic in machine learning.
+        \item Automatic evaluation of the quality of mapped labels and learning from different labels for the same area (as in
+            crowdsourcing).
+        \item Different architectures to predict lines opposite to heatmaps. This is not well-research topic in machine learning.
     \end{itemize}
 \subsection{Technical}
     \begin{itemize}
         \item Selection of the training data from the labelled image can be reassessed, for example how to sample
             uniformly from labelled lines and patches, or if it is necessary to sample from faults and lookalikes without
-            intesection.
+            intersection.
         \item Currently sampled data is stored in memory, which should be updated to loading data chunks from HDD by request.
         \item Preprocessing can include further random transformations: well-established optical transforms, such as changing
             brightness and contrast, cropping. For other channels the methods are not explored in the literature.
