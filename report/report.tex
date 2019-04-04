@@ -445,7 +445,7 @@ implemented in python with tensorflow libraries for deep learning.
         \item Selection of the training data from the labelled image can be reassessed, for example how to sample
             uniformly from labelled lines and patches, or if it is necessary to sample from faults and lookalikes without
             intersection.
-        \item Currently sampled data is stored in memory, which should be updated to loading data chunks from HDD by request.
+        \item Large patches of data lead to slowness of processing. Few updates are required to improve the process: storing data in the cloud or remote storage, processing remotely on HPC or GPUs, loading data chunks by request.
         \item Preprocessing can include further random transformations: well-established optical transforms, such as changing
             brightness and contrast, cropping. For other channels the methods are not explored in the literature.
     \end{itemize}
