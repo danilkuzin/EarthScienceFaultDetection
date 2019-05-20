@@ -27,7 +27,12 @@ for (preprocessor_ind, data_preprocessor_generator) in enumerate(global_params.d
     faults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 0],
                                          original_2dimage_shape=original_2dimage_shape)
     res_faults = faults_postprocessor.heatmaps(mode="mean")
-    data_preprocessor.data_io_backend.write_surface("training_on_6_split_validation/heatmaps_trained_on_6_faults_{}.tif".format(preprocessor_ind), res_faults)
+    data_preprocessor.data_io_backend.write_image(
+        "training_on_6_split_validation/heatmaps_trained_on_6_faults_{}.tif".format(preprocessor_ind),
+        res_faults*100)
+    data_preprocessor.data_io_backend.write_surface(
+        "training_on_6_split_validation/heatmaps_trained_on_6_faults_{}.tif".format(preprocessor_ind),
+        res_faults)
 
     # nonfaults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 1],
     #                                             original_2dimage_shape=original_2dimage_shape)
