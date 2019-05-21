@@ -1,5 +1,6 @@
 from typing import List
 
+import h5py
 import numpy as np
 import tensorflow as tf
 
@@ -14,31 +15,28 @@ np.random.seed(1)
 tf.set_random_seed(2)
 
 
-# use Pipeline instead
-def predict(datasets: List[int], models_folder, ensemble_size, classes, channels, heatmap_mode="max", stride=25,
-            batch_size=20):
+def predict(datasets: List[int], models_folder, classes, channels, stride=25, batch_size=20):
     if classes == 3:
-        model_generator = lambda: cnn_150x150x5_3class()
+        model = cnn_150x150x5_3class()
     elif classes == 2:
         if len(channels) == 12:
-            model_generator = lambda: cnn_150x150x12()
+            model = cnn_150x150x12()
         elif len(channels) == 11:
-            model_generator = lambda: cnn_150x150x11()
+            model = cnn_150x150x11()
         elif len(channels) == 5:
-            model_generator = lambda: cnn_150x150x5()
+            model = cnn_150x150x5()
         elif len(channels) == 4:
-            model_generator = lambda: cnn_150x150x4()
+            model = cnn_150x150x4()
         elif len(channels) == 3:
-            model_generator = lambda: cnn_150x150x3()
+            model = cnn_150x150x3()
         elif len(channels) == 1:
-            model_generator = lambda: cnn_150x150x1()
+            model = cnn_150x150x1()
         else:
             raise Exception()
     else:
         raise Exception('not supported')
 
-    trainer = KerasTrainer(model_generator=model_generator,
-                           ensemble_size=ensemble_size)
+    trainer = KerasTrainer(model=model)
 
     trainer.load(input_path=models_folder)
 
@@ -50,28 +48,30 @@ def predict(datasets: List[int], models_folder, ensemble_size, classes, channels
         boxes, probs = trainer.apply_for_sliding_window(
             data_preprocessor=data_preprocessor, patch_size=(150, 150), stride=stride, batch_size=batch_size,
             channels=channels)
+
+        with h5py.File(models_folder + f'{models_folder}/sliding_window_{preprocessor_ind}.h5', 'w') as hf:
+            hf.create_dataset("boxes", data=boxes)
+            hf.create_dataset("probs", data=probs)
+
+
+def postprocess(datasets: List[int], models_folder, heatmap_mode="max"):
+
+    for (preprocessor_ind, data_preprocessor_generator) in enumerate(global_params.data_preprocessor_generators):
+        if preprocessor_ind not in datasets:
+            continue
+
+        data_preprocessor = data_preprocessor_generator(Mode.TEST)
+
+        with h5py.File(models_folder + f'{models_folder}/sliding_window_{preprocessor_ind}.h5', 'w') as hf:
+            boxes = hf["boxes"][:]
+            probs = hf["probs"][:]
+
         original_2dimage_shape = (data_preprocessor.get_data_shape()[0], data_preprocessor.get_data_shape()[1])
         faults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 0],
                                              original_2dimage_shape=original_2dimage_shape)
         res_faults = faults_postprocessor.heatmaps(mode=heatmap_mode)
-        data_preprocessor.data_io_backend.write_surface("heatmaps_faults_{}.tif".format(preprocessor_ind), res_faults)
-
-        if classes == 3:
-            lookalikes_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 1],
-                                                     original_2dimage_shape=original_2dimage_shape)
-            res_lookalikes = lookalikes_postprocessor.heatmaps(mode=heatmap_mode)
-            data_preprocessor.data_io_backend.write_surface("heatmaps_lookalikes_{}.tif".format(preprocessor_ind),
-                                                            res_lookalikes)
-
-            nonfaults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 2],
-                                                    original_2dimage_shape=original_2dimage_shape)
-            res_nonfaults = nonfaults_postprocessor.heatmaps(mode="max")
-            data_preprocessor.data_io_backend.write_surface("heatmaps_nonfaults_{}.tif".format(preprocessor_ind),
-                                                            res_nonfaults)
-
-        elif classes == 2:
-            nonfaults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 1],
-                                                    original_2dimage_shape=original_2dimage_shape)
-            res_nonfaults = nonfaults_postprocessor.heatmaps(mode=heatmap_mode)
-            data_preprocessor.data_io_backend.write_surface("heatmaps_nonfaults_{}.tif".format(preprocessor_ind),
-                                                            res_nonfaults)
+        data_preprocessor.data_io_backend.write_image(
+            f"{models_folder}/heatmaps_probs_{preprocessor_ind}",
+            res_faults * 100)
+        data_preprocessor.data_io_backend.write_surface(
+            f"{models_folder}/heatmaps_faults_{res_faults}")

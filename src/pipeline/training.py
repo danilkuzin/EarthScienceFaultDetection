@@ -1,49 +1,71 @@
+import pathlib
 from typing import List, Tuple
 
-import matplotlib.pyplot as plt
+import h5py
 import numpy as np
 import tensorflow as tf
-import pathlib
 
-from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
-from src.DataPreprocessor.PatchesOutputBackend.in_memory_backend import InMemoryBackend
 from src.DataPreprocessor.data_generator import DataGenerator
-from src.DataPreprocessor.data_preprocessor import DataPreprocessor, Mode
-from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5_2class_3convolutions, cnn_150x150x5, \
+from src.DataPreprocessor.data_preprocessor import Mode
+from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5, \
     cnn_150x150x3, cnn_150x150x1, cnn_150x150x12, cnn_150x150x11, cnn_150x150x4, cnn_150x150x1_3class, \
     cnn_150x150x3_3class, cnn_150x150x10
-#from src.LearningKeras.net_architecture import CnnModel150x150x5
-from src.LearningKeras.train import KerasTrainer
-
-# use Pipeline instead
 from src.pipeline import global_params
 
 
-#todo sample validation set at beginning, once
-def train(train_datasets: List[int], test_datasets: List[int], validation_datasets: List[int], class_probabilities: str,
-          batch_size: int, patch_size: Tuple[int, int], channels: List[int], output_path="", steps_per_epoch=50,
-          epochs=5, valid_size=1000):
-    np.random.seed(1)
-    tf.set_random_seed(2)
+def get_class_probabilities_int(class_probabilities):
+    class_probabilities_int = None
 
-    train_preprocessors = [global_params.data_preprocessor_generators[ind](Mode.TRAIN) for ind in train_datasets]
-    train_data_generator = DataGenerator(preprocessors=train_preprocessors)
-    # test_preprocessors = [global_params.data_preprocessor_generators[ind](Mode.TRAIN) for ind in test_datasets]
-    # test_data_generator = DataGenerator(preprocessors=test_preprocessors)
-    valid_preprocessors = [global_params.data_preprocessor_generators[ind](Mode.TRAIN) for ind in validation_datasets]
-    valid_data_generator = DataGenerator(preprocessors=valid_preprocessors)
+    if class_probabilities not in ["equal", "two-class"]:
+        raise ValueError()
 
     if class_probabilities == "equal":
         class_probabilities_int = np.array([1. / 3, 1. / 3, 1. / 3])
+    elif class_probabilities == "two-class":
+        class_probabilities_int = np.array([0.5, 0.25, 0.25])
+    return class_probabilities_int
+
+
+def get_train_joint_generator(class_probabilities, class_probabilities_int, train_data_generator, batch_size,
+                              patch_size, channels):
+    if class_probabilities == "equal":
         train_joint_generator = train_data_generator.generator_3class(batch_size=batch_size,
-                                                   class_probabilities=class_probabilities_int,
-                                                   patch_size=patch_size,
-                                                   channels=np.array(channels))
+                                                                      class_probabilities=class_probabilities_int,
+                                                                      patch_size=patch_size,
+                                                                      channels=np.array(channels))
+    elif class_probabilities == "two-class":
+        train_joint_generator = train_data_generator.generator_2class_lookalikes_with_nonfaults(batch_size=batch_size,
+                                                                                                class_probabilities=class_probabilities_int,
+                                                                                                patch_size=patch_size,
+                                                                                                channels=np.array(
+                                                                                                    channels))
+    else:
+        raise ValueError()
+
+    return train_joint_generator
+
+
+def get_valid_joint_generator(class_probabilities, class_probabilities_int, valid_data_generator, valid_size,
+                              patch_size, channels):
+    if class_probabilities == "equal":
         valid_joint_generator = valid_data_generator.generator_3class(batch_size=valid_size,
                                                                       class_probabilities=class_probabilities_int,
                                                                       patch_size=patch_size,
                                                                       channels=np.array(channels))
+    elif class_probabilities == "two-class":
+        valid_joint_generator = valid_data_generator.generator_2class_lookalikes_with_nonfaults(batch_size=valid_size,
+                                                                                                class_probabilities=class_probabilities_int,
+                                                                                                patch_size=patch_size,
+                                                                                                channels=np.array(
+                                                                                                    channels))
+    else:
+        raise ValueError()
 
+    return valid_joint_generator
+
+
+def get_model(class_probabilities, channels):
+    if class_probabilities == "equal":
         if len(channels) == 5:
             model = cnn_150x150x5_3class()
         elif len(channels) == 3:
@@ -54,16 +76,6 @@ def train(train_datasets: List[int], test_datasets: List[int], validation_datase
             raise Exception()
 
     elif class_probabilities == "two-class":
-        class_probabilities_int = np.array([0.5, 0.25, 0.25])
-        train_joint_generator = train_data_generator.generator_2class_lookalikes_with_nonfaults(batch_size=batch_size,
-                                                   class_probabilities=class_probabilities_int,
-                                                   patch_size=patch_size,
-                                                   channels=np.array(channels))
-        valid_joint_generator = valid_data_generator.generator_2class_lookalikes_with_nonfaults(batch_size=valid_size,
-                                                                                                class_probabilities=class_probabilities_int,
-                                                                                                patch_size=patch_size,
-                                                                                                channels=np.array(
-                                                                                                    channels))
         if len(channels) == 12:
             model = cnn_150x150x12()
         elif len(channels) == 11:
@@ -83,49 +95,117 @@ def train(train_datasets: List[int], test_datasets: List[int], validation_datase
 
     else:
         raise Exception('Not implemented')
+    return model
 
+
+# todo sample validation set at beginning, once
+def train(train_datasets: List[int], test_datasets: List[int], validation_datasets: List[int], class_probabilities: str,
+          batch_size: int, patch_size: Tuple[int, int], channels: List[int], output_path="", steps_per_epoch=50,
+          epochs=5, valid_size=1000):
+    np.random.seed(1)
+    tf.set_random_seed(2)
+
+    train_preprocessors = [global_params.data_preprocessor_generators[ind](Mode.TRAIN) for ind in train_datasets]
+    train_data_generator = DataGenerator(preprocessors=train_preprocessors)
+    # test_preprocessors = [global_params.data_preprocessor_generators[ind](Mode.TRAIN) for ind in test_datasets]
+    # test_data_generator = DataGenerator(preprocessors=test_preprocessors)
+    valid_preprocessors = [global_params.data_preprocessor_generators[ind](Mode.TRAIN) for ind in validation_datasets]
+    valid_data_generator = DataGenerator(preprocessors=valid_preprocessors)
+
+    class_probabilities_int = get_class_probabilities_int(class_probabilities)
+    train_joint_generator = get_train_joint_generator(class_probabilities, class_probabilities_int,
+                                                      train_data_generator, batch_size, patch_size, channels)
+    valid_joint_generator = get_valid_joint_generator(class_probabilities, class_probabilities_int,
+                                                      valid_data_generator, valid_size, patch_size, channels)
+
+    model = get_model(class_probabilities, channels)
+
+    #todo test earlystopping
     callbacks = [
         tf.keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=1, batch_size=32, write_graph=True,
                                        write_grads=True, write_images=True),
-        tf.keras.callbacks.CSVLogger(filename='log.csv', separator=',', append=False)
+        tf.keras.callbacks.CSVLogger(filename='log.csv', separator=',', append=False),
+        tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=2, verbose=1, mode='auto',
+                                         baseline=None)
     ]
 
     imgs_valid, lbls_valid, _ = next(valid_joint_generator)
-    valid_joint_generator = None # release resources #todo replace with "with"
-    valid_preprocessors = None # release resources
+    valid_joint_generator = None  # release resources #todo replace with "with"
+    valid_preprocessors = None  # release resources
 
-    #todo train_joint_generator may now return 3 arrays instead of two, which is incorrect for fit_generator
+    # todo train_joint_generator may now return 3 arrays instead of two, which is incorrect for fit_generator
     history = model.fit_generator(generator=train_joint_generator,
-                                             steps_per_epoch=steps_per_epoch,
-                                             epochs=epochs,
-                                             verbose=2,
-                                             callbacks=callbacks,
-                                             validation_data=(imgs_valid, lbls_valid),
-                                             workers=0,
-                                             use_multiprocessing=False)
+                                  steps_per_epoch=steps_per_epoch,
+                                  epochs=epochs,
+                                  verbose=2,
+                                  callbacks=callbacks,
+                                  validation_data=(imgs_valid, lbls_valid),
+                                  workers=0,
+                                  use_multiprocessing=False)
 
     pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
     model.save_weights(output_path + '/model_{}.h5'.format(''.join(str(i) for i in train_datasets)))
 
-    #switched to tensorboard + csv
-        # plt.plot(history.history['acc'])
-        # plt.plot(history.history['val_acc'])
-        # plt.title('Model accuracy')
-        # plt.ylabel('Accuracy')
-        # plt.xlabel('Epoch')
-        # plt.legend(['Train', 'Test'], loc='upper left')
-        # plt.savefig("Model accuracy_{}.png".format(hist_ind))
-        # plt.close()
-        #
-        # # Plot training & validation loss values
-        # plt.plot(history.history['loss'])
-        # plt.plot(history.history['val_loss'])
-        # plt.title('Model loss')
-        # plt.ylabel('Loss')
-        # plt.xlabel('Epoch')
-        # plt.legend(['Train', 'Test'], loc='upper left')
-        # plt.savefig("Model loss_{}.png".format(hist_ind))
-        # plt.close()
+    # switched to tensorboard + csv
+    # plt.plot(history.history['acc'])
+    # plt.plot(history.history['val_acc'])
+    # plt.title('Model accuracy')
+    # plt.ylabel('Accuracy')
+    # plt.xlabel('Epoch')
+    # plt.legend(['Train', 'Test'], loc='upper left')
+    # plt.savefig("Model accuracy_{}.png".format(hist_ind))
+    # plt.close()
+    #
+    # # Plot training & validation loss values
+    # plt.plot(history.history['loss'])
+    # plt.plot(history.history['val_loss'])
+    # plt.title('Model loss')
+    # plt.ylabel('Loss')
+    # plt.xlabel('Epoch')
+    # plt.legend(['Train', 'Test'], loc='upper left')
+    # plt.savefig("Model loss_{}.png".format(hist_ind))
+    # plt.close()
 
+def load_data(regions, channels, train_ratio):
+    imgs_raw = []
+    lbls_raw = []
+    for reg_id in regions:
+        with h5py.File(f'../train_data/regions_{reg_id}/data.h5', 'r') as hf:
+            imgs_raw.append(hf['imgs'][:])
+            lbls_raw.append(hf['lbls'][:])
 
+    imgs = np.concatenate(imgs_raw, axis=0)
+    lbls = np.concatenate(lbls_raw, axis=0)
 
+    permuted_ind = np.random.permutation(imgs.shape[0])
+    imgs = imgs[permuted_ind]
+    lbls = lbls[permuted_ind]
+
+    imgs = imgs[:, :, :, channels]
+
+    train_len = int(imgs.shape[0] * train_ratio)
+    imgs_train = imgs[:train_len].copy()
+    lbls_train = lbls[:train_len].copy()
+    imgs_valid = imgs[train_len:].copy()
+    lbls_valid = lbls[train_len:].copy()
+
+    return imgs_train, lbls_train, imgs_valid, lbls_valid
+
+def train_on_preloaded(model, imgs_train, lbls_train, imgs_valid, lbls_valid, folder, epochs):
+    pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
+
+    callbacks = [
+        tf.keras.callbacks.CSVLogger(filename=f'{folder}/log.csv', separator=',',
+                                     append=False)
+    ]
+
+    history = model.fit(x=imgs_train,
+                        y=lbls_train,
+                        epochs=epochs,
+                        verbose=1,
+                        callbacks=callbacks,
+                        validation_data=(imgs_valid, lbls_valid),
+                        workers=0,
+                        use_multiprocessing=False)
+
+    model.save_weights(folder + '/model.h5')
