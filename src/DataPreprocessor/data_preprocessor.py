@@ -312,10 +312,8 @@ class DataPreprocessor:
 
         for i in range(batch_size):
             patch, coords = self.sample_patch(label=class_labels[i], patch_size=patch_size)
-            img_batch[i] = patch[:, :, channels]
+            img_batch[i] = ImageAugmentation.augment(patch[:, :, channels])
             coords_batch[i] = coords
-
-        img_batch = ImageAugmentation.augment(img_batch)
 
         return img_batch, coords_batch
 

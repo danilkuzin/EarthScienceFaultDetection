@@ -10,6 +10,7 @@ class ImageAugmentation:
         x = tf.image.random_flip_up_down(x)
         x = tf.image.random_brightness(x, 0.05)
         x = tf.image.random_contrast(x, 0.7, 1.3)
+
         x = ImageAugmentation.zoom(x)
         return x.numpy()
 
@@ -24,7 +25,7 @@ class ImageAugmentation:
             boxes[i] = [x1, y1, x2, y2]
 
         def random_crop(img):
-            crops = tf.image.crop_and_resize([img], boxes=boxes, box_ind=np.zeros(len(scales)), crop_size=(32, 32))
+            crops = tf.image.crop_and_resize([img], boxes=boxes, box_ind=np.zeros(len(scales)), crop_size=(150, 150))
             return crops[tf.random_uniform(shape=[], minval=0, maxval=len(scales), dtype=tf.int32)]
 
         choice = tf.random_uniform(shape=[], minval=0., maxval=1., dtype=tf.float32)
