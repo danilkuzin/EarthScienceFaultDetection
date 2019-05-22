@@ -4,9 +4,11 @@ from enum import Enum
 from typing import List, Tuple
 
 import numpy as np
+from tqdm import trange
 
 from src.DataPreprocessor.DataIOBackend.backend import DataIOBackend
 from src.DataPreprocessor.PatchesOutputBackend.backend import PatchesOutputBackend
+from src.DataPreprocessor.image_augmentation import ImageAugmentation
 
 
 class OutOfBoundsException(Exception):
@@ -310,55 +312,60 @@ class DataPreprocessor:
 
         for i in range(batch_size):
             patch, coords = self.sample_patch(label=class_labels[i], patch_size=patch_size)
-
-            for _ in range(np.random.randint(0, 4)):
-                patch = np.rot90(patch, axes=(0, 1))
-            for _ in range(np.random.randint(0, 2)):
-                patch = np.fliplr(patch)
-            for _ in range(np.random.randint(0, 2)):
-                patch = np.flipud(patch)
-
-            # if np.array_equal(channels[0, 1, 2], np.array([0, 1, 2])):
-                #make optical transforms
-
             img_batch[i] = patch[:, :, channels]
             coords_batch[i] = coords
 
+        img_batch = ImageAugmentation.augment(img_batch)
+
         return img_batch, coords_batch
 
-    def get_sample_3class(self, batch_size, class_probabilities, patch_size, channels):
+    def get_sample_3class(self, batch_size, class_probabilities, patch_size, channels, verbose:int):
         lbl_batch = np.zeros((batch_size, 3))
         class_labels = np.random.choice(class_probabilities.shape[0], batch_size, p=class_probabilities)
 
         img_batch, coords_batch = self.sample_batch(batch_size, class_labels, patch_size, channels)
 
-        for i in range(batch_size):
-            lbl_batch[i, class_labels[i]] = 1
-        return img_batch, lbl_batch
+        if verbose == 0:
+            tqdm_disable = True
+        elif verbose == 1:
+            tqdm_disable = False
+        else:
+            raise ValueError()
 
-    def get_sample_2class_lookalikes_with_nonfaults(self, batch_size, class_probabilities, patch_size, channels):
+        for i in trange(batch_size, disable=tqdm_disable):
+            lbl_batch[i, class_labels[i]] = 1
+        return img_batch, lbl_batch, coords_batch
+
+    def get_sample_2class_lookalikes_with_nonfaults(self, batch_size, class_probabilities, patch_size, channels, verbose:int):
         lbl_batch = np.zeros((batch_size, 2))
         class_labels = np.random.choice(class_probabilities.shape[0], batch_size, p=class_probabilities)
 
         img_batch, coords_batch = self.sample_batch(batch_size, class_labels, patch_size, channels)
 
-        for i in range(batch_size):
+        if verbose == 0:
+            tqdm_disable = True
+        elif verbose == 1:
+            tqdm_disable = False
+        else:
+            raise ValueError()
+
+        for i in trange(batch_size, disable=tqdm_disable):
             if class_labels[i] == FeatureValue.NONFAULT.value or class_labels[i] == FeatureValue.FAULT_LOOKALIKE.value:
                 lbl_batch[i, 1] = 1
             elif class_labels[i] == FeatureValue.FAULT.value:
                 lbl_batch[i, 0] = 1
         return img_batch, lbl_batch, coords_batch
 
-    def train_generator_3class(self, batch_size, class_probabilities, patch_size, channels):
+    def train_generator_3class(self, batch_size, class_probabilities, patch_size, channels, verbose:int):
         while True:
-            img_batch, lbl_batch, coords_batch = self.get_sample_3class(batch_size, class_probabilities, patch_size, channels)
+            img_batch, lbl_batch, coords_batch = self.get_sample_3class(batch_size, class_probabilities, patch_size, channels, verbose)
             yield img_batch.astype(np.float32), lbl_batch.astype(np.int32), coords_batch
 
-    def train_generator_2class_lookalikes_with_nonfaults(self, batch_size, class_probabilities, patch_size, channels):
+    def train_generator_2class_lookalikes_with_nonfaults(self, batch_size, class_probabilities, patch_size, channels, verbose:int):
         #todo replace channels as array of ints with array of strings, as we have no explicit mapping of strings to ints
         while True:
             img_batch, lbl_batch, coords_batch = self.get_sample_2class_lookalikes_with_nonfaults(batch_size, class_probabilities,
-                                                                                    patch_size, channels)
+                                                                                    patch_size, channels, verbose)
             yield img_batch, lbl_batch, coords_batch
 
     def sequential_pass_generator(self, patch_size: Tuple[int, int], stride: int, batch_size: int, channels: List[int]):

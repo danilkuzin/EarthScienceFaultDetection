@@ -10,7 +10,7 @@ class DataGenerator:
     def __init__(self, preprocessors: List[DataPreprocessor]):
         self.preprocessors = preprocessors
 
-    def generator_3class(self, batch_size: int, class_probabilities: np.array, patch_size: Tuple[int, int], channels: np.array):
+    def generator_3class(self, batch_size: int, class_probabilities: np.array, patch_size: Tuple[int, int], channels: np.array, verbose: int):
         while True:
             img_batches = []
             lbl_batches = []
@@ -20,13 +20,14 @@ class DataGenerator:
                     batch_size=batch_size,
                     class_probabilities=class_probabilities,
                     patch_size=patch_size,
-                    channels=channels))
+                    channels=channels,
+                    verbose=verbose))
                 img_batches.append(img_batch)
                 lbl_batches.append(lbl_batch)
                 coords_batches.append(coords_batch)
             yield img_batches, lbl_batches
 
-    def generator_2class_lookalikes_with_nonfaults(self, batch_size: int, class_probabilities: np.array, patch_size: Tuple[int, int], channels: np.array):
+    def generator_2class_lookalikes_with_nonfaults(self, batch_size: int, class_probabilities: np.array, patch_size: Tuple[int, int], channels: np.array, verbose: int):
         while True:
             img_batches = []
             lbl_batches = []
@@ -36,13 +37,14 @@ class DataGenerator:
                     batch_size=batch_size,
                     class_probabilities=class_probabilities,
                     patch_size=patch_size,
-                    channels=channels))
+                    channels=channels,
+                    verbose=verbose))
                 img_batches.append(img_batch)
                 lbl_batches.append(lbl_batch)
                 coords_batches.append(coords_batch)
             yield np.concatenate(img_batches, axis=0), np.concatenate(lbl_batches, axis=0), np.concatenate(coords_batches, axis=0)
 
-    def create_datasets(self, class_probabilities: str, patch_size: Tuple[int, int], channels: List[int], size: int):
+    def create_datasets(self, class_probabilities: str, patch_size: Tuple[int, int], channels: List[int], size: int, verbose=0):
 
         if class_probabilities == "equal":
             class_probabilities_int = np.array([1. / 3, 1. / 3, 1. / 3])
@@ -50,7 +52,8 @@ class DataGenerator:
                 batch_size=size,
                 class_probabilities=class_probabilities_int,
                 patch_size=patch_size,
-                channels=np.array(channels))
+                channels=np.array(channels),
+                verbose=verbose)
 
         elif class_probabilities == "two-class":
             class_probabilities_int = np.array([0.5, 0.25, 0.25])
@@ -58,7 +61,8 @@ class DataGenerator:
                 batch_size=size,
                 class_probabilities=class_probabilities_int,
                 patch_size=patch_size,
-                channels=np.array(channels))
+                channels=np.array(channels),
+                verbose=verbose)
 
         else:
             raise Exception('Not implemented')
