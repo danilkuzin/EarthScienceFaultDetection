@@ -49,7 +49,7 @@ def predict(datasets: List[int], models_folder, classes, channels, stride=25, ba
             data_preprocessor=data_preprocessor, patch_size=(150, 150), stride=stride, batch_size=batch_size,
             channels=channels)
 
-        with h5py.File(models_folder + f'{models_folder}/sliding_window_{preprocessor_ind}.h5', 'w') as hf:
+        with h5py.File(f'{models_folder}/sliding_window_{preprocessor_ind}.h5', 'w') as hf:
             hf.create_dataset("boxes", data=boxes)
             hf.create_dataset("probs", data=probs)
 
@@ -62,7 +62,7 @@ def postprocess(datasets: List[int], models_folder, heatmap_mode="max"):
 
         data_preprocessor = data_preprocessor_generator(Mode.TEST)
 
-        with h5py.File(models_folder + f'{models_folder}/sliding_window_{preprocessor_ind}.h5', 'w') as hf:
+        with h5py.File(f'{models_folder}/sliding_window_{preprocessor_ind}.h5', 'r') as hf:
             boxes = hf["boxes"][:]
             probs = hf["probs"][:]
 
@@ -74,4 +74,4 @@ def postprocess(datasets: List[int], models_folder, heatmap_mode="max"):
             f"{models_folder}/heatmaps_probs_{preprocessor_ind}",
             res_faults * 100)
         data_preprocessor.data_io_backend.write_surface(
-            f"{models_folder}/heatmaps_faults_{res_faults}")
+            f"{models_folder}/heatmaps_faults_{preprocessor_ind}", res_faults)

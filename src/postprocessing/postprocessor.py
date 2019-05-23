@@ -63,6 +63,7 @@ class PostProcessor:
                 counter_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y] \
                     = counter_im[top_left_x:bottom_right_x, top_left_y:bottom_right_y] + 1
 
-            res_im = np.exp(res_im / counter_im)
+            counted_indicator = counter_im > 0
+            res_im[counted_indicator] = np.exp(res_im[counted_indicator] / counter_im[counted_indicator])
 
         return res_im
