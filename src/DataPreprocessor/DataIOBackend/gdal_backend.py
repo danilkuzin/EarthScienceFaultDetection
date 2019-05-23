@@ -226,6 +226,8 @@ class GdalBackend(DataIOBackend):
             return features
 
         gt = self.gdal_options['geotransform']
+
+        # load lookalike patches
         lookalike_files = list(path.glob('Look_Alike_*.kml.utm'))
         logging.info(f"found lookalike files: {lookalike_files}")
         lookalike_patches = []
@@ -249,6 +251,7 @@ class GdalBackend(DataIOBackend):
             lookalike_patches.append(pixel_coords)
         logging.info(f"extracted lookalike patches: {lookalike_patches}")
 
+        # load nonfault patches
         nonfault_files = list(path.glob('Not_Fault_*.kml.utm'))
         logging.info(f"found nonfault files: {nonfault_files}")
         nonfault_patches = []
@@ -272,19 +275,79 @@ class GdalBackend(DataIOBackend):
             nonfault_patches.append(pixel_coords)
         logging.info(f"extracted nonfault patches: {nonfault_patches}")
 
+        # load lookalike lines
+        lookalike_line_files = list(path.glob('Line_Look_Alike_*.kml.utm'))
+        logging.info(f"found lookalike line files: {lookalike_line_files}")
+        lookalike_lines = []
+        for lookalike_line in lookalike_line_files:
+            with open(str(lookalike_line)) as f:
+                content = f.readlines()
+
+            coords = []
+            for line in content:
+                rr = re.findall("[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", line)
+                if len(rr) == 3:
+                    coords.append(list(map(float, rr)))
+
+            pixel_coords = []
+
+            for coord in coords:
+                Xpixel = int((coord[0] - gt[0]) / gt[1])
+                Ypixel = int((coord[1] - gt[3]) / gt[5])
+                pixel_coords.append((Xpixel, Ypixel))
+
+            lookalike_lines.append(pixel_coords)
+        logging.info(f"extracted lookalike lines: {lookalike_lines}")
+
+        # load fault lines
+        fault_line_files = list(path.glob('Fault_*.kml.utm'))
+        logging.info(f"found fault line files: {fault_line_files}")
+        fault_lines = []
+        for fault_line in fault_line_files:
+            with open(str(fault_line)) as f:
+                content = f.readlines()
+
+            coords = []
+            for line in content:
+                rr = re.findall("[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", line)
+                if len(rr) == 3:
+                    coords.append(list(map(float, rr)))
+
+            pixel_coords = []
+
+            for coord in coords:
+                Xpixel = int((coord[0] - gt[0]) / gt[1])
+                Ypixel = int((coord[1] - gt[3]) / gt[5])
+                pixel_coords.append((Xpixel, Ypixel))
+
+            fault_lines.append(pixel_coords)
+        logging.info(f"extracted fault lines: {fault_lines}")
+
         #todo we assign only normal labelling here, as they are patches, not lines and we cn't sample from patches for
         # lookalikes - then the probability of important labelled lines will be low
         for patch in lookalike_patches:
-            img = Image.new('L', (features.shape[0], features.shape[1]), 0)
+            img = Image.new('L', (features.shape[1], features.shape[0]), 0)
             ImageDraw.Draw(img).polygon(patch, outline=1, fill=1)
             mask = np.array(img)
             features[mask == 1] = FeatureValue.NONFAULT.value
 
         for patch in nonfault_patches:
-            img = Image.new('L', (features.shape[0], features.shape[1]), 0)
+            img = Image.new('L', (features.shape[1], features.shape[0]), 0)
             ImageDraw.Draw(img).polygon(patch, outline=1, fill=1)
             mask = np.array(img)
             features[mask == 1] = FeatureValue.NONFAULT.value
+
+        for line in lookalike_lines:
+            img = Image.new('L', (features.shape[1], features.shape[0]), 0)
+            ImageDraw.Draw(img).line(line, width=2, fill=1)
+            mask = np.array(img)
+            features[mask == 1] = FeatureValue.FAULT_LOOKALIKE.value
+
+        for line in fault_lines:
+            img = Image.new('L', (features.shape[1], features.shape[0]), 0)
+            ImageDraw.Draw(img).line(line, width=2, fill=1)
+            mask = np.array(img)
+            features[mask == 1] = FeatureValue.FAULT.value
 
         return features
 

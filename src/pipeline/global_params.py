@@ -2,7 +2,7 @@ from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
 from src.DataPreprocessor.PatchesOutputBackend.in_memory_backend import InMemoryBackend
 from src.DataPreprocessor.data_preprocessor import DataPreprocessor
 
-trainable = [0, 1, 6, 7]
+trainable = [0, 1, 6, 7, 10]
 data_path = "../data"
 data_preprocessor_generators = [
     lambda mode: DataPreprocessor(data_dir="{}/Region 1 - Lopukangri/".format(data_path),
