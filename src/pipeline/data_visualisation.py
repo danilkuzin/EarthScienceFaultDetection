@@ -38,7 +38,8 @@ def _plot_distributions(data_preprocessor:DataPreprocessor, output_path:str):
             ind_2d = np.unravel_index(ax_ind, (nrows, ncols))
             cur_ax = axis[ind_2d[0], ind_2d[1]]
             logging.info(f"plot distribution for {key}")
-            sns.distplot(data_preprocessor.channels[key].flatten(), ax=cur_ax)
+            if np.count_nonzero(data_preprocessor.channels[key]) > 0:
+                sns.distplot(data_preprocessor.channels[key].flatten(), ax=cur_ax)
             cur_ax.set_title(f'{key}')
             ax_ind = ax_ind + 1
     plt.tight_layout()
@@ -61,7 +62,8 @@ def _plot_distributions(data_preprocessor:DataPreprocessor, output_path:str):
             ind_2d = np.unravel_index(ax_ind, (nrows, ncols))
             cur_ax = axis[ind_2d[0], ind_2d[1]]
             logging.info(f"plot normalised distribution for {key}")
-            sns.distplot(data_preprocessor.normalised_channels[key].flatten(), ax=cur_ax)
+            if np.count_nonzero(data_preprocessor.normalised_channels[key]) > 0:
+                sns.distplot(data_preprocessor.normalised_channels[key].flatten(), ax=cur_ax)
             cur_ax.set_title(f'{key}')
             ax_ind = ax_ind + 1
     plt.tight_layout()
@@ -74,7 +76,7 @@ def _plot_samples(num_patches, patch_size, bands, data_preprocessor, output_path
     for lbl in [FeatureValue.FAULT, FeatureValue.FAULT_LOOKALIKE, FeatureValue.NONFAULT]:
         patches = np.zeros((num_patches, patch_size[0], patch_size[1], bands))
         for i in range(num_patches):
-            patches[i] = data_preprocessor.sample_patch(label=lbl.value, patch_size=patch_size)
+            patches[i], coords = data_preprocessor.sample_patch(label=lbl.value, patch_size=patch_size)
 
         for i in range(num_patches):
             cur_patch = patches[i]

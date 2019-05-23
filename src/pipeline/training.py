@@ -195,8 +195,11 @@ def train_on_preloaded(model, imgs_train, lbls_train, imgs_valid, lbls_valid, fo
     pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
 
     callbacks = [
-        tf.keras.callbacks.CSVLogger(filename=f'{folder}/log.csv', separator=',',
-                                     append=False)
+        tf.keras.callbacks.TensorBoard(log_dir='{folder}/logs', histogram_freq=1, batch_size=32, write_graph=True,
+                                       write_grads=True, write_images=True),
+        tf.keras.callbacks.CSVLogger(filename='{folder}/log.csv', separator=',', append=False),
+        tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=2, verbose=1, mode='auto',
+                                         baseline=None)
     ]
 
     history = model.fit(x=imgs_train,
