@@ -135,3 +135,5 @@ report/report.out
 report/report.pdf
 report/report.run.xml
 report/report.synctex.gz
+scripts/training_on_0_1_10/logs/events.out.tfevents.1558713726.Scotts-iMac.local.v2
+scripts/training_on_0_1_10/logs/events.out.tfevents.1558713768.Scotts-iMac.local.v2

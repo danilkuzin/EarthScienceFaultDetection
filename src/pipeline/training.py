@@ -213,13 +213,14 @@ def train_on_preloaded(model, imgs_train, lbls_train, imgs_valid, lbls_valid, fo
 
     model.save_weights(folder + '/model.h5')
 
-def train_on_preloaded_single_files(model, train_dataset, valid_dataset, folder, epochs):
+def train_on_preloaded_single_files(model, train_dataset, train_dataset_size, valid_dataset, valid_dataset_size,
+                                    folder, epochs, batch_size):
     pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
 
     callbacks = [
-        # tf.keras.callbacks.TensorBoard(log_dir='{folder}/logs', histogram_freq=1, batch_size=32, write_graph=True,
-        #                                write_grads=True, write_images=True),
-        # tf.keras.callbacks.CSVLogger(filename='{folder}/log.csv', separator=',', append=False),
+        tf.keras.callbacks.TensorBoard(log_dir=f'{folder}/logs', histogram_freq=1, batch_size=32, write_graph=True,
+                                       write_grads=True, write_images=True),
+        tf.keras.callbacks.CSVLogger(filename=f'{folder}/log.csv', separator=',', append=False),
         tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=3, verbose=1, mode='auto',
                                          baseline=None)
     ]
@@ -231,14 +232,14 @@ def train_on_preloaded_single_files(model, train_dataset, valid_dataset, folder,
                         validation_data=valid_dataset,
                         workers=0,
                         use_multiprocessing=False,
-                        steps_per_epoch=100,
-                        validation_steps=100)
+                        steps_per_epoch=int(np.ceil(train_dataset_size / batch_size)),
+                        validation_steps=int(np.ceil(valid_dataset_size / batch_size)))
 
     model.save_weights(folder + '/model.h5')
 
 #todo potentially use tfrecord insttead of h5 to maybe store all in one file and remove the py_func from here
-def datasets_on_single_files(regions, channels, train_ratio):
-    BATCH_SIZE = 32
+def datasets_on_single_files(regions, channels, train_ratio, batch_size):
+    BATCH_SIZE = batch_size
 
     def parse_file(f):
         with h5py.File(f, 'r') as hf:
@@ -252,6 +253,9 @@ def datasets_on_single_files(regions, channels, train_ratio):
 
     train_datasets = []
     valid_datasets = []
+
+    train_dataset_size = 0
+    valid_dataset_size = 0
 
     for reg_id in regions:
         reg_path = pathlib.Path(f'../../DataForEarthScienceFaultDetection/train_data/regions_{reg_id}_single_files/')
@@ -268,6 +272,7 @@ def datasets_on_single_files(regions, channels, train_ratio):
         train_ds = train_ds.batch(BATCH_SIZE)
         train_ds = train_ds.prefetch(buffer_size=AUTOTUNE)
         train_datasets.append(train_ds)
+        train_dataset_size += train_len
 
         valid_path_ds = tf.data.Dataset.from_tensor_slices(permuted_paths[train_len:])
         valid_image_label_coord_ds = valid_path_ds.map(parse_file_tf, num_parallel_calls=AUTOTUNE)
@@ -275,9 +280,10 @@ def datasets_on_single_files(regions, channels, train_ratio):
         valid_ds = valid_ds.batch(BATCH_SIZE)
         valid_ds = valid_ds.prefetch(buffer_size=AUTOTUNE)
         valid_datasets.append(valid_ds)
+        valid_dataset_size += image_count - train_len
 
 
     train_dataset = tf.data.experimental.sample_from_datasets(train_datasets)
     valid_dataset = tf.data.experimental.sample_from_datasets(valid_datasets)
 
-    return train_dataset, valid_dataset
+    return train_dataset, train_dataset_size, valid_dataset, valid_dataset_size
