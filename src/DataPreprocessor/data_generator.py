@@ -65,7 +65,13 @@ class DataGenerator:
                 verbose=verbose)
 
         else:
-            raise Exception('Not implemented')
+            class_probabilities_int = np.array(class_probabilities)
+            joint_generator = self.generator_2class_lookalikes_with_nonfaults(
+                batch_size=size,
+                class_probabilities=class_probabilities_int,
+                patch_size=patch_size,
+                channels=np.array(channels),
+                verbose=verbose)
 
         imgs, lbls, coords = next(joint_generator)
         return imgs, lbls, coords

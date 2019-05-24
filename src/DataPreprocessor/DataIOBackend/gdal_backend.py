@@ -312,15 +312,28 @@ class GdalBackend(DataIOBackend):
                 rr = re.findall("[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", line)
                 if len(rr) == 3:
                     coords.append(list(map(float, rr)))
+                if line.startswith('>'):
+                    if len(coords) > 0:
+                        pixel_coords = []
 
-            pixel_coords = []
+                        for coord in coords:
+                            Xpixel = int((coord[0] - gt[0]) / gt[1])
+                            Ypixel = int((coord[1] - gt[3]) / gt[5])
+                            pixel_coords.append((Xpixel, Ypixel))
 
-            for coord in coords:
-                Xpixel = int((coord[0] - gt[0]) / gt[1])
-                Ypixel = int((coord[1] - gt[3]) / gt[5])
-                pixel_coords.append((Xpixel, Ypixel))
+                        fault_lines.append(pixel_coords)
 
-            fault_lines.append(pixel_coords)
+                        coords = []
+            if len(coords) > 0:
+                pixel_coords = []
+
+                for coord in coords:
+                    Xpixel = int((coord[0] - gt[0]) / gt[1])
+                    Ypixel = int((coord[1] - gt[3]) / gt[5])
+                    pixel_coords.append((Xpixel, Ypixel))
+
+                fault_lines.append(pixel_coords)
+
         logging.info(f"extracted fault lines: {fault_lines}")
 
         #todo we assign only normal labelling here, as they are patches, not lines and we cn't sample from patches for
