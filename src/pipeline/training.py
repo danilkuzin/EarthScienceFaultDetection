@@ -264,14 +264,14 @@ def datasets_on_single_files(regions, channels, train_ratio):
 
         train_path_ds = tf.data.Dataset.from_tensor_slices(permuted_paths[:train_len])
         train_image_label_coord_ds = train_path_ds.map(parse_file_tf, num_parallel_calls=AUTOTUNE)
-        train_ds = train_image_label_coord_ds.apply(tf.data.experimental.shuffle_and_repeat(buffer_size=image_count))
+        train_ds = train_image_label_coord_ds.apply(tf.data.experimental.shuffle_and_repeat(buffer_size=int(image_count * train_ratio)))
         train_ds = train_ds.batch(BATCH_SIZE)
         train_ds = train_ds.prefetch(buffer_size=AUTOTUNE)
         train_datasets.append(train_ds)
 
         valid_path_ds = tf.data.Dataset.from_tensor_slices(permuted_paths[train_len:])
         valid_image_label_coord_ds = valid_path_ds.map(parse_file_tf, num_parallel_calls=AUTOTUNE)
-        valid_ds = valid_image_label_coord_ds.apply(tf.data.experimental.shuffle_and_repeat(buffer_size=image_count))
+        valid_ds = valid_image_label_coord_ds.apply(tf.data.experimental.shuffle_and_repeat(buffer_size=int(image_count * (1- train_ratio))))
         valid_ds = valid_ds.batch(BATCH_SIZE)
         valid_ds = valid_ds.prefetch(buffer_size=AUTOTUNE)
         valid_datasets.append(valid_ds)
