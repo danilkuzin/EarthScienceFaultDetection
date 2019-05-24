@@ -4,6 +4,7 @@ from typing import List, Tuple
 import h5py
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.data.experimental import AUTOTUNE
 
 from src.DataPreprocessor.data_generator import DataGenerator
 from src.DataPreprocessor.data_preprocessor import Mode
@@ -11,7 +12,6 @@ from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150
     cnn_150x150x3, cnn_150x150x1, cnn_150x150x12, cnn_150x150x11, cnn_150x150x4, cnn_150x150x1_3class, \
     cnn_150x150x3_3class, cnn_150x150x10
 from src.pipeline import global_params
-
 
 def get_class_probabilities_int(class_probabilities):
     class_probabilities_int = None
@@ -212,3 +212,72 @@ def train_on_preloaded(model, imgs_train, lbls_train, imgs_valid, lbls_valid, fo
                         use_multiprocessing=False)
 
     model.save_weights(folder + '/model.h5')
+
+def train_on_preloaded_single_files(model, train_dataset, valid_dataset, folder, epochs):
+    pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
+
+    callbacks = [
+        # tf.keras.callbacks.TensorBoard(log_dir='{folder}/logs', histogram_freq=1, batch_size=32, write_graph=True,
+        #                                write_grads=True, write_images=True),
+        # tf.keras.callbacks.CSVLogger(filename='{folder}/log.csv', separator=',', append=False),
+        tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=3, verbose=1, mode='auto',
+                                         baseline=None)
+    ]
+
+    history = model.fit(train_dataset,
+                        epochs=epochs,
+                        verbose=1,
+                        callbacks=callbacks,
+                        validation_data=valid_dataset,
+                        workers=0,
+                        use_multiprocessing=False,
+                        steps_per_epoch=100,
+                        validation_steps=100)
+
+    model.save_weights(folder + '/model.h5')
+
+#todo potentially use tfrecord insttead of h5 to maybe store all in one file and remove the py_func from here
+def datasets_on_single_files(regions, channels, train_ratio):
+    BATCH_SIZE = 32
+
+    def parse_file(f):
+        with h5py.File(f, 'r') as hf:
+            img = hf['img'][:].astype(np.float32)[:, :, channels]
+            lbl = hf['lbl'][:].astype(np.int32)
+            coord = hf['coord'][:].astype(np.int32)
+            return img, lbl
+
+    def parse_file_tf(filename):
+        return tf.py_func(parse_file, [filename], [tf.float32, tf.int32])
+
+    train_datasets = []
+    valid_datasets = []
+
+    for reg_id in regions:
+        reg_path = pathlib.Path(f'../../DataForEarthScienceFaultDetection/train_data/regions_{reg_id}_single_files/')
+        all_image_paths = np.array([str(path) for path in list(reg_path.glob('*'))])
+
+        image_count = len(all_image_paths)
+        permuted_ind = np.random.permutation(image_count)
+        permuted_paths = all_image_paths[permuted_ind]
+        train_len = int(image_count * train_ratio)
+
+        train_path_ds = tf.data.Dataset.from_tensor_slices(permuted_paths[:train_len])
+        train_image_label_coord_ds = train_path_ds.map(parse_file_tf, num_parallel_calls=AUTOTUNE)
+        train_ds = train_image_label_coord_ds.apply(tf.data.experimental.shuffle_and_repeat(buffer_size=image_count))
+        train_ds = train_ds.batch(BATCH_SIZE)
+        train_ds = train_ds.prefetch(buffer_size=AUTOTUNE)
+        train_datasets.append(train_ds)
+
+        valid_path_ds = tf.data.Dataset.from_tensor_slices(permuted_paths[train_len:])
+        valid_image_label_coord_ds = valid_path_ds.map(parse_file_tf, num_parallel_calls=AUTOTUNE)
+        valid_ds = valid_image_label_coord_ds.apply(tf.data.experimental.shuffle_and_repeat(buffer_size=image_count))
+        valid_ds = valid_ds.batch(BATCH_SIZE)
+        valid_ds = valid_ds.prefetch(buffer_size=AUTOTUNE)
+        valid_datasets.append(valid_ds)
+
+
+    train_dataset = tf.data.experimental.sample_from_datasets(train_datasets)
+    valid_dataset = tf.data.experimental.sample_from_datasets(valid_datasets)
+
+    return train_dataset, valid_dataset

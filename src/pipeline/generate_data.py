@@ -62,19 +62,28 @@ def generate_data(datasets, size, data_batch_size=100, lookalike_ratio=None):
 
         logging.info(f"data saved: {[output_path + '/data.h5', output_path + '/data_coords.h5']}")
 
-def generate_data_single_files(datasets, size):
+def generate_data_single_files(datasets, size, lookalike_ratio=None):
+    if lookalike_ratio is None:
+        lookalike_ratio = [0.25] * len(datasets)
+
+    for i in range(len(lookalike_ratio)):
+        if lookalike_ratio[i] is None:
+            lookalike_ratio[i] = 0.25
+
     preprocessors = [global_params.data_preprocessor_generators[ind](Mode.TRAIN) for ind in datasets]
-    for preprocessor, preprocessor_ind in zip(preprocessors, datasets):
-        output_path = f"../train_data/regions_{preprocessor_ind}_single_files/"
+    for preprocessor, preprocessor_ind, lookalike_ratio_for_dataset in zip(preprocessors, datasets, lookalike_ratio):
+        output_path = f"../../DataForEarthScienceFaultDetection/train_data/regions_{preprocessor_ind}_single_files/"
         pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
 
         data_generator = DataGenerator(preprocessors=[preprocessor])
+        class_probabilities = [0.5, lookalike_ratio_for_dataset, 0.5 - lookalike_ratio_for_dataset]
 
         for n in trange(size):
-            imgs, lbls, coords = __generate_data_batch(data_generator, 1)
+            imgs, lbls, coords = __generate_data_batch(data_generator, 1, class_probabilities)
             with h5py.File(f'{output_path}/data_{n}.h5', 'w') as hf:
                 hf.create_dataset("img", data=imgs[0])
                 hf.create_dataset("lbl", data=lbls[0])
+                hf.create_dataset("coord", data=coords[0])
 
         logging.info(f"data saved: {output_path}")
 
