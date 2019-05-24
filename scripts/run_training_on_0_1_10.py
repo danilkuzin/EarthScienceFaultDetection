@@ -17,7 +17,12 @@ model = cnn_150x150x5()
 # train_on_preloaded(model, imgs_train, lbls_train, imgs_valid, lbls_valid,
 #                    folder="training_on_0_1_10", epochs=10)
 #
-train_dataset, valid_dataset = datasets_on_single_files(regions=[0, 1, 10], channels=[0, 1, 2, 3, 4], train_ratio=0.80)
 
-train_on_preloaded_single_files(model, train_dataset, valid_dataset, folder="training_on_0_1_10", epochs=10)
+batch_size = 32
+
+train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
+    datasets_on_single_files(regions=[0, 1, 10], channels=[0, 1, 2, 3, 4], train_ratio=0.80, batch_size=batch_size)
+
+train_on_preloaded_single_files(model, train_dataset, train_dataset_size, valid_dataset, valid_dataset_size,
+                                folder="training_on_0_1_10", epochs=10, batch_size=batch_size)
 
