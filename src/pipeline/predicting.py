@@ -15,26 +15,26 @@ np.random.seed(1)
 tf.set_random_seed(2)
 
 
-def predict(datasets: List[int], models_folder, classes, channels, stride=25, batch_size=20):
-    if classes == 3:
-        model = cnn_150x150x5_3class()
-    elif classes == 2:
-        if len(channels) == 12:
-            model = cnn_150x150x12()
-        elif len(channels) == 11:
-            model = cnn_150x150x11()
-        elif len(channels) == 5:
-            model = cnn_150x150x5()
-        elif len(channels) == 4:
-            model = cnn_150x150x4()
-        elif len(channels) == 3:
-            model = cnn_150x150x3()
-        elif len(channels) == 1:
-            model = cnn_150x150x1()
-        else:
-            raise Exception()
-    else:
-        raise Exception('not supported')
+def predict(datasets: List[int], model, models_folder, classes, channels, stride=25, batch_size=20):
+    # if classes == 3:
+    #     model = cnn_150x150x5_3class()
+    # elif classes == 2:
+    #     if len(channels) == 12:
+    #         model = cnn_150x150x12()
+    #     elif len(channels) == 11:
+    #         model = cnn_150x150x11()
+    #     elif len(channels) == 5:
+    #         model = cnn_150x150x5()
+    #     elif len(channels) == 4:
+    #         model = cnn_150x150x4()
+    #     elif len(channels) == 3:
+    #         model = cnn_150x150x3()
+    #     elif len(channels) == 1:
+    #         model = cnn_150x150x1()
+    #     else:
+    #         raise Exception()
+    # else:
+    #     raise Exception('not supported')
 
     trainer = KerasTrainer(model=model)
 
