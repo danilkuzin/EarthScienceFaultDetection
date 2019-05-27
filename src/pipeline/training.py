@@ -105,11 +105,11 @@ def train(train_datasets: List[int], test_datasets: List[int], validation_datase
     np.random.seed(1)
     tf.set_random_seed(2)
 
-    train_preprocessors = [global_params.data_preprocessor_generators[ind](Mode.TRAIN) for ind in train_datasets]
+    train_preprocessors = [global_params.data_preprocessor_generator(Mode.TRAIN, ind) for ind in train_datasets]
     train_data_generator = DataGenerator(preprocessors=train_preprocessors)
     # test_preprocessors = [global_params.data_preprocessor_generators[ind](Mode.TRAIN) for ind in test_datasets]
     # test_data_generator = DataGenerator(preprocessors=test_preprocessors)
-    valid_preprocessors = [global_params.data_preprocessor_generators[ind](Mode.TRAIN) for ind in validation_datasets]
+    valid_preprocessors = [global_params.data_preprocessor_generator(Mode.TRAIN, ind) for ind in validation_datasets]
     valid_data_generator = DataGenerator(preprocessors=valid_preprocessors)
 
     class_probabilities_int = get_class_probabilities_int(class_probabilities)

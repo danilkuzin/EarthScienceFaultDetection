@@ -40,29 +40,24 @@ def predict(datasets: List[int], model, models_folder, classes, channels, stride
 
     trainer.load(input_path=models_folder)
 
-    for (preprocessor_ind, data_preprocessor_generator) in enumerate(global_params.data_preprocessor_generators):
-        if preprocessor_ind not in datasets:
-            continue
-
-        data_preprocessor = data_preprocessor_generator(Mode.TEST)
+    for ind in datasets:
+        data_preprocessor = global_params.data_preprocessor_generator(Mode.TEST, ind)
         boxes, probs = trainer.apply_for_sliding_window(
             data_preprocessor=data_preprocessor, patch_size=(150, 150), stride=stride, batch_size=batch_size,
             channels=channels)
 
-        with h5py.File(f'{models_folder}/sliding_window_{preprocessor_ind}.h5', 'w') as hf:
+        with h5py.File(f'{models_folder}/sliding_window_{ind}.h5', 'w') as hf:
             hf.create_dataset("boxes", data=boxes)
             hf.create_dataset("probs", data=probs)
 
 
 def postprocess(datasets: List[int], models_folder, heatmap_mode="max"):
 
-    for (preprocessor_ind, data_preprocessor_generator) in enumerate(global_params.data_preprocessor_generators):
-        if preprocessor_ind not in datasets:
-            continue
+    for ind in datasets:
 
-        data_preprocessor = data_preprocessor_generator(Mode.TEST)
+        data_preprocessor = global_params.data_preprocessor_generator(Mode.TEST, ind)
 
-        with h5py.File(f'{models_folder}/sliding_window_{preprocessor_ind}.h5', 'r') as hf:
+        with h5py.File(f'{models_folder}/sliding_window_{ind}.h5', 'r') as hf:
             boxes = hf["boxes"][:]
             probs = hf["probs"][:]
 
@@ -71,7 +66,7 @@ def postprocess(datasets: List[int], models_folder, heatmap_mode="max"):
                                              original_2dimage_shape=original_2dimage_shape)
         res_faults = faults_postprocessor.heatmaps(mode=heatmap_mode)
         data_preprocessor.data_io_backend.write_image(
-            f"{models_folder}/heatmaps_probs_{preprocessor_ind}",
+            f"{models_folder}/heatmaps_probs_{ind}",
             res_faults * 100)
         data_preprocessor.data_io_backend.write_surface(
-            f"{models_folder}/heatmaps_faults_{preprocessor_ind}", res_faults)
+            f"{models_folder}/heatmaps_faults_{ind}", res_faults)

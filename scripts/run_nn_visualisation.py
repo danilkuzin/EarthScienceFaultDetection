@@ -20,7 +20,7 @@ nn_visualisation = NnVisualisation(model=model)
 output_path = ("../nn_visualisations/")
 pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
 
-data_preprocessor = global_params.data_preprocessor_generators[0](Mode.TRAIN)
+data_preprocessor = global_params.data_preprocessor_generator(Mode.TRAIN, 0)
 #image = data_preprocessor.get_full_image()[0:5]
 #image = data_preprocessor.sample_fault_patch(patch_size=(150, 150))[:, :, 0:5]
 for i in range(6):

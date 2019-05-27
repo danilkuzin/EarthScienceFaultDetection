@@ -19,7 +19,7 @@ def visualise_training_patches(dataset):
     coords = coords.astype(np.int)
     lbls = lbls.astype(np.int)
     logging.info(f"loaded data for dataset {dataset}, length={coords.shape[0]}")
-    data_preprocessor = global_params.data_preprocessor_generators[dataset](Mode.TRAIN)
+    data_preprocessor = global_params.data_preprocessor_generator(Mode.TRAIN, dataset)
     im_w, im_h, _ = data_preprocessor.get_data_shape()
 
     mask_0 = np.zeros((im_w, im_h))
@@ -48,7 +48,7 @@ def visualise_training_patches(dataset):
 
 def visualise_training_patches_single_files(dataset, num):
     #todo estimate num from os
-    data_preprocessor = global_params.data_preprocessor_generators[dataset](Mode.TRAIN)
+    data_preprocessor = global_params.data_preprocessor_generator(Mode.TRAIN, dataset)
     im_w, im_h, _ = data_preprocessor.get_data_shape()
     mask_0 = np.zeros((im_w, im_h))
     mask_1 = np.zeros((im_w, im_h))

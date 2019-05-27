@@ -18,7 +18,7 @@ def find_coordinate(region_ind: int, coordinate: Tuple[float, float]) -> Tuple[i
     return x_pixel, y_pixel
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
 
     logging.basicConfig(level=logging.CRITICAL)
 
@@ -27,7 +27,7 @@ if __name__=="__main__":
 
     for region_ind in regions_ind:
         print(f"region: {region_ind}")
-        preprocessor = global_params.data_preprocessor_generators[region_ind](Mode.TEST)
+        preprocessor = global_params.data_preprocessor_generator(Mode.TEST, region_ind)
         for point_ind, point in enumerate(points):
             image_point = find_coordinate(region_ind, point)
             for key, val in preprocessor.channels.items():

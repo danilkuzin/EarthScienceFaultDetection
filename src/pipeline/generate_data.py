@@ -32,7 +32,7 @@ def generate_data(datasets, size, data_batch_size=100, lookalike_ratio=None):
         if lookalike_ratio[i] is None:
             lookalike_ratio[i] = 0.25
 
-    preprocessors = [global_params.data_preprocessor_generators[ind](Mode.TRAIN) for ind in datasets]
+    preprocessors = [global_params.data_preprocessor_generator(Mode.TRAIN, ind) for ind in datasets]
     for preprocessor, preprocessor_ind, lookalike_ratio_for_dataset in zip(preprocessors, datasets, lookalike_ratio):
         output_path = f"../train_data/regions_{preprocessor_ind}/"
         pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
@@ -70,7 +70,7 @@ def generate_data_single_files(datasets, size, lookalike_ratio=None):
         if lookalike_ratio[i] is None:
             lookalike_ratio[i] = 0.25
 
-    preprocessors = [global_params.data_preprocessor_generators[ind](Mode.TRAIN) for ind in datasets]
+    preprocessors = [global_params.data_preprocessor_generator(Mode.TRAIN, ind) for ind in datasets]
     for preprocessor, preprocessor_ind, lookalike_ratio_for_dataset in zip(preprocessors, datasets, lookalike_ratio):
         output_path = f"../../DataForEarthScienceFaultDetection/train_data/regions_{preprocessor_ind}_single_files/"
         pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
