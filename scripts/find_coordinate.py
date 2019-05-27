@@ -3,7 +3,7 @@ from typing import Tuple
 
 from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
 from src.DataPreprocessor.data_preprocessor import Mode
-from src.pipeline import global_params
+from src import config
 
 
 def find_coordinate(region_ind: int, coordinate: Tuple[float, float]) -> Tuple[int, int]:
@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     for region_ind in regions_ind:
         print(f"region: {region_ind}")
-        preprocessor = global_params.data_preprocessor_generator(Mode.TEST, region_ind)
+        preprocessor = config.data_preprocessor_generator(Mode.TEST, region_ind)
         for point_ind, point in enumerate(points):
             image_point = find_coordinate(region_ind, point)
             for key, val in preprocessor.channels.items():

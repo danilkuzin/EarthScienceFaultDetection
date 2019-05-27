@@ -364,3 +364,9 @@ class GdalBackend(DataIOBackend):
 
         return features
 
+    def get_params(self):
+        return {
+            'driver_name': self.gdal_options['driver'].LongName,
+            'projection': self.gdal_options['projection'],
+            'geotransform': str(self.gdal_options['geotransform']),
+        }

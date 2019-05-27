@@ -2,7 +2,9 @@ import itertools
 import logging
 from enum import Enum
 from typing import List, Tuple
-
+import yaml
+import io
+import h5py
 import numpy as np
 from tqdm import trange
 
@@ -402,3 +404,22 @@ class DataPreprocessor:
             patch_coords_batch_np = np.stack(patch_coords_batch, axis=0)
             patch_batch_np = np.stack(patch_batch, axis=0)
             yield patch_coords_batch_np, patch_batch_np[:, :, :, channels]
+
+    def write_data(self, output_path: str):
+        with h5py.File(f"{output_path}/data.h5", 'w') as hf:
+            dict(elevation=None, slope=None, optical_rgb=None, nir=None, ultrablue=None, swir1=None, swir2=None,
+                 panchromatic=None, curve=None, erosion=None)
+            hf.create_dataset("elevation", data=self.channels['elevation'].astype(np.float32))
+            hf.create_dataset("slope", data=self.channels['slope'].astype(np.float32))
+            hf.create_dataset("optical_rgb", data=self.channels['optical_rgb'].astype(np.float32))
+            hf.create_dataset("nir", data=self.channels['nir'].astype(np.float32))
+            hf.create_dataset("ultrablue", data=self.channels['ultrablue'].astype(np.float32))
+            hf.create_dataset("swir1", data=self.channels['swir1'].astype(np.float32))
+            hf.create_dataset("swir2", data=self.channels['swir2'].astype(np.float32))
+            hf.create_dataset("panchromatic", data=self.channels['panchromatic'].astype(np.float32))
+            hf.create_dataset("curve", data=self.channels['curve'].astype(np.float32))
+            hf.create_dataset("erosion", data=self.channels['erosion'].astype(np.float32))
+
+        with io.open(f"{output_path}/gdal_params.yaml", 'w', encoding='utf8') as outfile:
+            yaml.dump(self.data_io_backend.get_params(), outfile, default_flow_style=False, allow_unicode=True)
+
