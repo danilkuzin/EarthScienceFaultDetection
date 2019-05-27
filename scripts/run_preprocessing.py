@@ -13,4 +13,3 @@ from src.pipeline.global_params import data_preprocessor_params, areas
 
 for region_params in data_preprocessor_params:
 
-
