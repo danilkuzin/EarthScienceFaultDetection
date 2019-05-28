@@ -5,8 +5,11 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 
+from src.DataPreprocessor.region_dataset import RegionDataset
+
+
 class DataVisualiser:
-    def __init__(self, preprocessor: DataPreprocessor):
+    def __init__(self, preprocessor: RegionDataset):
         self.preprocessor = preprocessor
 
     def get_features_map_transparent(self, opacity: int):

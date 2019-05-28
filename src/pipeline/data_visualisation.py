@@ -8,6 +8,7 @@ import logging
 
 from src.DataPreprocessor.data_preprocessor import Mode, FeatureValue, DataPreprocessor
 from src.DataPreprocessor.data_visualiser import DataVisualiser
+from src.DataPreprocessor.region_dataset import RegionDataset
 from src.pipeline import global_params
 
 
@@ -96,28 +97,26 @@ def visualise(datasets_ind, num_patches, patch_size, bands, plot_distributions, 
     tf.set_random_seed(2)
 
     for d_ind in datasets_ind:
-        logging.info("init data preprocessors")
-        if d_ind in global_params.trainable:
-            data_preprocessor = global_params.data_preprocessor_generator(Mode.TRAIN, d_ind)
-        else:
-            data_preprocessor = global_params.data_preprocessor_generator(Mode.TEST, d_ind)
-        output_path = inp_output_path + str(datasets_ind[d_gen_ind]) + "/"
+        logging.info("init data preprocessor")
+        region_dataset_visualiser = RegionDatasetVisualiser(region_id=d_ind)
+        region_unnormalised_data_visualiser = DataNormaliserVisualiser(region_id=d_ind)
+        output_path = inp_output_path + str(d_ind) + "/"
         pathlib.Path(output_path).mkdir(exist_ok=True, parents=True)
-        data_visualiser = DataVisualiser(data_preprocessor)
+        data_visualiser = DataVisualiser(region_dataset)
 
         logging.info("plot bands")
-        if data_preprocessor.mode == Mode.TRAIN:
+        if region_dataset.trainable:
             if not crop:
                 data_visualiser.write_features(path=f"{output_path}features.tif")
-            _plot_channels_with_features(data_preprocessor, data_visualiser, output_path, crop=crop)
+            _plot_channels_with_features(region_dataset, data_visualiser, output_path, crop=crop)
         #elif data_preprocessor.mode == Mode.TEST: for new data we can't see anything on fully labelled images, so we plot channels for them as well
-        _plot_channels(data_preprocessor, data_visualiser, output_path, crop=crop)
+        _plot_channels(region_dataset, data_visualiser, output_path, crop=crop)
 
         if plot_distributions:
             logging.info("plot distributions")
-            _plot_distributions(data_preprocessor, output_path)
+            _plot_distributions(region_dataset, output_path)
 
-        if data_preprocessor.mode == Mode.TRAIN:
+        if region_dataset.trainable:
             logging.info("plot samples")
-            _plot_samples(num_patches, patch_size, bands, data_preprocessor, output_path)
+            _plot_samples(num_patches, patch_size, bands, region_dataset, output_path)
 
