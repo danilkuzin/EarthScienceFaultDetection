@@ -12,15 +12,22 @@ import yaml
 import io
 
 def normalise_area(area_ind):
-    associated_regions = list(filter(lambda x: x[1] == area_ind, data_preprocessor_params))
+    associated_regions = []
+    for region_id, region in enumerate(data_preprocessor_params):
+        if region[1] == area_ind:
+            associated_regions.append(region_id)
+
     print(f"area: {area_ind}, associated regions: {associated_regions}")
     elevations_list = []
-    for region in associated_regions:
+    for region_id in associated_regions:
         preprocessed_data_path = f"{data_path}/preprocessed/{region_id}/data.h5"
         with h5py.File(preprocessed_data_path, 'r') as hf:
             elevations_list.append(hf["elevation"][:])
 
-    elevations_array = np.array(elevations_list)
+    for i in range(len(elevations_list)):
+        elevations_list[i] = elevations_list[i].flatten()
+
+    elevations_array = np.concatenate(elevations_list)
     mean_elevation = np.mean(elevations_array)
     std_elevation = np.std(elevations_array)
 
@@ -28,10 +35,10 @@ def normalise_area(area_ind):
     pathlib.Path(output_path).mkdir(exist_ok=True, parents=True)
 
     with io.open(f"{output_path}/area_{area_ind}.yaml", 'w', encoding='utf8') as outfile:
-        yaml.dump({"mean_elevation": mean_elevation, "std_elevation": std_elevation}, outfile, default_flow_style=False, allow_unicode=True)
+        yaml.dump({"mean_elevation": float(mean_elevation), "std_elevation": float(std_elevation)}, outfile, default_flow_style=False, allow_unicode=True)
 
 
-def normalise_region(area_ind):
+def normalise_region(region_id, area_ind):
     preprocessed_data_path = f"{data_path}/preprocessed/{region_id}/data.h5"
     with h5py.File(preprocessed_data_path, 'r') as hf:
         optical_r = hf["optical_r"][:]
@@ -60,14 +67,14 @@ def normalise_region(area_ind):
     with open(f"{input_path}/area_{area_ind}.yaml", 'r') as stream:
         features_areawide = yaml.safe_load(stream)
 
-    elevation_mean, elevation_std = features_areawide.mean_elevation, features_areawide.std_elevation
+    elevation_mean, elevation_std = features_areawide['mean_elevation'], features_areawide['std_elevation']
     elevation_normalised = (elevation - elevation_mean) / elevation_std
 
     slope_mean = 45.
     slope_std = 90.
     slope_normalised = (slope - slope_mean) / slope_std
 
-    with h5py.File(f"{input_path}/{area_ind}_data.h5", 'w') as hf:
+    with h5py.File(f"{input_path}/{region_id}_data.h5", 'w') as hf:
         dict(elevation=None, slope=None, optical_rgb=None, nir=None, ultrablue=None, swir1=None, swir2=None,
              panchromatic=None, curve=None, erosion=None)
         hf.create_dataset("elevation", data=elevation_normalised)
@@ -100,8 +107,6 @@ def preprocess_single_region(path: pathlib.Path, area_id: int, trainable:bool, r
     data_preprocessor.write_data(output_path)
 
 
-
-
 for region_id, region_params in enumerate(data_preprocessor_params):
     path = pathlib.Path(region_params[0])
     preprocess_single_region(path=path, area_id=region_params[1], trainable=region_params[2], region_id=region_id)
@@ -111,5 +116,5 @@ for key_area, val_area in areas.items():
 
 for region_id, region_params in enumerate(data_preprocessor_params):
     path = pathlib.Path(region_params[0])
-    normalise_region(area_ind =region_params[1])
+    normalise_region(region_id, area_ind=region_params[1])
 

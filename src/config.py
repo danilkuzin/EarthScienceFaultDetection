@@ -17,7 +17,8 @@ data_preprocessor_params = [
     (f"{data_path}/raw_data/Region 8 - Nevada test/", 1, True),
     (f"{data_path}/raw_data/Region 8 - 144036/", 0, False),
     (f"{data_path}/raw_data/Region 9 - WRS 143038/", 0, False),
-    (f"{data_path}/raw_data/Region 10 - 141037/", 0, True)
+    (f"{data_path}/raw_data/Region 10 - 141037/", 0, True),
+    (f"{data_path}/raw_data/Region 11 - 140038/", 0, True)
 ]
 
 
