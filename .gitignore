@@ -142,3 +142,9 @@ scripts/training_on_0_1_10 copy/logs/events.out.tfevents.1558713768.Scotts-iMac.
 scripts/training_on_0_1_10_deeper copy/logs_10_epoch/events.out.tfevents.1558821428.Scotts-iMac.local.v2
 scripts/training_on_0_1_10_deeper/logs/events.out.tfevents.1558828153.Scotts-iMac.local.v2
 scripts/training_on_0_1_10_deeper/logs_10_epoch/events.out.tfevents.1558821428.Scotts-iMac.local.v2
+report-archived/references.bib
+report-archived/report.pdf
+report-archived/report.tex
+report/report.fdb_latexmk
+report/report.fls
+*.v2

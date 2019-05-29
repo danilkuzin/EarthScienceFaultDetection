@@ -118,7 +118,7 @@ class RawDataPreprocessor:
         return self.preprocessed_data.channels['optical_rgb'].shape[0], self.preprocessed_data.channels['optical_rgb'].shape[1], len(self.preprocessed_data.channels)
 
     def write_data(self):
-        self.preprocessed_data.write()
+        self.preprocessed_data.save()
         output_path = f"{data_path}/preprocessed/{self.region_id}"
         with io.open(f"{output_path}/gdal_params.yaml", 'w', encoding='utf8') as outfile:
             yaml.dump(self.data_io_backend.get_params(), outfile, default_flow_style=False, allow_unicode=True)

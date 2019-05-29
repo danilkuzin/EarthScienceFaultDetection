@@ -7,11 +7,11 @@ import tensorflow as tf
 from tensorflow.python.data.experimental import AUTOTUNE
 
 from src.DataPreprocessor.data_generator import DataGenerator
-from src.DataPreprocessor.data_preprocessor import Mode
+from src.DataPreprocessor.region_dataset import RegionDataset
 from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5, \
     cnn_150x150x3, cnn_150x150x1, cnn_150x150x12, cnn_150x150x11, cnn_150x150x4, cnn_150x150x1_3class, \
     cnn_150x150x3_3class, cnn_150x150x10
-from src.pipeline import global_params
+from src.config import data_path
 
 def get_class_probabilities_int(class_probabilities):
     class_probabilities_int = None
@@ -105,11 +105,11 @@ def train(train_datasets: List[int], test_datasets: List[int], validation_datase
     np.random.seed(1)
     tf.set_random_seed(2)
 
-    train_preprocessors = [global_params.data_preprocessor_generator(Mode.TRAIN, ind) for ind in train_datasets]
+    train_preprocessors = [RegionDataset(ind) for ind in train_datasets]
     train_data_generator = DataGenerator(preprocessors=train_preprocessors)
     # test_preprocessors = [global_params.data_preprocessor_generators[ind](Mode.TRAIN) for ind in test_datasets]
     # test_data_generator = DataGenerator(preprocessors=test_preprocessors)
-    valid_preprocessors = [global_params.data_preprocessor_generator(Mode.TRAIN, ind) for ind in validation_datasets]
+    valid_preprocessors = [RegionDataset(ind) for ind in validation_datasets]
     valid_data_generator = DataGenerator(preprocessors=valid_preprocessors)
 
     class_probabilities_int = get_class_probabilities_int(class_probabilities)
@@ -166,6 +166,7 @@ def train(train_datasets: List[int], test_datasets: List[int], validation_datase
     # plt.savefig("Model loss_{}.png".format(hist_ind))
     # plt.close()
 
+
 def load_data(regions, channels, train_ratio):
     imgs_raw = []
     lbls_raw = []
@@ -191,6 +192,7 @@ def load_data(regions, channels, train_ratio):
 
     return imgs_train, lbls_train, imgs_valid, lbls_valid
 
+
 def train_on_preloaded(model, imgs_train, lbls_train, imgs_valid, lbls_valid, folder, epochs):
     pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
 
@@ -212,6 +214,7 @@ def train_on_preloaded(model, imgs_train, lbls_train, imgs_valid, lbls_valid, fo
                         use_multiprocessing=False)
 
     model.save_weights(folder + '/model.h5')
+
 
 def train_on_preloaded_single_files(model, train_dataset, train_dataset_size, valid_dataset, valid_dataset_size,
                                     folder, epochs, batch_size):
@@ -237,7 +240,8 @@ def train_on_preloaded_single_files(model, train_dataset, train_dataset_size, va
 
     model.save_weights(folder + '/model.h5')
 
-#todo potentially use tfrecord insttead of h5 to maybe store all in one file and remove the py_func from here
+
+# todo potentially use tfrecord insttead of h5 to maybe store all in one file and remove the py_func from here
 def datasets_on_single_files(regions, channels, train_ratio, batch_size):
     BATCH_SIZE = batch_size
 
@@ -258,7 +262,7 @@ def datasets_on_single_files(regions, channels, train_ratio, batch_size):
     valid_dataset_size = 0
 
     for reg_id in regions:
-        reg_path = pathlib.Path(f'../../DataForEarthScienceFaultDetection/train_data/regions_{reg_id}_single_files/')
+        reg_path = pathlib.Path(f'{data_path}/train_data/regions_{reg_id}_single_files/')
         all_image_paths = np.array([str(path) for path in list(reg_path.glob('*'))])
 
         image_count = len(all_image_paths)

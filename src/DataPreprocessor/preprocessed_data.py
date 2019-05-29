@@ -14,7 +14,7 @@ class PreprocessedData:
         self.features = None
         self.storage_path = f"{data_path}/preprocessed/{region_id}"
 
-    def write(self):
+    def save(self):
         pathlib.Path(self.storage_path).mkdir(exist_ok=True, parents=True)
         with h5py.File(f"{self.storage_path}/data.h5", 'w') as hf:
             dict(elevation=None, slope=None, optical_rgb=None, nir=None, ultrablue=None, swir1=None, swir2=None,

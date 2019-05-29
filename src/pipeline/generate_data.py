@@ -21,24 +21,24 @@ def __generate_data_batch(data_generator, size, class_probabilities):
         size=size,
         verbose=0)
 
-def generate_data(datasets, size, data_batch_size=100, lookalike_ratio=None):
+def generate_data(dataset_inds, size, data_batch_size=100, lookalike_ratio=None):
     # todo currently data_batch_size is a multiplier of size
     if not size % data_batch_size == 0:
         raise ValueError()
 
     if lookalike_ratio is None:
-        lookalike_ratio = [0.25] * len(datasets)
+        lookalike_ratio = [0.25] * len(dataset_inds)
 
     for i in range(len(lookalike_ratio)):
         if lookalike_ratio[i] is None:
             lookalike_ratio[i] = 0.25
 
-    preprocessors = [global_params.data_preprocessor_generator(Mode.TRAIN, ind) for ind in datasets]
-    for preprocessor, preprocessor_ind, lookalike_ratio_for_dataset in zip(preprocessors, datasets, lookalike_ratio):
+    region_datasets = [RegionDataset(ind) for ind in dataset_inds]
+    for dataset, preprocessor_ind, lookalike_ratio_for_dataset in zip(region_datasets, dataset_inds, lookalike_ratio):
         output_path = f"../train_data/regions_{preprocessor_ind}/"
         pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
 
-        data_generator = DataGenerator(preprocessors=[preprocessor])
+        data_generator = DataGenerator(preprocessors=[dataset])
         class_probabilities = [0.5, lookalike_ratio_for_dataset, 0.5 - lookalike_ratio_for_dataset]
 
         imgs, lbls, coords = __generate_data_batch(data_generator, data_batch_size, class_probabilities)
@@ -63,19 +63,19 @@ def generate_data(datasets, size, data_batch_size=100, lookalike_ratio=None):
 
         logging.info(f"data saved: {[output_path + '/data.h5', output_path + '/data_coords.h5']}")
 
-def generate_data_single_files(datasets, size, lookalike_ratio=None):
+
+def generate_data_single_files(dataset_inds, size, lookalike_ratio=None):
     if lookalike_ratio is None:
-        lookalike_ratio = [0.25] * len(datasets)
+        lookalike_ratio = [0.25] * len(dataset_inds)
 
     for i in range(len(lookalike_ratio)):
         if lookalike_ratio[i] is None:
             lookalike_ratio[i] = 0.25
 
-    datasets = [RegionDataset(ind) for ind in datasets]
+    region_datasets = [RegionDataset(ind) for ind in dataset_inds]
 
-
-    for dataset, preprocessor_ind, lookalike_ratio_for_dataset in zip(datasets, datasets, lookalike_ratio):
-        output_path = f"../../DataForEarthScienceFaultDetection/train_data/regions_{preprocessor_ind}_single_files/"
+    for dataset, dataset_ind, lookalike_ratio_for_dataset in zip(region_datasets, dataset_inds, lookalike_ratio):
+        output_path = f"../../DataForEarthScienceFaultDetection/train_data/regions_{dataset_ind}_single_files/"
         pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
 
         data_generator = DataGenerator(preprocessors=[dataset])

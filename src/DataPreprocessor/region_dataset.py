@@ -197,7 +197,11 @@ class RegionDataset:
 
         for i in range(batch_size):
             patch, coords = self.sample_patch(label=class_labels[i], patch_size=patch_size)
-            img_batch[i] = ImageAugmentation.augment(patch[:, :, channels])
+            augment_probability = np.random.rand()
+            if augment_probability < 0.5:
+                img_batch[i] = ImageAugmentation.augment(patch[:, :, channels])
+            else:
+                img_batch[i] = patch
             coords_batch[i] = coords
 
         return img_batch, coords_batch

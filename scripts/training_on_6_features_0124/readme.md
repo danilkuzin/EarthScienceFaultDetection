@@ -1,5 +1,6 @@
 Experiment on training on region 6 - Region 7 - Nevada train
 and labels manually provided for them rather than from the US database (at the moment of 25.05.2019)
+Augmentation is done unconditionally as per commit 9b99029.
 For training only optical rgb and slope channels are used rather than additional elevation as in the previous experiments
 
 The trained model is later used to build heatmaps for all available regions.

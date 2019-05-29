@@ -11,4 +11,4 @@ np.random.seed(5)
 from src.pipeline.generate_data import generate_data, generate_data_single_files
 
 #generate_data(datasets=[6], size=2000)
-generate_data_single_files(datasets=[6], size=15000, lookalike_ratio=[None, None, None])
+generate_data_single_files(dataset_inds=[6], size=15000, lookalike_ratio=[None, None, None])
