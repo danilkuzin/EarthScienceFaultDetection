@@ -1,4 +1,4 @@
-from src.DataPreprocessor.data_preprocessor import DataPreprocessor
+from src.DataPreprocessor.region_dataset import RegionDataset
 from typing import List, Tuple
 import numpy as np
 
@@ -7,7 +7,7 @@ class DataGenerator:
     """
     A collection of data_preprocessors that feed data into training pipeline
     """
-    def __init__(self, preprocessors: List[DataPreprocessor]):
+    def __init__(self, preprocessors: List[RegionDataset]):
         self.preprocessors = preprocessors
 
     def generator_3class(self, batch_size: int, class_probabilities: np.array, patch_size: Tuple[int, int], channels: np.array, verbose: int):

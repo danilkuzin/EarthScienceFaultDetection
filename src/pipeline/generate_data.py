@@ -6,17 +6,18 @@ import sys
 
 from tqdm import trange
 
+from src.DataPreprocessor.region_dataset import RegionDataset
+
 sys.path.extend(['../../EarthScienceFaultDetection'])
 
 from src.DataPreprocessor.data_generator import DataGenerator
-from src.DataPreprocessor.data_preprocessor import Mode
-from src.pipeline import global_params
+import src.config
 
 def __generate_data_batch(data_generator, size, class_probabilities):
     return data_generator.create_datasets(
         class_probabilities=class_probabilities,
         patch_size=(150, 150),
-        channels=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+        channels=[0, 1, 2, 3, 4],
         size=size,
         verbose=0)
 
@@ -70,12 +71,14 @@ def generate_data_single_files(datasets, size, lookalike_ratio=None):
         if lookalike_ratio[i] is None:
             lookalike_ratio[i] = 0.25
 
-    preprocessors = [global_params.data_preprocessor_generator(Mode.TRAIN, ind) for ind in datasets]
-    for preprocessor, preprocessor_ind, lookalike_ratio_for_dataset in zip(preprocessors, datasets, lookalike_ratio):
+    datasets = [RegionDataset(ind) for ind in datasets]
+
+
+    for dataset, preprocessor_ind, lookalike_ratio_for_dataset in zip(datasets, datasets, lookalike_ratio):
         output_path = f"../../DataForEarthScienceFaultDetection/train_data/regions_{preprocessor_ind}_single_files/"
         pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
 
-        data_generator = DataGenerator(preprocessors=[preprocessor])
+        data_generator = DataGenerator(preprocessors=[dataset])
         class_probabilities = [0.5, lookalike_ratio_for_dataset, 0.5 - lookalike_ratio_for_dataset]
 
         for n in trange(size):

@@ -3,13 +3,14 @@ from typing import List
 import h5py
 import numpy as np
 import tensorflow as tf
+import yaml
 
-from src.DataPreprocessor.data_preprocessor import Mode
-from src.LearningKeras.net_architecture import cnn_150x150x5_3class, cnn_150x150x5, cnn_150x150x3, cnn_150x150x1, \
-    cnn_150x150x12, cnn_150x150x11, cnn_150x150x4
+from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
+from src.DataPreprocessor.region_dataset import RegionDataset
 from src.LearningKeras.train import KerasTrainer
-from src.pipeline import global_params
 from src.postprocessing.postprocessor import PostProcessor
+
+from src.config import data_path
 
 np.random.seed(1)
 tf.set_random_seed(2)
@@ -41,7 +42,8 @@ def predict(datasets: List[int], model, models_folder, classes, channels, stride
     trainer.load(input_path=models_folder)
 
     for ind in datasets:
-        data_preprocessor = global_params.data_preprocessor_generator(Mode.TEST, ind)
+        data_preprocessor = RegionDataset(ind)
+
         boxes, probs = trainer.apply_for_sliding_window(
             data_preprocessor=data_preprocessor, patch_size=(150, 150), stride=stride, batch_size=batch_size,
             channels=channels)
@@ -55,7 +57,13 @@ def postprocess(datasets: List[int], models_folder, heatmap_mode="max"):
 
     for ind in datasets:
 
-        data_preprocessor = global_params.data_preprocessor_generator(Mode.TEST, ind)
+        data_preprocessor = RegionDataset(ind)
+
+        gdal_backend = GdalBackend()
+        with open(f"{data_path}/preprocessed/{ind}/gdal_params.yaml", 'r') as stream:
+            gdal_params = yaml.safe_load(stream)
+        gdal_backend.set_params(gdal_params['driver_name'], gdal_params['projection'],
+                                     eval(gdal_params['geotransform']))
 
         with h5py.File(f'{models_folder}/sliding_window_{ind}.h5', 'r') as hf:
             boxes = hf["boxes"][:]
@@ -65,8 +73,8 @@ def postprocess(datasets: List[int], models_folder, heatmap_mode="max"):
         faults_postprocessor = PostProcessor(boxes=boxes, probs=probs[:, 0],
                                              original_2dimage_shape=original_2dimage_shape)
         res_faults = faults_postprocessor.heatmaps(mode=heatmap_mode)
-        data_preprocessor.data_io_backend.write_image(
+        gdal_backend.write_image(
             f"{models_folder}/heatmaps_probs_{ind}",
             res_faults * 100)
-        data_preprocessor.data_io_backend.write_surface(
+        gdal_backend.write_surface(
             f"{models_folder}/heatmaps_faults_{ind}", res_faults)

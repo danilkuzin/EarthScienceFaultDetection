@@ -13,7 +13,7 @@ import logging
 
 import matplotlib.pyplot as plt
 
-from src.DataPreprocessor.data_preprocessor import FeatureValue
+from src.DataPreprocessor.raw_data_preprocessor import FeatureValue
 
 
 class GdalBackend(DataIOBackend):
@@ -366,7 +366,12 @@ class GdalBackend(DataIOBackend):
 
     def get_params(self):
         return {
-            'driver_name': self.gdal_options['driver'].LongName,
+            'driver_name': self.gdal_options['driver'].ShortName,
             'projection': self.gdal_options['projection'],
             'geotransform': str(self.gdal_options['geotransform']),
         }
+
+    def set_params(self, driver_name, projection, geotransform):
+        self.gdal_options['driver'] = gdal.GetDriverByName(driver_name)
+        self.gdal_options['projection'] = projection
+        self.gdal_options['geotransform'] = geotransform

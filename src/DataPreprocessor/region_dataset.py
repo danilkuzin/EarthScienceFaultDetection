@@ -11,6 +11,7 @@ from tqdm import trange
 from src.DataPreprocessor.DataIOBackend.backend import DataIOBackend
 from src.DataPreprocessor.PatchesOutputBackend.backend import PatchesOutputBackend
 from src.DataPreprocessor.image_augmentation import ImageAugmentation
+from src.DataPreprocessor.normalised_data import NormalisedData
 from src.config import data_preprocessor_params, areas, data_path
 
 class OutOfBoundsException(Exception):
@@ -30,32 +31,20 @@ class FeatureValue(Enum):
 
 
 class RegionDataset:
-    def __init__(self, region_id: str):
+    def __init__(self, region_id: int):
         self.region_id = region_id
-        self.elevation = None
-        self.slope = None
-        self.optical_r = None
-        self.optical_g = None
-        self.optical_b = None
-        self.features = None
+        self.normalised_data = NormalisedData(region_id)
         self.trainable = None
 
         self.load()
 
     def load(self):
         logging.info('loading...')
-        with h5py.File(f"{data_path}/normalised/{self.region_id}_data.h5", 'r') as hf:
-            self.elevation = hf["elevation"][:]
-            self.slope= hf["slope"][:]
-            self.optical_r= hf["optical_r"][:]
-            self.optical_g= hf["optical_g"][:]
-            self.optical_b= hf["optical_b"][:]
-            self.features= hf["features"][:]
-        self.trainable = not np.all(self.features == FeatureValue.UNDEFINED.value)
+        self.normalised_data.load()
         logging.info('loaded')
 
     def get_data_shape(self):
-        return self.channels['optical_rgb'].shape[0], self.channels['optical_rgb'].shape[1], len(self.channels)
+        return self.normalised_data.channels['optical_rgb'].shape[0], self.normalised_data.channels['optical_rgb'].shape[1], len(self.normalised_data.channels)
 
     def __borders_from_center(self, center, patch_size):
         left_border = center[0] - patch_size[0] // 2
@@ -73,16 +62,9 @@ class RegionDataset:
 
     def concatenate_full_patch(self, left_border: int, right_border: int, top_border: int, bottom_border: int):
         return np.concatenate(
-            (self.normalised_channels['optical_rgb'][left_border:right_border, top_border:bottom_border],
-             np.expand_dims(self.normalised_channels['elevation'][left_border:right_border, top_border:bottom_border], axis=2),
-             np.expand_dims(self.normalised_channels['slope'][left_border:right_border, top_border:bottom_border], axis=2),
-             np.expand_dims(self.normalised_channels['nir'][left_border:right_border, top_border:bottom_border], axis=2),
-             np.expand_dims(self.normalised_channels['ultrablue'][left_border:right_border, top_border:bottom_border], axis=2),
-             np.expand_dims(self.normalised_channels['swir1'][left_border:right_border, top_border:bottom_border], axis=2),
-             np.expand_dims(self.normalised_channels['swir2'][left_border:right_border, top_border:bottom_border], axis=2),
-             np.expand_dims(self.normalised_channels['panchromatic'][left_border:right_border, top_border:bottom_border], axis=2),
-             np.expand_dims(self.normalised_channels['curve'][left_border:right_border, top_border:bottom_border], axis=2),
-             np.expand_dims(self.normalised_channels['erosion'][left_border:right_border, top_border:bottom_border], axis=2)),
+            (self.normalised_data.channels['optical_rgb'][left_border:right_border, top_border:bottom_border],
+             np.expand_dims(self.normalised_data.channels['elevation'][left_border:right_border, top_border:bottom_border], axis=2),
+             np.expand_dims(self.normalised_data.channels['slope'][left_border:right_border, top_border:bottom_border], axis=2)),
             axis=2)
 
     def get_full_image(self):
@@ -92,7 +74,7 @@ class RegionDataset:
     def sample_fault_patch(self, patch_size):
         """if an image patch contains fault bit in the center area than assign it as a fault - go through fault lines
         and sample patches"""
-        fault_locations = np.argwhere(self.features == FeatureValue.FAULT.value)
+        fault_locations = np.argwhere(self.normalised_data.features == FeatureValue.FAULT.value)
         sampled = False
         left_border, right_border, top_border, bottom_border = None, None, None, None
         while not sampled:
@@ -112,7 +94,7 @@ class RegionDataset:
     def sample_fault_lookalike_patch(self, patch_size):
         """if an image patch contains fault lookalike bit in the center area than assign it as a fault - go through
         fault lookalike lines and sample patches"""
-        fault_lookalike_locations = np.argwhere(self.features == FeatureValue.FAULT_LOOKALIKE.value)
+        fault_lookalike_locations = np.argwhere(self.normalised_data.features == FeatureValue.FAULT_LOOKALIKE.value)
         if fault_lookalike_locations.size == 0:
             logging.warning("no lookalikes marked, sampling nonfaults instead")
             return self.sample_nonfault_patch(patch_size)
@@ -134,7 +116,7 @@ class RegionDataset:
 
     def sample_nonfault_patch(self, patch_size):
         """if an image path contains only nonfault bits, than assign it as a non-fault"""
-        nonfault_locations = np.argwhere(self.features == FeatureValue.NONFAULT.value)
+        nonfault_locations = np.argwhere(self.normalised_data.features == FeatureValue.NONFAULT.value)
         if nonfault_locations.size == 0:
             logging.warning("no nonfaults marked, sampling undefined instead")
             return self.sample_undefined_patch(patch_size)
@@ -150,7 +132,7 @@ class RegionDataset:
                                                                    bottom_border))
                 is_probably_fault = False
                 for i1, i2 in itertools.product(range(patch_size[0]), range(patch_size[1])):
-                    if self.features[left_border + i1][top_border + i2] != FeatureValue.NONFAULT.value:
+                    if self.normalised_data.features[left_border + i1][top_border + i2] != FeatureValue.NONFAULT.value:
                         is_probably_fault = True
                         logging.info("probably fault")
                         break
@@ -165,7 +147,7 @@ class RegionDataset:
 
     def sample_undefined_patch(self, patch_size):
         """if an image patch contains only undefined bits, than assign it as a undefined"""
-        undefined_locations = np.argwhere(self.features == FeatureValue.UNDEFINED.value)
+        undefined_locations = np.argwhere(self.normalised_data.features == FeatureValue.UNDEFINED.value)
         if undefined_locations.size == 0:
             logging.warning("no undefined marked")
             raise Exception()
@@ -181,7 +163,7 @@ class RegionDataset:
                                                                    bottom_border))
                 is_probably_fault = False
                 for i1, i2 in itertools.product(range(patch_size[0]), range(patch_size[1])):
-                    if self.features[left_border + i1][top_border + i2] != FeatureValue.UNDEFINED.value:
+                    if self.normalised_data.features[left_border + i1][top_border + i2] != FeatureValue.UNDEFINED.value:
                         is_probably_fault = True
                         logging.info("probably fault")
                         break
@@ -203,37 +185,6 @@ class RegionDataset:
             return self.sample_nonfault_patch(patch_size)
         else:
             raise NotImplementedError(f"class label {label}")
-
-    def __normalise(self):
-        for ch_name, channel in self.channels.items():
-            if ch_name == 'optical_rgb':
-                self.normalised_channels[ch_name] = self.channels[ch_name].astype(np.float32) / 255. - 0.5
-            elif ch_name == 'slope':
-                self.normalised_channels[ch_name] = self.channels[ch_name].astype(np.float32) / 90. - 0.5
-
-            else:
-                if np.allclose(np.std(self.channels[ch_name].astype(np.float32)), 0.):
-                    self.normalised_channels[ch_name] = np.zeros_like(self.channels[ch_name].astype(np.float32))
-                else:
-                    self.normalised_channels[ch_name] = (self.channels[ch_name].astype(np.float32) - np.mean(
-                        self.channels[ch_name].astype(np.float32))) / np.std(self.channels[ch_name].astype(np.float32))
-
-    def denormalise(self, patch):
-        denormalised_rgb = ((patch[:, :, :3] + 0.5) * 255).astype(np.uint8)
-        denormalised_elevation = (patch[:, :, 3] * np.std(self.channels['elevation'].astype(np.float32)) + np.mean(
-            self.channels['elevation'].astype(np.float32)))
-        denormalised_slope = (patch[:, :, 4] * 45 + 45)
-        denormalised_nir = (patch[:, :, 5] * np.std(self.channels['nir'].astype(np.float32)) + np.mean(
-            self.channels['nir'].astype(np.float32)))
-        denormalised_ultrablue = (patch[:, :, 6] * np.std(self.channels['ultrablue'].astype(np.float32)) + np.mean(
-            self.channels['ultrablue'].astype(np.float32)))
-        denormalised_swir1 = (patch[:, :, 7] * np.std(self.channels['swir1'].astype(np.float32)) + np.mean(
-            self.channels['swir1'].astype(np.float32)))
-        denormalised_swir2 = (patch[:, :, 8] * np.std(self.channels['swir2'].astype(np.float32)) + np.mean(
-            self.channels['swir2'].astype(np.float32)))
-        denormalised_panchromatic = (patch[:, :, 9] * np.std(self.channels['panchromatic'].astype(np.float32)) + np.mean(
-            self.channels['panchromatic'].astype(np.float32)))
-        return denormalised_rgb, denormalised_elevation, denormalised_slope
 
     def sample_batch(self, batch_size, class_labels, patch_size, channels):
         # todo consider random preprocessing for rgb channels, such is tf.image.random_brightness, etc

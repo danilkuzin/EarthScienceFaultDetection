@@ -1,7 +1,3 @@
-from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
-from src.DataPreprocessor.PatchesOutputBackend.in_memory_backend import InMemoryBackend
-from src.DataPreprocessor.data_preprocessor import DataPreprocessor
-
 trainable = [0, 1, 6, 7, 10]
 data_path = "../../DataForEarthScienceFaultDetection"
 areas = {"Tibet":0, "Nevada":1, "Turkey":2}

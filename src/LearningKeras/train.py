@@ -5,7 +5,7 @@ import tensorflow as tf
 import numpy as np
 from tqdm import trange, tqdm
 
-from src.DataPreprocessor.data_preprocessor import DataPreprocessor
+from src.DataPreprocessor.region_dataset import RegionDataset
 
 
 class KerasTrainer:
@@ -60,7 +60,7 @@ class KerasTrainer:
 
         return np.mean(true_labels == predicted_labels)
 
-    def apply_for_sliding_window(self, data_preprocessor: DataPreprocessor, patch_size: Tuple[int, int],
+    def apply_for_sliding_window(self, data_preprocessor: RegionDataset, patch_size: Tuple[int, int],
                                  stride: int, batch_size: int, channels:List[int]):
         boxes, probs = [], []
         for patch_coords_batch, patch_batch in tqdm(data_preprocessor.sequential_pass_generator(
