@@ -2,10 +2,12 @@ import logging
 
 import h5py
 import numpy as np
+import yaml
 from tqdm import trange
 
-from src.DataPreprocessor.data_preprocessor import Mode
-from src.pipeline import global_params
+from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
+from src.DataPreprocessor.region_dataset import RegionDataset
+from src.config import data_path
 
 
 def visualise_training_patches(dataset):
@@ -19,7 +21,7 @@ def visualise_training_patches(dataset):
     coords = coords.astype(np.int)
     lbls = lbls.astype(np.int)
     logging.info(f"loaded data for dataset {dataset}, length={coords.shape[0]}")
-    data_preprocessor = global_params.data_preprocessor_generator(Mode.TRAIN, dataset)
+    data_preprocessor = RegionDataset(dataset)
     im_w, im_h, _ = data_preprocessor.get_data_shape()
 
     mask_0 = np.zeros((im_w, im_h))
@@ -41,14 +43,22 @@ def visualise_training_patches(dataset):
 
     mask_0_path = f'../train_data/regions_{dataset}/data_patches_faults'
     mask_1_path = f'../train_data/regions_{dataset}/data_patches_non_faults'
-    data_preprocessor.data_io_backend.write_surface(mask_0_path, mask_0)
-    data_preprocessor.data_io_backend.write_surface(mask_1_path, mask_1)
+
+    gdal_backend = GdalBackend()
+    with open(f"{data_path}/preprocessed/{dataset}/gdal_params.yaml", 'r') as stream:
+        gdal_params = yaml.safe_load(stream)
+    gdal_backend.set_params(gdal_params['driver_name'], gdal_params['projection'],
+                                 eval(gdal_params['geotransform']))
+
+    gdal_backend.write_surface(mask_0_path, mask_0)
+    gdal_backend.write_surface(mask_1_path, mask_1)
+
 
     logging.info(f"images saved: {[mask_0_path, mask_1_path]}")
 
 def visualise_training_patches_single_files(dataset, num):
     #todo estimate num from os
-    data_preprocessor = global_params.data_preprocessor_generator(Mode.TRAIN, dataset)
+    data_preprocessor = RegionDataset(dataset)
     im_w, im_h, _ = data_preprocessor.get_data_shape()
     mask_0 = np.zeros((im_w, im_h))
     mask_1 = np.zeros((im_w, im_h))
@@ -76,8 +86,15 @@ def visualise_training_patches_single_files(dataset, num):
 
     mask_0_path = f'../train_data/regions_{dataset}/data_patches_faults'
     mask_1_path = f'../train_data/regions_{dataset}/data_patches_non_faults'
-    data_preprocessor.data_io_backend.write_surface(mask_0_path, mask_0)
-    data_preprocessor.data_io_backend.write_surface(mask_1_path, mask_1)
+
+    gdal_backend = GdalBackend()
+    with open(f"{data_path}/preprocessed/{dataset}/gdal_params.yaml", 'r') as stream:
+        gdal_params = yaml.safe_load(stream)
+    gdal_backend.set_params(gdal_params['driver_name'], gdal_params['projection'],
+                            eval(gdal_params['geotransform']))
+
+    gdal_backend.write_surface(mask_0_path, mask_0)
+    gdal_backend.write_surface(mask_1_path, mask_1)
 
     logging.info(f"images saved: {[mask_0_path, mask_1_path]}")
 
