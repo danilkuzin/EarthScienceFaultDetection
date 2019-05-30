@@ -7,6 +7,7 @@ from src.pipeline.training import train_on_preloaded, load_data, datasets_on_sin
     train_on_preloaded_single_files
 from src.LearningKeras.net_architecture import cnn_150x150x5
 import tensorflow as tf
+from src.config import data_path
 
 tf.enable_eager_execution()
 np.random.seed(1000)
@@ -24,5 +25,5 @@ train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
     datasets_on_single_files(regions=[0, 1, 10], channels=[0, 1, 2, 3, 4], train_ratio=0.80, batch_size=batch_size)
 
 train_on_preloaded_single_files(model, train_dataset, train_dataset_size, valid_dataset, valid_dataset_size,
-                                folder="training_on_0_1_10", epochs=10, batch_size=batch_size)
+                                folder=f"{data_path}/results/training_on_0_1_10_novel_elevation_normalisation", epochs=10, batch_size=batch_size)
 

@@ -1,7 +1,8 @@
 Experiment on training on region 0, 1, and 10 - Tibet Region 1 - Lopukangri and Region 2 - Muga Puruo and Region 10 - 141037
 and all labels available for them (at the moment of 25.05.2019)
+Augmentation is made unconditionally as per commit 9b99029.
 
-The trained model is later used to build heatmaps for all available regions.
+The trained model is later used to build heatmaps for all available regions. For regions 0, 1, 3-10 heatmaps are built with stride 10, for region 2 heatmaps are built for both strides 5 and 10, for region 11 heatmaps built for stride 5.
 
 Training is done for 10 epochs.
 
