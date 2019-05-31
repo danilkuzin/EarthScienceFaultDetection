@@ -193,7 +193,8 @@ class NnVisualisation:
         heatmap = np.mean(conv_layer_output_value, axis=-1)
 
         heatmap = np.maximum(heatmap, 0)
-        heatmap /= np.max(heatmap)
+        if np.max(heatmap) > 0:
+            heatmap /= np.max(heatmap)
 
         fig = plt.figure(frameon=False, dpi=1)
         fig.set_size_inches(150, 150)
@@ -202,6 +203,7 @@ class NnVisualisation:
         fig.add_axes(ax)
         ax.matshow(heatmap, aspect='auto')
         plt.savefig(f"{output_path}heatmaps_activations_{image_ind}.png")
+        plt.close(fig)
 
     def visualise_nn(self):
         output_path = "../nn_visualisations/"
@@ -215,7 +217,7 @@ class NnVisualisation:
 
             den_image = normaliser.denormalise_patch(image)
             den_rgb, den_elev, den_slope = den_image[:,:,:3], den_image[:,:,3], den_image[:,:,4]
-            plt.imsave(output_path + f"input_image_{i}_0_2.png", den_rgb)
+            plt.imsave(output_path + f"input_image_{i}_0_2.png", den_rgb.astype(np.uint8))
             plt.imsave(output_path + f"input_image_{i}_3.png", den_elev)
             plt.imsave(output_path + f"input_image_{i}_4.png", den_slope)
 

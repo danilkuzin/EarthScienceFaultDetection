@@ -71,7 +71,7 @@ def visualise_training_patches_single_files(dataset, num):
 
         cur_coords = cur_coords.astype(np.int)
         cur_lbl = cur_lbl.astype(np.int)
-        logging.info(f"loaded data {n} for dataset {dataset}")
+        #logging.info(f"loaded data {n} for dataset {dataset}")
 
         if cur_lbl[0] == 1:
             mask_0[cur_coords[0]:cur_coords[1], cur_coords[2]:cur_coords[3]] = mask_0[cur_coords[0]:cur_coords[1], cur_coords[2]:cur_coords[3]] + 1
