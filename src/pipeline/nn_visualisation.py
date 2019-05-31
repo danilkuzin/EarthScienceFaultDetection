@@ -18,7 +18,7 @@ class NnVisualisation:
         self.region_id = region_id
         self.num_samples = num_samples
 
-    def visualise_intermediate_activations(self, output_path, image):
+    def visualise_intermediate_activations(self, output_path, image, image_ind):
         layer_before_flatten_ind = 6
 
         # Extracts the outputs of the top layers:
@@ -71,7 +71,7 @@ class NnVisualisation:
             plt.imshow(display_grid, aspect='auto', cmap='viridis')
             plt.colorbar()
 
-            plt.savefig(f"{output_path}intermediate_activations_{layer_name}.png")
+            plt.savefig(f"{output_path}intermediate_activations_{layer_name}_image_{image_ind}.png")
 
     def visualise_convnet_filters(self, output_path):
 
@@ -158,7 +158,7 @@ class NnVisualisation:
             plt.imshow(results[:,:,4])
             plt.savefig(f"{output_path}convnet_filters_slope_{layer_name}.png")
 
-    def visualise_heatmaps_activations(self, output_path, image):
+    def visualise_heatmaps_activations(self, output_path, image, image_ind):
         # This is the "fault" entry in the prediction vector
         african_elephant_output = self.model.output[:, 0]
 
@@ -195,13 +195,13 @@ class NnVisualisation:
         heatmap = np.maximum(heatmap, 0)
         heatmap /= np.max(heatmap)
 
-        fig = plt.figure(frameon=False)
+        fig = plt.figure(frameon=False, dpi=1)
         fig.set_size_inches(150, 150)
         ax = plt.Axes(fig, [0., 0., 1., 1.])
         ax.set_axis_off()
         fig.add_axes(ax)
         ax.matshow(heatmap, aspect='auto')
-        plt.savefig(f"{output_path}heatmaps_activations.png")
+        plt.savefig(f"{output_path}heatmaps_activations_{image_ind}.png")
 
     def visualise_nn(self):
         output_path = "../nn_visualisations/"
@@ -221,9 +221,9 @@ class NnVisualisation:
 
             image = image[:, :, 0:5]
             image = np.expand_dims(image, axis=0)
-            self.visualise_intermediate_activations(output_path, image)
+            self.visualise_intermediate_activations(output_path, image, i)
             self.visualise_convnet_filters(output_path)
-            self.visualise_heatmaps_activations(output_path, image)
+            self.visualise_heatmaps_activations(output_path, image, i)
 
 
 
