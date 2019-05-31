@@ -212,8 +212,9 @@ class NnVisualisation:
 
         for i in range(self.num_samples):
             image, _ = data_preprocessor.sample_patch(label=FeatureValue.FAULT.value, patch_size=(150, 150))
-            den_rgb, den_elev, den_slope = normaliser.denormalise_patch(image)
 
+            den_image = normaliser.denormalise_patch(image)
+            den_rgb, den_elev, den_slope = den_image[:,:,:3], den_image[:,:,3], den_image[:,:,4]
             plt.imsave(output_path + f"input_image_{i}_0_2.png", den_rgb)
             plt.imsave(output_path + f"input_image_{i}_3.png", den_elev)
             plt.imsave(output_path + f"input_image_{i}_4.png", den_slope)

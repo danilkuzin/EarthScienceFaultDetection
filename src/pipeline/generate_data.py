@@ -5,7 +5,6 @@ import h5py
 import sys
 
 from tqdm import trange
-from joblib import Parallel, delayed
 
 sys.path.extend(['../../EarthScienceFaultDetection'])
 

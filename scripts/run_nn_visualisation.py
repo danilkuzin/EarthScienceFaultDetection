@@ -11,9 +11,10 @@ from src.pipeline.nn_visualisation import NnVisualisation
 import numpy as np
 
 import matplotlib.pyplot as plt
+from src.config import data_path
 
 model=cnn_150x150x5()
-model.load_weights('updated_heatmaps_trained_on_6/model.h5')
+model.load_weights(f"{data_path}/results/training_on_0_1_10_novel_elevation_normalisation/model.h5")
 
 nn_visualiser = NnVisualisation(model=model, region_id=6, num_samples=6)
 nn_visualiser.visualise_nn()
