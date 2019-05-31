@@ -263,7 +263,7 @@ def datasets_on_single_files(regions, channels, train_ratio, batch_size):
 
     for reg_id in regions:
         reg_path = pathlib.Path(f'{data_path}/train_data/regions_{reg_id}_single_files/')
-        all_image_paths = np.array([str(path) for path in list(reg_path.glob('*'))])
+        all_image_paths = np.array([str(path) for path in list(reg_path.glob('*.h5'))])
 
         image_count = len(all_image_paths)
         permuted_ind = np.random.permutation(image_count)
@@ -280,7 +280,7 @@ def datasets_on_single_files(regions, channels, train_ratio, batch_size):
 
         valid_path_ds = tf.data.Dataset.from_tensor_slices(permuted_paths[train_len:])
         valid_image_label_coord_ds = valid_path_ds.map(parse_file_tf, num_parallel_calls=AUTOTUNE)
-        valid_ds = valid_image_label_coord_ds.apply(tf.data.experimental.shuffle_and_repeat(buffer_size=int(image_count * (1- train_ratio))))
+        valid_ds = valid_image_label_coord_ds.apply(tf.data.experimental.shuffle_and_repeat(buffer_size=int(image_count - train_len)))
         valid_ds = valid_ds.batch(BATCH_SIZE)
         valid_ds = valid_ds.prefetch(buffer_size=AUTOTUNE)
         valid_datasets.append(valid_ds)

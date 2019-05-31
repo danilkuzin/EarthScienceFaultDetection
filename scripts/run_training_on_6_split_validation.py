@@ -23,4 +23,4 @@ train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
     datasets_on_single_files(regions=[6], channels=[0, 1, 2, 3, 4], train_ratio=0.80, batch_size=batch_size)
 
 train_on_preloaded_single_files(model, train_dataset, train_dataset_size, valid_dataset, valid_dataset_size,
-                                folder=f"{data_path}/results/training_on_6_only_manual_faults_novel_elevation_normalisation", epochs=10, batch_size=batch_size)
+                                folder=f"{data_path}/results/training_on_6_only_manual_faults_novel_elevation_normalisation_reduced_nonfault_area", epochs=10, batch_size=batch_size)

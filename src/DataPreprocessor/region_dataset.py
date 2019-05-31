@@ -114,25 +114,24 @@ class RegionDataset:
         coords = np.array((left_border, right_border, top_border, bottom_border))
         return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border), coords
 
-    def sample_nonfault_patch(self, patch_size):
-        """if an image path contains only nonfault bits, than assign it as a non-fault"""
-        nonfault_locations = np.argwhere(self.normalised_data.features == FeatureValue.NONFAULT.value)
-        if nonfault_locations.size == 0:
-            logging.warning("no nonfaults marked, sampling undefined instead")
-            return self.sample_undefined_patch(patch_size)
+    def sample_from_region(self, locations, inside_value, patch_size):
+        inside_region_size = (50, 50)
         sampled = False
         left_border, right_border, top_border, bottom_border = None, None, None, None
         while not sampled:
-            samples_ind = np.random.randint(nonfault_locations.shape[0])
+            samples_ind = np.random.randint(locations.shape[0])
             try:
                 left_border, right_border, top_border, bottom_border = self.__borders_from_center(
-                    nonfault_locations[samples_ind], patch_size)
+                    locations[samples_ind], patch_size)
                 logging.info(
                     "trying patch {}:{}, {}:{} as nonfault".format(left_border, right_border, top_border,
                                                                    bottom_border))
                 is_probably_fault = False
-                for i1, i2 in itertools.product(range(patch_size[0]), range(patch_size[1])):
-                    if self.normalised_data.features[left_border + i1][top_border + i2] != FeatureValue.NONFAULT.value:
+                for i1, i2 in itertools.product(range(int(patch_size[0]/2 - inside_region_size[0]/2),
+                                                      int(patch_size[0]/2 + inside_region_size[0]/2)),
+                                                range(int(patch_size[1]/2 - inside_region_size[1]/2),
+                                                      int(patch_size[1]/2 + inside_region_size[1]/2))):
+                    if self.normalised_data.features[left_border + i1][top_border + i2] != inside_value:
                         is_probably_fault = True
                         logging.info("probably fault")
                         break
@@ -141,6 +140,18 @@ class RegionDataset:
                     sampled = True
             except OutOfBoundsException:
                 sampled = False
+
+        return left_border, right_border, top_border, bottom_border
+
+    def sample_nonfault_patch(self, patch_size):
+        """if an image path contains only nonfault bits, than assign it as a non-fault"""
+        nonfault_locations = np.argwhere(self.normalised_data.features == FeatureValue.NONFAULT.value)
+        if nonfault_locations.size == 0:
+            logging.warning("no nonfaults marked, sampling undefined instead")
+            return self.sample_undefined_patch(patch_size)
+
+        left_border, right_border, top_border, bottom_border = \
+            self.sample_from_region(nonfault_locations, FeatureValue.NONFAULT.value, patch_size)
 
         coords = np.array((left_border, right_border, top_border, bottom_border))
         return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border), coords
@@ -151,27 +162,9 @@ class RegionDataset:
         if undefined_locations.size == 0:
             logging.warning("no undefined marked")
             raise Exception()
-        sampled = False
-        left_border, right_border, top_border, bottom_border = None, None, None, None
-        while not sampled:
-            samples_ind = np.random.randint(undefined_locations.shape[0])
-            try:
-                left_border, right_border, top_border, bottom_border = self.__borders_from_center(
-                    undefined_locations[samples_ind], patch_size)
-                logging.info(
-                    "trying patch {}:{}, {}:{} as nonfault".format(left_border, right_border, top_border,
-                                                                   bottom_border))
-                is_probably_fault = False
-                for i1, i2 in itertools.product(range(patch_size[0]), range(patch_size[1])):
-                    if self.normalised_data.features[left_border + i1][top_border + i2] != FeatureValue.UNDEFINED.value:
-                        is_probably_fault = True
-                        logging.info("probably fault")
-                        break
-                if not is_probably_fault:
-                    logging.info("nonfault")
-                    sampled = True
-            except OutOfBoundsException:
-                sampled = False
+
+        left_border, right_border, top_border, bottom_border = \
+            self.sample_from_region(undefined_locations, FeatureValue.UNDEFINED.value, patch_size)
 
         coords = np.array((left_border, right_border, top_border, bottom_border))
         return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border), coords

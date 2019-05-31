@@ -1,15 +1,22 @@
+import pathlib
+
 from tensorflow.python.keras import models
 from tensorflow.python.keras import backend as K
 import numpy as np
 import matplotlib.pyplot as plt
 
+from src.DataPreprocessor.region_dataset import RegionDataset, FeatureValue
+from src.DataPreprocessor.region_normaliser import RegionNormaliser
+from src.config import data_preprocessor_params
 
 class NnVisualisation:
     """
     based on https://github.com/fchollet/deep-learning-with-python-notebooks/blob/master/5.4-visualizing-what-convnets-learn.ipynb
     """
-    def __init__(self, model):
+    def __init__(self, model, region_id: int, num_samples: int):
         self.model = model
+        self.region_id = region_id
+        self.num_samples = num_samples
 
     def visualise_intermediate_activations(self, output_path, image):
         layer_before_flatten_ind = 6
@@ -195,6 +202,27 @@ class NnVisualisation:
         fig.add_axes(ax)
         ax.matshow(heatmap, aspect='auto')
         plt.savefig(f"{output_path}heatmaps_activations.png")
+
+    def visualise_nn(self):
+        output_path = "../nn_visualisations/"
+        pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
+
+        data_preprocessor = RegionDataset(self.region_id)
+        normaliser = RegionNormaliser(region_id=self.region_id, area_ind=data_preprocessor_params[self.region_id][1])
+
+        for i in range(self.num_samples):
+            image, _ = data_preprocessor.sample_patch(label=FeatureValue.FAULT.value, patch_size=(150, 150))
+            den_rgb, den_elev, den_slope = normaliser.denormalise_patch(image)
+
+            plt.imsave(output_path + f"input_image_{i}_0_2.png", den_rgb)
+            plt.imsave(output_path + f"input_image_{i}_3.png", den_elev)
+            plt.imsave(output_path + f"input_image_{i}_4.png", den_slope)
+
+            image = image[:, :, 0:5]
+            image = np.expand_dims(image, axis=0)
+            self.visualise_intermediate_activations(output_path, image)
+            self.visualise_convnet_filters(output_path)
+            self.visualise_heatmaps_activations(output_path, image)
 
 
 

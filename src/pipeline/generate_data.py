@@ -5,11 +5,11 @@ import h5py
 import sys
 
 from tqdm import trange
-
-from src.DataPreprocessor.region_dataset import RegionDataset
+from joblib import Parallel, delayed
 
 sys.path.extend(['../../EarthScienceFaultDetection'])
 
+from src.DataPreprocessor.region_dataset import RegionDataset
 from src.DataPreprocessor.data_generator import DataGenerator
 import src.config
 
@@ -64,6 +64,14 @@ def generate_data(dataset_inds, size, data_batch_size=100, lookalike_ratio=None)
         logging.info(f"data saved: {[output_path + '/data.h5', output_path + '/data_coords.h5']}")
 
 
+def __generate_and_save_data_batch(data_generator, size, class_probabilities, output_path, n):
+    imgs, lbls, coords = __generate_data_batch(data_generator, size, class_probabilities)
+    with h5py.File(f'{output_path}/data_{n}.h5', 'w') as hf:
+        hf.create_dataset("img", data=imgs[0])
+        hf.create_dataset("lbl", data=lbls[0])
+        hf.create_dataset("coord", data=coords[0])
+
+
 def generate_data_single_files(dataset_inds, size, lookalike_ratio=None):
     if lookalike_ratio is None:
         lookalike_ratio = [0.25] * len(dataset_inds)
@@ -82,11 +90,9 @@ def generate_data_single_files(dataset_inds, size, lookalike_ratio=None):
         class_probabilities = [0.5, lookalike_ratio_for_dataset, 0.5 - lookalike_ratio_for_dataset]
 
         for n in trange(size):
-            imgs, lbls, coords = __generate_data_batch(data_generator, 1, class_probabilities)
-            with h5py.File(f'{output_path}/data_{n}.h5', 'w') as hf:
-                hf.create_dataset("img", data=imgs[0])
-                hf.create_dataset("lbl", data=lbls[0])
-                hf.create_dataset("coord", data=coords[0])
+            __generate_and_save_data_batch(data_generator, 1, class_probabilities, output_path, n)
+        # Parallel(n_jobs=4)(delayed(__generate_and_save_data_batch)(data_generator, 1, class_probabilities, output_path, n)
+        #                    for n in range(size))
 
         logging.info(f"data saved: {output_path}")
 
