@@ -115,7 +115,11 @@ class RegionDataset:
         return self.concatenate_full_patch(left_border, right_border, top_border, bottom_border), coords
 
     def sample_from_region(self, locations, inside_value, patch_size):
-        inside_region_size = (50, 50)
+        # this can be changed for example to (50, 50) to reproduce experiment with
+        # sampling non-fault patch as patch that may contain faults but not in the center
+        # TODO make this a classmember or a method parameter
+        inside_region_size = patch_size
+
         sampled = False
         left_border, right_border, top_border, bottom_border = None, None, None, None
         while not sampled:

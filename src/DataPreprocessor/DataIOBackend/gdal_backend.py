@@ -1,7 +1,6 @@
 from PIL import Image, ImageDraw
 from matplotlib.path import Path
-import matplotlib.patches as patches
-import matplotlib.pyplot as plt
+
 import re
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -18,7 +17,9 @@ from src.DataPreprocessor.raw_data_preprocessor import FeatureValue
 
 class GdalBackend(DataIOBackend):
     def __init__(self):
-        self.gdal_options = dict()
+        self.driver_name = None
+        self.projection = None
+        self.geotransform = None
 
     def __load_1d_raster(self, path: str) -> np.array:
         dataset = gdal.Open(path, gdal.GA_ReadOnly)
@@ -84,73 +85,27 @@ class GdalBackend(DataIOBackend):
         """to be used for parsing gdal headers and recreating them in output results
            based on https://www.gdal.org/gdal_tutorial.html
         """
-        #Opening the File
+
         dataset = gdal.Open(path, gdal.GA_ReadOnly)
         if not dataset:
             raise FileNotFoundError(dataset)
 
-        scale = '-scale 0 65535 0 255'
-        options_list = [
-            '-ot Byte',
-            '-of GTiff',
-            scale
-        ]
-        options_string = " ".join(options_list)
-
-        dataset = gdal.Translate(NamedTemporaryFile(delete=False).name, dataset, options=options_string)
-
-        # Getting Dataset Information
         logging.info("Driver: {}/{}".format(dataset.GetDriver().ShortName,
                                      dataset.GetDriver().LongName))
-        self.gdal_options['driver'] = dataset.GetDriver()
-
-        logging.info("Size is {} x {} x {}".format(dataset.RasterXSize,
-                                            dataset.RasterYSize,
-                                            dataset.RasterCount))
-        self.gdal_options['size'] = [dataset.RasterXSize, dataset.RasterYSize,  dataset.RasterCount]
+        self.driver_name = dataset.GetDriver().ShortName
 
         logging.info("Projection is {}".format(dataset.GetProjection()))
-        self.gdal_options['projection'] = dataset.GetProjection()
-        geotransform = dataset.GetGeoTransform()
-        if geotransform:
-            logging.info("Origin = ({}, {})".format(geotransform[0], geotransform[3]))
-            logging.info("Pixel Size = ({}, {})".format(geotransform[1], geotransform[5]))
-        self.gdal_options['geotransform'] = geotransform
+        self.projection = dataset.GetProjection()
 
-        # Fetching a Raster Band
-        #band = dataset.GetRasterBand(1)
-        #print("Band Type={}".format(gdal.GetDataTypeName(band.DataType)))
-
-        #min = band.GetMinimum()
-        #max = band.GetMaximum()
-        #if not min or not max:
-        #    (min, max) = band.ComputeRasterMinMax(True)
-        #print("Min={:.3f}, Max={:.3f}".format(min, max))
-
-        #if band.GetOverviewCount() > 0:
-        #    print("Band has {} overviews".format(band.GetOverviewCount()))
-
-        #if band.GetRasterColorTable():
-        #    print("Band has a color table with {} entries".format(band.GetRasterColorTable().GetCount()))
-
-        #dataset = gdal.Translate(self.data_dir+'tmp.tif', dataset, options=gdal.TranslateOptions(outputType=gdal.GDT_Byte, scaleParams=[0, 65535, 0, 255]))
-        #dataset = gdal.Translate(self.data_dir+'tmp.tif', gdal.TranslateOptions(["-of", "GTiff", "-ot", "Byte", "-scale", "0 65535 0 255"]))
-
-        # Reading Raster Data
-        #scanline = band.ReadRaster(xoff=0, yoff=0,
-        #                           xsize=band.XSize, ysize=1,
-        #                           buf_xsize=band.XSize, buf_ysize=1,
-        #                           buf_type=gdal.GDT_Byte)
-
-        #tuple_of_floats = struct.unpack('f' * band.XSize, scanline)
-        #tuple_of_floats = struct.unpack('b' * band.XSize, scanline)
-
-        dataset = None
+        self.geotransform = dataset.GetGeoTransform()
+        if self.geotransform:
+            logging.info("Origin = ({}, {})".format(self.geotransform[0], self.geotransform[3]))
+            logging.info("Pixel Size = ({}, {})".format(self.geotransform[1], self.geotransform[5]))
 
     def write_image(self, path, image, crop=None):
         if crop is None:
             # image is self.optical_rgb.shape[0] X self.optical_rgb.shape[1] in this case
-            driver = self.gdal_options['driver']
+            driver = gdal.GetDriverByName(self.driver_name)
             if not driver:
                 raise Exception("driver not created")
             if image.ndim == 3:
@@ -160,11 +115,9 @@ class GdalBackend(DataIOBackend):
             else:
                 raise Exception("Bands number incorrect")
             dst_ds = driver.Create(path+".tif", xsize=image.shape[1], ysize=image.shape[0], bands=bands, eType=gdal.GDT_Byte)
-    
-            geotransform = self.gdal_options['geotransform']
-            dst_ds.SetGeoTransform(geotransform)
-            projection = self.gdal_options['projection']
-            dst_ds.SetProjection(projection)
+
+            dst_ds.SetGeoTransform(self.geotransform)
+            dst_ds.SetProjection(self.projection)
             raster = image.astype(np.uint8)
             if image.ndim == 3:
                 for band_ind in range(bands):
@@ -175,7 +128,6 @@ class GdalBackend(DataIOBackend):
         else:
             image = image[crop[0]:crop[2], crop[1]:crop[3]]
             plt.imsave(path+".png", image)
-
 
     def write_surface(self, path, image, crop=None):
         #todo use gdal dem
@@ -366,12 +318,12 @@ class GdalBackend(DataIOBackend):
 
     def get_params(self):
         return {
-            'driver_name': self.gdal_options['driver'].ShortName,
-            'projection': self.gdal_options['projection'],
-            'geotransform': str(self.gdal_options['geotransform']),
+            'driver_name': self.driver_name,
+            'projection': self.projection,
+            'geotransform': str(self.geotransform),
         }
 
     def set_params(self, driver_name, projection, geotransform):
-        self.gdal_options['driver'] = gdal.GetDriverByName(driver_name)
-        self.gdal_options['projection'] = projection
-        self.gdal_options['geotransform'] = geotransform
+        self.driver_name = driver_name
+        self.projection = projection
+        self.geotransform = geotransform
