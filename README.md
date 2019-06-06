@@ -28,12 +28,16 @@ pip install pillow statsmodels seaborn tensorflow tqdm opencv-python h5py
 ```
 
 # Repeating experiments from report
-* get data from GDrive, links are not posted for security reasons
-* repeat steps from:
-  * scripts/training_on_01_long_split_validation
-  * scripts/training_on_6_split_validation
-* scripts/run_predicting_on_01_long_split_validation.py - you may want to increase stride to 50 to make it faster
-* scripts/run_predicting_on_6_split_validation.py - same comment here
+* get data from GDrive, links are not posted for security reasons. Unarchive it and place it in DataForEarthScienceFaultDetection/raw_data
+* scripts/run_preprocessing.py
+* scripts/generate_data_on_0_1_10.py
+* scripts/generate_data_on_6.py
+* scripts/run_training_on_0_1__10.py
+* scripts/training_on_6_split_validation.py
+* scripts/run_predicting_on_0_1_10.py - you may want to increase stride to 50 to make it faster
+* scripts/run_predicting_on_6.py - same comment here
+
+### optional
 * scripts/run_visualisation_for_report.py (or use scripts/run_visualisation.py to get much more images) - all 
 visualisations may take few gigabytes of space
 * scripts/run_feature_selection.py - long and memory leaks
