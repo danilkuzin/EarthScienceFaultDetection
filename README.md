@@ -69,5 +69,8 @@ sys.path.extend(['../../EarthScienceFaultDetection'])
 
 ```
 
+# Notes
+* Some of fault lines provided for Nevada-train (region 6) have UTM coordinates outside of region boundaries. These fault lines are ignored in the current code. 
+* For first two regions tif for different bands have slightly different size (couple of pixels difference). Larger tifs are cropped to fit the smallest band for the same region.
 
 
