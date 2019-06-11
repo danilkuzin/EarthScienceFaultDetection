@@ -25,13 +25,14 @@ def preprocess_single_region(path: pathlib.Path, region_id: int):
     raw_data_preprocessor.write_data()
 
 
-for region_id, region_params in enumerate(data_preprocessor_params):
-    path = pathlib.Path(region_params[0])
-    preprocess_single_region(path=path, region_id=region_id)
+# for region_id, region_params in enumerate(data_preprocessor_params):
+#     path = pathlib.Path(region_params[0])
+#     preprocess_single_region(path=path, region_id=region_id)
+preprocess_single_region(path=pathlib.Path(data_preprocessor_params[6][0]), region_id=6)
 
-for key_area, val_area in areas.items():
-    normalise_area(val_area)
-
-for region_id, region_params in enumerate(data_preprocessor_params):
-    path = pathlib.Path(region_params[0])
-    normalise_region(region_id, area_ind=region_params[1])
+# for key_area, val_area in areas.items():
+#     normalise_area(val_area)
+#
+# for region_id, region_params in enumerate(data_preprocessor_params):
+#     path = pathlib.Path(region_params[0])
+#     normalise_region(region_id, area_ind=region_params[1])

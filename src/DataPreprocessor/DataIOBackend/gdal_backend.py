@@ -12,6 +12,7 @@ import logging
 
 import matplotlib.pyplot as plt
 
+from src.DataPreprocessor.DataIOBackend.utm_coord import UtmCoord
 from src.DataPreprocessor.raw_data_preprocessor import FeatureValue
 
 
@@ -177,116 +178,11 @@ class GdalBackend(DataIOBackend):
             logging.warning("additional_features are not specified")
             return features
 
-        gt = self.gdal_options['geotransform']
-
-        # load lookalike patches
-        lookalike_files = list(path.glob('Look_Alike_*.kml.utm'))
-        logging.info(f"found lookalike files: {lookalike_files}")
-        lookalike_patches = []
-        for lookalike_file in lookalike_files:
-            with open(str(lookalike_file)) as f:
-                content = f.readlines()
-
-            coords = []
-            for line in content:
-                rr = re.findall("[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", line)
-                if len(rr) == 3:
-                    coords.append(list(map(float, rr)))
-
-            pixel_coords = []
-
-            for coord in coords:
-                Xpixel = int((coord[0] - gt[0]) / gt[1])
-                Ypixel = int((coord[1] - gt[3]) / gt[5])
-                pixel_coords.append((Xpixel, Ypixel))
-
-            lookalike_patches.append(pixel_coords)
-        logging.info(f"extracted lookalike patches: {lookalike_patches}")
-
-        # load nonfault patches
-        nonfault_files = list(path.glob('Not_Fault_*.kml.utm'))
-        logging.info(f"found nonfault files: {nonfault_files}")
-        nonfault_patches = []
-        for nonfault_file in nonfault_files:
-            with open(str(nonfault_file)) as f:
-                content = f.readlines()
-
-            coords = []
-            for line in content:
-                rr = re.findall("[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", line)
-                if len(rr) == 3:
-                    coords.append(list(map(float, rr)))
-
-            pixel_coords = []
-
-            for coord in coords:
-                Xpixel = int((coord[0] - gt[0]) / gt[1])
-                Ypixel = int((coord[1] - gt[3]) / gt[5])
-                pixel_coords.append((Xpixel, Ypixel))
-
-            nonfault_patches.append(pixel_coords)
-        logging.info(f"extracted nonfault patches: {nonfault_patches}")
-
-        # load lookalike lines
-        lookalike_line_files = list(path.glob('Line_Look_Alike_*.kml.utm'))
-        logging.info(f"found lookalike line files: {lookalike_line_files}")
-        lookalike_lines = []
-        for lookalike_line in lookalike_line_files:
-            with open(str(lookalike_line)) as f:
-                content = f.readlines()
-
-            coords = []
-            for line in content:
-                rr = re.findall("[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", line)
-                if len(rr) == 3:
-                    coords.append(list(map(float, rr)))
-
-            pixel_coords = []
-
-            for coord in coords:
-                Xpixel = int((coord[0] - gt[0]) / gt[1])
-                Ypixel = int((coord[1] - gt[3]) / gt[5])
-                pixel_coords.append((Xpixel, Ypixel))
-
-            lookalike_lines.append(pixel_coords)
-        logging.info(f"extracted lookalike lines: {lookalike_lines}")
-
-        # load fault lines
-        fault_line_files = list(path.glob('Fault_*.kml.utm'))
-        logging.info(f"found fault line files: {fault_line_files}")
-        fault_lines = []
-        for fault_line in fault_line_files:
-            with open(str(fault_line)) as f:
-                content = f.readlines()
-
-            coords = []
-            for line in content:
-                rr = re.findall("[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", line)
-                if len(rr) == 3:
-                    coords.append(list(map(float, rr)))
-                if line.startswith('>'):
-                    if len(coords) > 0:
-                        pixel_coords = []
-
-                        for coord in coords:
-                            Xpixel = int((coord[0] - gt[0]) / gt[1])
-                            Ypixel = int((coord[1] - gt[3]) / gt[5])
-                            pixel_coords.append((Xpixel, Ypixel))
-
-                        fault_lines.append(pixel_coords)
-
-                        coords = []
-            if len(coords) > 0:
-                pixel_coords = []
-
-                for coord in coords:
-                    Xpixel = int((coord[0] - gt[0]) / gt[1])
-                    Ypixel = int((coord[1] - gt[3]) / gt[5])
-                    pixel_coords.append((Xpixel, Ypixel))
-
-                fault_lines.append(pixel_coords)
-
-        logging.info(f"extracted fault lines: {fault_lines}")
+        utm_coord = UtmCoord(self.geotransform[0], self.geotransform[1], self.geotransform[3], self.geotransform[5])
+        lookalike_patches = utm_coord.read_geometry(list(path.glob('Look_Alike_*.kml.utm')))
+        nonfault_patches = utm_coord.read_geometry(list(path.glob('Not_Fault_*.kml.utm')))
+        lookalike_lines = utm_coord.read_geometry(list(path.glob('Line_Look_Alike_*.kml.utm')))
+        fault_lines = utm_coord.read_geometry(list(path.glob('Fault_*.kml.utm')))
 
         #todo we assign only normal labelling here, as they are patches, not lines and we cn't sample from patches for
         # lookalikes - then the probability of important labelled lines will be low
