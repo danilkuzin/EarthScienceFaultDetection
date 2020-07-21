@@ -24,7 +24,7 @@ tf.enable_eager_execution()
 np.random.seed(1000)
 
 cnn_model = FCNet()
-criterion = nn.CrossEntropyLoss()
+criterion = nn.BCEWithLogitsLoss()
 optimizer = optim.Adam(cnn_model.parameters(), lr=1e-4)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10,
                                            gamma=0.1)

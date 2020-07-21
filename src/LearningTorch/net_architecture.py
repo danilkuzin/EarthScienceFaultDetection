@@ -229,12 +229,11 @@ class FCNet(nn.Module):
             kernel_size=2
         )
         self.conv1transp = nn.ConvTranspose2d(
-            out_channels=2,
+            out_channels=1,
             in_channels=32,
             kernel_size=(5, 5),
             bias=False
         )
-        self.probs = nn.Softmax2d()
 
     def forward(self, x):
         x = self.conv1(x)
@@ -254,7 +253,6 @@ class FCNet(nn.Module):
         x = self.relu5(x)
         x = self.m1up(x, mp1_indices)
         x = self.conv1transp(x)
-        x = self.probs(x)
         return x
 
 # def cnn_150x150x5_fully_conv_with_transposes_torch(input):
