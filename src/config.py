@@ -1,4 +1,15 @@
-data_path = "../../DataForEarthScienceFaultDetection"
+try:
+    import google.colab
+    from google.colab import drive
+    IN_COLAB = True
+except ModuleNotFoundError:
+    IN_COLAB = False
+
+if IN_COLAB:
+    data_path = '/gdrive/My Drive/Work/fault_detection/data'
+    drive.mount('/gdrive')
+else:
+    data_path = "../../DataForEarthScienceFaultDetection"
 areas = {"Tibet": 0, "Nevada": 1, "Turkey": 2}
 # path, area, trainable
 data_preprocessor_params = [
