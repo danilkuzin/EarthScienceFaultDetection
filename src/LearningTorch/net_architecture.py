@@ -183,28 +183,33 @@ class FCNet(nn.Module):
             in_channels=5,
             out_channels=32,
             kernel_size=(5, 5),
-            bias=False)
+            bias=False,
+            padding=2)
         self.relu1 = nn.ReLU()
         self.mp1 = nn.MaxPool2d(
             kernel_size=2,
+            stride=2,
             return_indices=True
         )
         self.conv2 = nn.Conv2d(
             in_channels=32,
             out_channels=64,
             kernel_size=(5, 5),
-            bias=False)
+            bias=False,
+            padding=2
+        )
         self.relu2 = nn.ReLU()
-        self.pad2 = nn.ConstantPad2d((0, 1, 0, 1), 0)
+        # self.pad2 = nn.ConstantPad2d((0, 1, 0, 1), 0)
         self.mp2 = nn.MaxPool2d(
             kernel_size=2,
+            stride=2,
             return_indices=True
         )
         self.conv3 = nn.Conv2d(
             in_channels=64,
             out_channels=128,
             kernel_size=(35, 35),
-            bias=False
+            bias=False,
         )
         self.relu3 = nn.ReLU()
         self.conv3transp = nn.ConvTranspose2d(
@@ -217,12 +222,13 @@ class FCNet(nn.Module):
         self.m2up = nn.MaxUnpool2d(
             kernel_size=2
         )
-        self.unpad2 = nn.ConstantPad2d((0, -1, 0, -1), 0)
+        # self.unpad2 = nn.ConstantPad2d((0, -1, 0, -1), 0)
         self.conv2transp = nn.ConvTranspose2d(
             out_channels=32,
             in_channels=64,
             kernel_size=(5, 5),
-            bias=False
+            bias=False,
+            padding=2
         )
         self.relu5 = nn.ReLU()
         self.m1up = nn.MaxUnpool2d(
@@ -232,26 +238,46 @@ class FCNet(nn.Module):
             out_channels=1,
             in_channels=32,
             kernel_size=(5, 5),
-            bias=False
+            bias=False,
+            padding=2
         )
 
     def forward(self, x):
         x = self.conv1(x)
         x = self.relu1(x)
+        if (x.shape[2] % 2) == 0:
+            pad1_first = 0
+        else:
+            pad1_first = 1
+        if (x.shape[3] % 2) == 0:
+            pad1_second = 0
+        else:
+            pad1_second = 1
+        x = nn.ConstantPad2d((0, pad1_first, 0, pad1_second), 0)(x)
         x, mp1_indices = self.mp1(x)
         x = self.conv2(x)
         x = self.relu2(x)
-        x = self.pad2(x)
+        if (x.shape[2] % 2) == 0:
+            pad2_first = 0
+        else:
+            pad2_first = 1
+        if (x.shape[3] % 2) == 0:
+            pad2_second = 0
+        else:
+            pad2_second = 1
+        x = nn.ConstantPad2d((0, pad2_first, 0, pad2_second), 0)(x)
         x, mp2_indices = self.mp2(x)
         x = self.conv3(x)
         x = self.relu3(x)
         x = self.conv3transp(x)
         x = self.relu4(x)
         x = self.m2up(x, mp2_indices)
-        x = self.unpad2(x)
+        x = nn.ConstantPad2d((0, -pad2_first, 0, -pad2_second), 0)(x)
+        # x = self.unpad2(x)
         x = self.conv2transp(x)
         x = self.relu5(x)
         x = self.m1up(x, mp1_indices)
+        x = nn.ConstantPad2d((0, -pad1_first, 0, -pad1_second), 0)(x)
         x = self.conv1transp(x)
         x = torch.squeeze(x)
         return x
