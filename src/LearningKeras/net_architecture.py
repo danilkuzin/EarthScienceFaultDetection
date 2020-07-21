@@ -137,10 +137,10 @@ def cnn_150x150x4(lr=1e-4):
 def cnn_150x150x5(lr=1e-4):
     cnn_model = tf.keras.models.Sequential()
     cnn_model.add(tf.keras.layers.InputLayer(input_shape=(150, 150, 5)))
-    cnn_model.add(tf.keras.layers.Conv2D(32, (5, 5), strides=1, padding='same'))
+    cnn_model.add(tf.keras.layers.Conv2D(32, (5, 5), padding='same'))
     cnn_model.add(tf.keras.layers.Activation('relu'))
     cnn_model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='same'))
-    cnn_model.add(tf.keras.layers.Conv2D(64, (5, 5), strides=1, padding='same'))
+    cnn_model.add(tf.keras.layers.Conv2D(64, (5, 5), padding='same'))
     cnn_model.add(tf.keras.layers.Activation('relu'))
     cnn_model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='same'))
     cnn_model.add(tf.keras.layers.Flatten())
@@ -155,6 +155,44 @@ def cnn_150x150x5(lr=1e-4):
     cnn_model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 
     return cnn_model
+
+def cnn_150x150x5_fully_conv(lr=1e-4):
+    pass
+    # cnn_model = tf.keras.models.Sequential()
+    # cnn_model.add(tf.keras.layers.InputLayer(input_shape=(None, None, 5)))
+    # cnn_model.add(tf.keras.layers.Conv2D(32, (5, 5), padding='same'))
+    # cnn_model.add(tf.keras.layers.Activation('relu'))
+    # cnn_model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2), padding='same'))
+    # cnn_model.add(tf.keras.layers.Conv2D(64, (5, 5),
+    #                                      padding='same',
+    #                                      dilation_rate=(2, 2)))
+    # cnn_model.add(tf.keras.layers.Activation('relu'))
+    #
+    # tf.nn.pool(
+    #     input,
+    #     window_shape,
+    #     pooling_type,
+    #     padding,
+    #     dilation_rate=None,
+    #     strides=None,
+    #     name=None,
+    #     data_format=None,
+    #     dilations=None
+    # )
+    # cnn_model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2),
+    #                                            padding='same'))
+    #
+    # cnn_model.add(tf.keras.layers.Dense(1024))
+    # cnn_model.add(tf.keras.layers.Activation('relu'))
+    # cnn_model.add(tf.keras.layers.Dropout(0.5))
+    # cnn_model.add(tf.keras.layers.Dense(2))
+    # cnn_model.add(tf.keras.layers.Activation('softmax'))
+    #
+    # adam = tf.keras.optimizers.Adam(lr=lr)
+    #
+    # cnn_model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
+    #
+    # return cnn_model
 
 def cnn_four_layers(lr=1e-4):
     cnn_model = tf.keras.models.Sequential()

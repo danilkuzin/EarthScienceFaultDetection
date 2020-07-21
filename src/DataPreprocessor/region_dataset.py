@@ -46,7 +46,7 @@ class RegionDataset:
     def get_data_shape(self):
         return self.normalised_data.channels['optical_rgb'].shape[0], self.normalised_data.channels['optical_rgb'].shape[1], len(self.normalised_data.channels)
 
-    def __borders_from_center(self, center, patch_size):
+    def _borders_from_center(self, center, patch_size):
         left_border = center[0] - patch_size[0] // 2
         right_border = center[0] + patch_size[0] // 2
         top_border = center[1] - patch_size[1] // 2
@@ -80,7 +80,7 @@ class RegionDataset:
         while not sampled:
             samples_ind = np.random.randint(fault_locations.shape[0])
             try:
-                left_border, right_border, top_border, bottom_border = self.__borders_from_center(
+                left_border, right_border, top_border, bottom_border = self._borders_from_center(
                     fault_locations[samples_ind], patch_size)
                 logging.info(
                     "extracting patch {}:{}, {}:{}".format(left_border, right_border, top_border, bottom_border))
@@ -103,7 +103,7 @@ class RegionDataset:
         while not sampled:
             samples_ind = np.random.randint(fault_lookalike_locations.shape[0])
             try:
-                left_border, right_border, top_border, bottom_border = self.__borders_from_center(
+                left_border, right_border, top_border, bottom_border = self._borders_from_center(
                     fault_lookalike_locations[samples_ind], patch_size)
                 logging.info(
                     "extracting patch {}:{}, {}:{}".format(left_border, right_border, top_border, bottom_border))
@@ -125,7 +125,7 @@ class RegionDataset:
         while not sampled:
             samples_ind = np.random.randint(locations.shape[0])
             try:
-                left_border, right_border, top_border, bottom_border = self.__borders_from_center(
+                left_border, right_border, top_border, bottom_border = self._borders_from_center(
                     locations[samples_ind], patch_size)
                 logging.info(
                     "trying patch {}:{}, {}:{} as nonfault".format(left_border, right_border, top_border,

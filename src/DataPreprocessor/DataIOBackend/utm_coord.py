@@ -19,10 +19,10 @@ class UtmCoord(object):
     Attributes:
         top_left_x (float): UTM coordinate of the top-left corner of the
             predefined image.
-        west_east_pixel_resolution (float): horizontal resolution fo the image.
+        west_east_pixel_resolution (float): horizontal resolution of the image.
         top_left_y (float): UTM coordinate of the bottom-right corner of the
             predefined image.
-        north_south_pixel_resolution (float): vertical resolution fo the image.
+        north_south_pixel_resolution (float): vertical resolution of the image.
     """
 
     def __init__(self, top_left_x: float, west_east_pixel_resolution: float,
