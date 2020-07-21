@@ -41,7 +41,8 @@ batch_size = 32
 
 train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
     datasets_on_single_files_torch_segmentation(
-        regions=[6], channels=[0, 1, 2, 3, 4],
+        regions=[6], path_prefix=f'{data_path}/train_data',
+        channels=[0, 1, 2, 3, 4],
         train_ratio=0.80, batch_size=batch_size)
 
 train_on_preloaded_single_files_torch(

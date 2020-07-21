@@ -44,7 +44,7 @@ class h5_loader_segmentation(data.Dataset):
     def __parse_file__(self, f):
         with h5py.File(f, 'r') as hf:
             img = hf['img'][:].astype(np.float32)[:, :, self.channels]
-            lbl = hf['lbl'][:].astype(np.int)
+            lbl = hf['lbl'][:].astype(np.float32)
             coord = hf['coord'][:].astype(np.int32)
             return img, lbl
 

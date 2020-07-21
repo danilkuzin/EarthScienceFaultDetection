@@ -253,6 +253,7 @@ class FCNet(nn.Module):
         x = self.relu5(x)
         x = self.m1up(x, mp1_indices)
         x = self.conv1transp(x)
+        x = torch.squeeze(x)
         return x
 
 # def cnn_150x150x5_fully_conv_with_transposes_torch(input):
