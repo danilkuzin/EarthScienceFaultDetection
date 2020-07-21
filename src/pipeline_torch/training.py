@@ -48,7 +48,8 @@ def datasets_on_single_files_torch(regions, channels, train_ratio, batch_size):
 
     return train_dataset, train_dataset_size, valid_dataset, valid_dataset_size
 
-def datasets_on_single_files_torch_segmentation(regions, path_prefix, channels,
+def datasets_on_single_files_torch_segmentation(device, regions,
+                                                path_prefix, channels,
                                                 train_ratio, batch_size):
     BATCH_SIZE = batch_size
 
@@ -76,14 +77,14 @@ def datasets_on_single_files_torch_segmentation(regions, path_prefix, channels,
     train_path_ds = h5_loader_segmentation(
         np.array(train_paths).flatten(),
         channels=channels,
-        transform=ToTensor())
+        transform=ToTensor(device))
     train_dataset = DataLoader(train_path_ds, batch_size=BATCH_SIZE,
                                shuffle=True, num_workers=2)
 
     valid_path_ds = h5_loader_segmentation(
         np.array(valid_paths).flatten(),
         channels=channels,
-        transform=ToTensor())
+        transform=ToTensor(device))
     valid_dataset = DataLoader(valid_path_ds, batch_size=BATCH_SIZE,
                                shuffle=True, num_workers=2)
 

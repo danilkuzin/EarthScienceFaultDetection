@@ -64,14 +64,15 @@ class h5_loader_segmentation(data.Dataset):
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
 
+    def __init__(self, device):
+        self.device = device
+
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
-
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         # swap color axis because
         # numpy image: H x W x C
         # torch image: C X H X W
         image = image.transpose((2, 0, 1))
-        return {'image': torch.from_numpy(image).to(device),
-                'label': torch.from_numpy(label).to(device)}
+        return {'image': torch.from_numpy(image).to(self.device),
+                'label': torch.from_numpy(label).to(self.device)}
