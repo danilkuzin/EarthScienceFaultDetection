@@ -31,7 +31,7 @@ data_preprocessor = RegionDataset(6)
 
 input_image = data_preprocessor.get_full_image()
 
-sliced_input_image = input_image[4440:4740, 3528:3828, :]
+sliced_input_image = input_image[4440:4590, 3528:3678, :]
 
 input_data = np.expand_dims(
     sliced_input_image.astype(np.float32).transpose((2, 0, 1)),

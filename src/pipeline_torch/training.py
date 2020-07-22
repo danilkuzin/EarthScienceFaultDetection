@@ -180,6 +180,20 @@ def train_on_preloaded_single_files_torch(
             #     best_acc_epoch_num = epoch
             #     best_model_wts = copy.deepcopy(model.state_dict())
 
+            if phase == 'val' and ((epoch + 1) % 5 == 0):
+                output = {}
+                output['model'] = model
+                output['optimizer'] = optimizer
+                output['scheduler'] = scheduler
+                output['best_acc'] = best_acc
+                output['best_acc_epoch_num'] = best_acc_epoch_num
+                output['all_train_loss'] = all_train_loss
+                output['all_train_acc'] = all_train_acc
+                output['all_val_loss'] = all_val_loss
+                output['all_val_acc'] = all_val_acc
+
+                torch.save(output, folder + f'/model_epoch_{epoch}.pth')
+
         print()
 
     print('Finished Training')
