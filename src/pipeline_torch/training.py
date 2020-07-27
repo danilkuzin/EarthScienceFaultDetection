@@ -211,3 +211,127 @@ def train_on_preloaded_single_files_torch(
 
     torch.save(output, folder + '/model.pth')
 
+
+def train_on_preloaded_single_files_torch_unet(
+        model, train_dataset, train_dataset_size,
+        valid_dataset, valid_dataset_size,
+        folder, epochs, batch_size, optimizer,
+        criterion, scheduler):
+    pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
+
+    best_model_wts = copy.deepcopy(model.state_dict())
+    best_acc = 0.0
+    best_acc_epoch_num = 0
+
+    all_train_loss = []
+    all_train_acc = []
+
+    all_val_loss = []
+    all_val_acc = []
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    datasets = {'train': train_dataset, 'val': valid_dataset}
+    dataset_sizes = {'train': train_dataset_size, 'val': valid_dataset_size}
+
+    for epoch in range(epochs):  # loop over the dataset multiple times
+        print('Epoch {}/{}'.format(epoch, epochs - 1))
+        print('-' * 10)
+
+        for phase in ['train', 'val']:
+            if phase == 'train':
+                model.train()  # Set model to training mode
+            else:
+                model.eval()  # Set model to evaluate mode
+
+            running_loss = 0.0
+            running_corrects = 0
+
+            for i, data in enumerate(datasets[phase], 0):
+                # get the inputs; data is a list of [inputs, labels]
+                inputs, labels = data['image'], data['label']
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                # labels = torch.unsqueeze(labels, 1)
+
+                # zero the parameter gradients
+                optimizer.zero_grad()
+
+                # forward
+                # track history if only in train
+                with torch.set_grad_enabled(phase == 'train'):
+                    outputs = model(inputs)
+                    #_, preds = torch.max(outputs, 1)
+                    dim1_cropping = (labels.shape[1] - outputs.shape[1]) // 2
+                    dim2_cropping = (labels.shape[2] - outputs.shape[2]) // 2
+                    labels = labels[:, dim1_cropping:-dim1_cropping,
+                             dim2_cropping:-dim2_cropping]
+                    loss = criterion(outputs,
+                                     labels)
+
+                    # backward + optimize only if in training phase
+                    if phase == 'train':
+                        loss.backward()
+                        optimizer.step()
+
+                # print statistics
+                running_loss += loss.item() * inputs.size(0)
+                # running_corrects += torch.sum(preds == labels.data)
+
+            if phase == 'train':
+                scheduler.step()
+
+            epoch_loss = running_loss / dataset_sizes[phase]
+            # epoch_acc = running_corrects.double() / dataset_sizes[phase]
+            # epoch_acc = float(epoch_acc.data.to('cpu').numpy())
+
+            # print('{} Loss: {:.4f} Acc: {:.4f}'.format(
+            #     phase, epoch_loss, epoch_acc))
+
+            print('{} Loss: {:.4f}'.format(
+                phase, epoch_loss))
+
+            if phase == 'train':
+                all_train_loss.append(epoch_loss)
+                # all_train_acc.append(epoch_acc)
+            else:
+                all_val_loss.append(epoch_loss)
+                # all_val_acc.append(epoch_acc)
+
+            # # deep copy the model
+            # if phase == 'val' and epoch_acc > best_acc:
+            #     best_acc = epoch_acc
+            #     best_acc_epoch_num = epoch
+            #     best_model_wts = copy.deepcopy(model.state_dict())
+
+            if phase == 'val' and ((epoch + 1) % 5 == 0):
+                output = {}
+                output['model'] = model
+                output['optimizer'] = optimizer
+                output['scheduler'] = scheduler
+                output['best_acc'] = best_acc
+                output['best_acc_epoch_num'] = best_acc_epoch_num
+                output['all_train_loss'] = all_train_loss
+                output['all_train_acc'] = all_train_acc
+                output['all_val_loss'] = all_val_loss
+                output['all_val_acc'] = all_val_acc
+
+                torch.save(output, folder + f'/model_epoch_{epoch}.pth')
+
+        print()
+
+    print('Finished Training')
+
+    output = {}
+    output['model'] = model
+    output['optimizer'] = optimizer
+    output['scheduler'] = scheduler
+    output['best_acc'] = best_acc
+    output['best_acc_epoch_num'] = best_acc_epoch_num
+    output['all_train_loss'] = all_train_loss
+    output['all_train_acc'] = all_train_acc
+    output['all_val_loss'] = all_val_loss
+    output['all_val_acc'] = all_val_acc
+
+    torch.save(output, folder + '/model.pth')
+

@@ -282,6 +282,110 @@ class FCNet(nn.Module):
         x = torch.squeeze(x)
         return x
 
+
+class ContractingBlock(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(ContractingBlock, self).__init__()
+        self.conv1 = torch.nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=(3, 3))
+        self.conv2 = torch.nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=(3, 3))
+        self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
+
+    def forward(self, x):
+        x = torch.nn.functional.relu(self.conv1(x))
+        x = torch.nn.functional.relu(self.conv2(x))
+        x_pool = self.pool(x)
+        return x_pool, x
+
+
+class MiddleBlock(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(MiddleBlock, self).__init__()
+        self.conv1 = torch.nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=(3, 3))
+        self.conv2 = torch.nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=(3, 3))
+
+    def forward(self, x):
+        x = torch.nn.functional.relu(self.conv1(x))
+        x = torch.nn.functional.relu(self.conv2(x))
+        return x
+
+
+class ExpansiveBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, contracting_channels):
+        super(ExpansiveBlock, self).__init__()
+        self.upsampling = torch.nn.Upsample(scale_factor=2, mode='bilinear')
+        self.conv1 = torch.nn.Conv2d(
+            in_channels=in_channels+contracting_channels, 
+            out_channels=out_channels, kernel_size=(3, 3))
+        self.conv2 = torch.nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=(3, 3))
+
+    def forward(self, x, contracting_part):
+        x = self.upsampling(x)
+        x = torch.cat((x, contracting_part), dim=1)
+        x = torch.nn.functional.relu(self.conv1(x))
+        x = torch.nn.functional.relu(self.conv2(x))
+        return x
+
+
+class UNet(nn.Module):
+    def __init__(self, n_classes):
+        super(UNet, self).__init__()
+
+        self.contracting_block1 = ContractingBlock(5, 64)
+        self.contracting_block2 = ContractingBlock(64, 128)
+        self.contracting_block3 = ContractingBlock(128, 256)
+        # self.contracting_block4 = ContractingBlock(256, 512)
+        
+        self.middle_block = MiddleBlock(256, 512)
+
+        self.expansive_block1 = ExpansiveBlock(512, 256, 256)
+        self.expansive_block2 = ExpansiveBlock(256, 128, 128)
+        self.expansive_block3 = ExpansiveBlock(128, 64, 64)
+        # self.expansive_block4 = ExpansiveBlock(128, 64, 64)
+
+        self.output_conv = torch.nn.Conv2d(in_channels=64, out_channels=n_classes, kernel_size=(1, 1))
+
+    def forward(self, x):
+        width, height = x.shape[2], x.shape[3]
+        x, x_block1 = self.contracting_block1(x)
+        block1_width = (width-4) // 2
+        block1_height = (height-4) // 2
+        x, x_block2 = self.contracting_block2(x)
+        block2_width = (block1_width-4) // 2
+        block2_height = (block1_height-4) // 2
+        x, x_block3 = self.contracting_block3(x)
+        block3_width = (block2_width-4) // 2
+        block3_height = (block2_height-4) // 2
+        
+        x = self.middle_block(x)
+        middle_block_width = block3_width - 4
+        middle_block_height = block3_height - 4
+
+        height_cropping = (block3_height*2 - middle_block_height*2) // 2
+        width_cropping = (block3_width*2 - middle_block_width*2) // 2
+        x_block3_crop = x_block3[:, :, height_cropping:-height_cropping,
+                        width_cropping:-width_cropping]
+        x = self.expansive_block1(x, x_block3_crop)
+        exp_block1_width = middle_block_width * 2 - 4
+        exp_block1_height = middle_block_height * 2 - 4
+
+        height_cropping = (block2_height*2 - exp_block1_height*2) // 2
+        width_cropping = (block2_width*2 - exp_block1_width*2) // 2
+        x_block2_crop = x_block2[:, :, height_cropping:-height_cropping,
+                        width_cropping:-width_cropping]
+        x = self.expansive_block2(x, x_block2_crop)
+        exp_block2_width = exp_block1_width * 2 - 4
+        exp_block2_height = exp_block1_height * 2 - 4
+
+        height_cropping = (block1_height*2 - exp_block2_height*2) // 2
+        width_cropping = (block1_width*2 - exp_block2_width*2) // 2
+        x_block1_crop = x_block1[:, :, height_cropping:-height_cropping,
+                        width_cropping:-width_cropping]
+        x = self.expansive_block3(x, x_block1_crop)
+
+        x = self.output_conv(x)
+        x = torch.squeeze(x)
+        return x
+
 # def cnn_150x150x5_fully_conv_with_transposes_torch(input):
 #     # cnn_model = nn.Sequential()
 #     #cnn_model.add_module(tf.keras.layers.InputLayer(input_shape=(150, 150, 5)))
