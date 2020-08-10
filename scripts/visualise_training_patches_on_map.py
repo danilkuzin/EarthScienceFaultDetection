@@ -98,6 +98,32 @@ def visualise_training_patches_single_files(dataset, num):
 
     logging.info(f"images saved: {[mask_0_path, mask_1_path]}")
 
+def visualise_training_patches_single_files_segmentation(dataset, num):
+    data_preprocessor = RegionDataset(dataset)
+    im_w, im_h, _ = data_preprocessor.get_data_shape()
+    mask = .5 * np.ones((im_w, im_h))
 
+    for n in trange(num):
+        with h5py.File(f'../../DataForEarthScienceFaultDetection/train_data/regions_{dataset}_segmentation_mask/data_{n}.h5', 'r') as hf:
+            cur_lbl = hf['lbl'][:]
+            cur_coords = hf['coord'][:]
 
+        cur_coords = cur_coords.astype(np.int)
+        cur_lbl = cur_lbl.astype(np.int)
 
+        mask[
+            cur_coords[0]:cur_coords[1],
+            cur_coords[2]:cur_coords[3]
+        ] = cur_lbl
+
+    mask_path = f'../train_data/regions_{dataset}/data_patches_segmentation'
+
+    gdal_backend = GdalBackend()
+    with open(f"{data_path}/preprocessed/{dataset}/gdal_params.yaml",
+              'r') as stream:
+        gdal_params = yaml.safe_load(stream)
+    gdal_backend.set_params(gdal_params['driver_name'],
+                            gdal_params['projection'],
+                            eval(gdal_params['geotransform']))
+
+    gdal_backend.write_surface(mask_path, mask)
