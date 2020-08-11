@@ -139,7 +139,7 @@ class RandomHorizontalFlip(object):
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
 
-        if random.random > 0.5:
+        if random.random() > 0.5:
             image = tf.image.flip_left_right(image)
             label = tf.image.flip_left_right(label)
 
@@ -156,7 +156,7 @@ class RandomVerticalFlip(object):
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
 
-        if random.random > 0.5:
+        if random.random() > 0.5:
             image = tf.image.flip_up_down(image)
             label = tf.image.flip_up_down(label)
 
