@@ -7,7 +7,9 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 
-from src.pipeline_torch.dataset import ToTensor, RandomRotation
+from src.pipeline_torch.dataset import ToTensor, RandomRotation, ToTFImageInput, \
+    RandomHorizontalFlip, RandomVerticalFlip, RandomBrightness, RandomContrast, \
+    FromTFImageOutput
 
 sys.path.extend(['../../EarthScienceFaultDetection'])
 
@@ -45,8 +47,14 @@ num_workers = 0
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 transform = torchvision.transforms.Compose([
+    ToTFImageInput(),
+    RandomRotation(),
+    RandomHorizontalFlip(),
+    RandomVerticalFlip(),
+    RandomBrightness(),
+    RandomContrast(),
+    FromTFImageOutput(),
     ToTensor(device),
-    # RandomRotation(angles=[0, 90, 180, 270])
     ]
 )
 
