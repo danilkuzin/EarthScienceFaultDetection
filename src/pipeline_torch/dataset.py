@@ -3,6 +3,9 @@ import pathlib
 import torch
 import torch.utils.data as data
 
+from torchvision.transforms import functional
+import random
+
 import numpy as np
 
 import h5py
@@ -76,3 +79,22 @@ class ToTensor(object):
         image = image.transpose((2, 0, 1))
         return {'image': torch.from_numpy(image).to(self.device),
                 'label': torch.from_numpy(label).to(self.device)}
+
+
+class RandomRotation(object):
+    """Rotate on random angle from set of angles"""
+
+    def __init__(self, angles):
+        self.angles = angles
+
+    def __call__(self, sample):
+        image, label = sample['image'], sample['label']
+
+        angle = random.choice(self.angles)
+        image = functional.rotate(image, angle)
+        label = functional.rotate(label, angle)
+
+        return {'image': image,
+                'label': label}
+
+

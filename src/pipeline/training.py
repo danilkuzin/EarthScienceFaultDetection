@@ -241,7 +241,7 @@ def train_on_preloaded_single_files(model, train_dataset, train_dataset_size, va
     model.save_weights(folder + '/model.h5')
 
 
-# todo potentially use tfrecord insttead of h5 to maybe store all in one file and remove the py_func from here
+# todo potentially use tfrecord instead of h5 to maybe store all in one file and remove the py_func from here
 def datasets_on_single_files(regions, channels, train_ratio, batch_size):
     BATCH_SIZE = batch_size
 

@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 
-class ImageAugmentation:
+class  ImageAugmentation:
     @staticmethod
     def augment(x: np.array) -> np.array:
         x = tf.image.rot90(x, k=tf.random_uniform(shape=[], minval=0, maxval=4, dtype=tf.int32))

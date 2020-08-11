@@ -7,6 +7,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 
+from src.pipeline_torch.dataset import ToTensor, RandomRotation
+
 sys.path.extend(['../../EarthScienceFaultDetection'])
 
 from src.LearningTorch.net_architecture import UNet
@@ -17,10 +19,11 @@ from src.pipeline_torch.training import datasets_on_single_files_torch, \
 from src.pipeline.training import train_on_preloaded, load_data, datasets_on_single_files, \
     train_on_preloaded_single_files
 from src.LearningKeras.net_architecture import cnn_150x150x5
-import tensorflow as tf
 from src.config import data_path
 
-tf.enable_eager_execution()
+import torchvision
+
+
 np.random.seed(1000)
 
 cnn_model = UNet(n_classes=1)
@@ -41,13 +44,21 @@ num_workers = 0
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+transform = torchvision.transforms.Compose([
+    ToTensor(device),
+    # RandomRotation(angles=[0, 90, 180, 270])
+    ]
+)
+
 train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
     datasets_on_single_files_torch_segmentation(
         device=device,
         regions=[6], path_prefix=f'{data_path}/train_data',
         channels=[0, 1, 2, 3, 4],
         train_ratio=0.80, batch_size=batch_size,
-        num_workers=num_workers)
+        num_workers=num_workers,
+        transform=transform
+)
 
 train_on_preloaded_single_files_torch_unet(
     cnn_model, train_dataset, train_dataset_size, valid_dataset, valid_dataset_size,
