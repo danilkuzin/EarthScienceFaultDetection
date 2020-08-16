@@ -386,6 +386,32 @@ class UNet(nn.Module):
         x = torch.squeeze(x)
         return x
 
+
+class LossBinary:
+    """
+     Implementation from  https://github.com/ternaus/robot-surgery-segmentation
+    """
+
+    def __init__(self, jaccard_weight=0):
+        self.nll_loss = nn.BCEWithLogitsLoss()
+        self.jaccard_weight = jaccard_weight
+
+    def __call__(self, outputs, targets):
+        loss = self.nll_loss(outputs, targets)
+
+        if self.jaccard_weight:
+            eps = 1e-15
+            jaccard_target = (targets == 1.0).float()
+            jaccard_output = F.sigmoid(outputs)
+
+            intersection = (jaccard_output * jaccard_target).sum()
+            union = jaccard_output.sum() + jaccard_target.sum()
+
+            loss -= self.jaccard_weight * \
+                    torch.log((intersection + eps) /
+                              (union - intersection + eps))
+        return loss
+
 # def cnn_150x150x5_fully_conv_with_transposes_torch(input):
 #     # cnn_model = nn.Sequential()
 #     #cnn_model.add_module(tf.keras.layers.InputLayer(input_shape=(150, 150, 5)))
