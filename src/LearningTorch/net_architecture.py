@@ -287,12 +287,18 @@ class ContractingBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(ContractingBlock, self).__init__()
         self.conv1 = torch.nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=(3, 3))
+        self.bn1 = torch.nn.BatchNorm2d(out_channels)
         self.conv2 = torch.nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=(3, 3))
+        self.bn2 = torch.nn.BatchNorm2d(out_channels)
         self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
 
     def forward(self, x):
-        x = torch.nn.functional.relu(self.conv1(x))
-        x = torch.nn.functional.relu(self.conv2(x))
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = torch.nn.functional.relu(x)
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = torch.nn.functional.relu(x)
         x_pool = self.pool(x)
         return x_pool, x
 
@@ -301,11 +307,17 @@ class MiddleBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(MiddleBlock, self).__init__()
         self.conv1 = torch.nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=(3, 3))
+        self.bn1 = torch.nn.BatchNorm2d(out_channels)
         self.conv2 = torch.nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=(3, 3))
+        self.bn2 = torch.nn.BatchNorm2d(out_channels)
 
     def forward(self, x):
-        x = torch.nn.functional.relu(self.conv1(x))
-        x = torch.nn.functional.relu(self.conv2(x))
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = torch.nn.functional.relu(x)
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = torch.nn.functional.relu(x)
         return x
 
 
@@ -316,13 +328,21 @@ class ExpansiveBlock(nn.Module):
         self.conv1 = torch.nn.Conv2d(
             in_channels=in_channels+contracting_channels, 
             out_channels=out_channels, kernel_size=(3, 3))
-        self.conv2 = torch.nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=(3, 3))
+        self.bn1 = torch.nn.BatchNorm2d(out_channels)
+        self.conv2 = torch.nn.Conv2d(
+            in_channels=out_channels,
+            out_channels=out_channels, kernel_size=(3, 3))
+        self.bn2 = torch.nn.BatchNorm2d(out_channels)
 
     def forward(self, x, contracting_part):
         x = self.upsampling(x)
         x = torch.cat((x, contracting_part), dim=1)
-        x = torch.nn.functional.relu(self.conv1(x))
-        x = torch.nn.functional.relu(self.conv2(x))
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = torch.nn.functional.relu(x)
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = torch.nn.functional.relu(x)
         return x
 
 
@@ -411,6 +431,39 @@ class LossBinary:
                     torch.log((intersection + eps) /
                               (union - intersection + eps))
         return loss
+
+
+class FocalLoss(nn.Module):
+    """
+    adapted from mbsariyildiz
+    """
+    def __init__(self, gamma=0, alpha=None, size_average=True):
+        super(FocalLoss, self).__init__()
+        self.gamma = gamma
+        self.alpha = alpha
+        self.size_average = size_average
+
+    def forward(self, input, target):
+        input = input.view(input.size(0), -1)  # N,H,W => N,H*W
+        input = input.contiguous().view(-1, 1)   # N,H*W => N*H*W
+        target = target.contiguous().view(target.size(0), -1)  # N,H,W => N,H*W
+        target = target.contiguous().view(-1, 1)  # N,H*W => N*H*W
+
+        p = torch.nn.functional.sigmoid(input)
+        pt = target * p + (1 - target) * (1 - p)
+        logpt = torch.log(pt)
+
+        # if self.alpha is not None:
+        #     if self.alpha.type() != input.data.type():
+        #         self.alpha = self.alpha.type_as(input.data)
+        #     at = self.alpha.gather(0, target.data.view(-1))
+        #     logpt = logpt * torch.autograd.Variable(at)
+
+        loss = -self.alpha * (1-pt)**self.gamma * logpt
+        if self.size_average:
+            return loss.mean()
+        else:
+            return loss.sum()
 
 # def cnn_150x150x5_fully_conv_with_transposes_torch(input):
 #     # cnn_model = nn.Sequential()

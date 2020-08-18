@@ -18,7 +18,7 @@ from src.pipeline_torch.dataset import ToTensor, RandomRotation, ToTFImageInput,
     RandomHorizontalFlip, RandomVerticalFlip, RandomBrightness, RandomContrast, \
     FromTFImageOutput
 
-from src.LearningTorch.net_architecture import UNet, LossBinary
+from src.LearningTorch.net_architecture import UNet, LossBinary, FocalLoss
 from src.pipeline_torch.training import datasets_on_single_files_torch, \
     train_on_preloaded_single_files_torch_unet, \
     datasets_on_single_files_torch_segmentation
@@ -35,7 +35,7 @@ tf.enable_eager_execution()
 np.random.seed(1000)
 
 cnn_model = UNet(n_classes=1)
-criterion = LossBinary(jaccard_weight=5) # nn.BCEWithLogitsLoss()
+criterion = FocalLoss(gamma=0.5, alpha=0.5) # LossBinary(jaccard_weight=5) # nn.BCEWithLogitsLoss()
 optimizer = optim.Adam(cnn_model.parameters(), lr=1e-4)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10,
                                        gamma=0.1)
