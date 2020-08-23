@@ -232,7 +232,7 @@ def train_on_preloaded_single_files_torch_unet(
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_iou = 0.0
-    best_acc_epoch_num = 0
+    best_iou_epoch_num = -1
 
     all_train_loss = []
     all_train_iou = []
