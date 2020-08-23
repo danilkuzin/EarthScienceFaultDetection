@@ -73,9 +73,9 @@ class RegionDataset:
                     axis=2))
         return np.concatenate(np_channel_data, axis=2)
 
-    def get_full_image(self):
+    def get_full_image(self, channel_list):
         full_shape = self.get_data_shape()
-        return self.concatenate_full_patch(left_border=0, right_border=full_shape[0], top_border=0, bottom_border=full_shape[1])
+        return self.concatenate_full_patch(left_border=0, right_border=full_shape[0], top_border=0, bottom_border=full_shape[1], channel_list=channel_list)
 
     def sample_fault_patch(self, patch_size):
         """if an image patch contains fault bit in the center area than assign it as a fault - go through fault lines

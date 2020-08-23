@@ -63,7 +63,7 @@ cnn_model.eval()
 
 data_preprocessor = RegionDataset(6)
 
-input_image = data_preprocessor.get_full_image()
+input_image = data_preprocessor.get_full_image(channel_list=['optical_rgb', 'elevation', 'slope'])
 im_width = input_image.shape[1]
 im_height = input_image.shape[0]
 
