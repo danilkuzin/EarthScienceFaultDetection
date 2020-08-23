@@ -60,12 +60,18 @@ class RegionDataset:
 
         return left_border, right_border, top_border, bottom_border
 
-    def concatenate_full_patch(self, left_border: int, right_border: int, top_border: int, bottom_border: int):
-        return np.concatenate(
-            (self.normalised_data.channels['optical_rgb'][left_border:right_border, top_border:bottom_border],
-             np.expand_dims(self.normalised_data.channels['elevation'][left_border:right_border, top_border:bottom_border], axis=2),
-             np.expand_dims(self.normalised_data.channels['slope'][left_border:right_border, top_border:bottom_border], axis=2)),
-            axis=2)
+    def concatenate_full_patch(self, left_border: int, right_border: int, top_border: int, bottom_border: int, channel_list: List[str]):
+        np_channel_data = []
+        for channel in channel_list:
+            if self.normalised_data.channels[channel].ndim == 3:
+                np_channel_data.append(self.normalised_data.channels[channel][
+                                       left_border:right_border, top_border:bottom_border])
+            else:
+                np_channel_data.append(np.expand_dims(
+                    self.normalised_data.channels[channel][
+                        left_border:right_border, top_border:bottom_border],
+                    axis=2))
+        return np.concatenate(np_channel_data, axis=2)
 
     def get_full_image(self):
         full_shape = self.get_data_shape()

@@ -55,7 +55,13 @@ class GdalBackend(DataIOBackend):
         return np.dstack((optical_r, optical_g, optical_b))
 
     def load_nir(self, path: str) -> np.array:
-        return self.__load_1d_raster(path)
+        opt_string = '-ot Byte -of GTiff -scale 0 65535 0 255'
+        dataset = gdal.Translate(NamedTemporaryFile(delete=False).name,
+                                 gdal.Open(path, gdal.GA_ReadOnly),
+                                 options=opt_string)
+        if not dataset:
+            raise FileNotFoundError(path)
+        return np.array(dataset.ReadAsArray())
 
     def load_ultrablue(self, path: str) -> np.array:
         return self.__load_1d_raster(path)
@@ -80,6 +86,9 @@ class GdalBackend(DataIOBackend):
         return self.__load_1d_raster(path)
 
     def load_erosion(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
+    def load_roughness(self, path: str) -> np.array:
         return self.__load_1d_raster(path)
 
     def parse_meta_with_gdal(self, path: str):

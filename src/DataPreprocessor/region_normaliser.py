@@ -18,6 +18,8 @@ class RegionNormaliser:
     optical_std = 255.
     slope_mean = 45.
     slope_std = 90.
+    roughness_mean = 50.
+    roughness_std = 100.
 
     def __init__(self, region_id, area_ind):
         self.region_id = region_id
@@ -44,6 +46,13 @@ class RegionNormaliser:
         self.normalised_data.channels['elevation'] = (self.preprocessed_data.channels['elevation'] - elevation_mean) / elevation_std
 
         self.normalised_data.channels['slope'] = (self.preprocessed_data.channels['slope'] - self.slope_mean) / self.slope_std
+
+        self.normalised_data.channels['nir'] = (self.preprocessed_data.channels['nir'] - self.optical_mean) / self.optical_std
+
+        self.normalised_data.channels['topographic_roughness'] = \
+            (self.preprocessed_data.channels['topographic_roughness'] -
+             self.roughness_mean) / self.roughness_std
+
         self.normalised_data.features = self.preprocessed_data.features
 
     def denormalise_patch(self, patch):

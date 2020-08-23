@@ -349,10 +349,10 @@ class ExpansiveBlock(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, n_classes):
+    def __init__(self, n_input_channels, n_classes):
         super(UNet, self).__init__()
 
-        self.contracting_block1 = ContractingBlock(5, 64)
+        self.contracting_block1 = ContractingBlock(n_input_channels, 64)
         self.contracting_block2 = ContractingBlock(64, 128)
         self.contracting_block3 = ContractingBlock(128, 256)
         # self.contracting_block4 = ContractingBlock(256, 512)
@@ -364,7 +364,8 @@ class UNet(nn.Module):
         self.expansive_block3 = ExpansiveBlock(128, 64, 64)
         # self.expansive_block4 = ExpansiveBlock(128, 64, 64)
 
-        self.output_conv = torch.nn.Conv2d(in_channels=64, out_channels=n_classes, kernel_size=(1, 1))
+        self.output_conv = torch.nn.Conv2d(
+            in_channels=64, out_channels=n_classes, kernel_size=(1, 1))
 
     def forward(self, x):
         width, height = x.shape[2], x.shape[3]

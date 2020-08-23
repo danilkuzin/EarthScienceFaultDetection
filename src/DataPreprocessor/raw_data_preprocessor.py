@@ -103,6 +103,12 @@ class RawDataPreprocessor:
             self.preprocessed_data.channels['erosion'] = np.zeros_like(self.preprocessed_data.channels['elevation'])
             logging.warning("Error: {}".format(err))
 
+        try:
+            self.preprocessed_data.channels['topographic_roughness'] = self.data_io_backend.load_roughness(path=str(self.data_dir / 'TRI.tif'))
+        except FileNotFoundError as err:
+            self.preprocessed_data.channels['topographic_roughness'] = np.zeros_like(self.preprocessed_data.channels['elevation'])
+            logging.warning("Error: {}".format(err))
+
         self.__check_crop_data()
 
         try:

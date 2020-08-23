@@ -21,6 +21,8 @@ class NormalisedData:
             hf.create_dataset("optical_r", data=self.channels['optical_rgb'][:, :, 0])
             hf.create_dataset("optical_g", data=self.channels['optical_rgb'][:, :, 1])
             hf.create_dataset("optical_b", data=self.channels['optical_rgb'][:, :, 2])
+            hf.create_dataset("nir", data=self.channels['nir'])
+            hf.create_dataset("topographic_roughness", data=self.channels['topographic_roughness'])
             hf.create_dataset("features", data=self.features)
 
     def load(self):
@@ -31,6 +33,8 @@ class NormalisedData:
             self.channels['optical_rgb'] = np.stack((optical_r, optical_g, optical_b), axis=-1)
             self.channels['elevation'] = hf["elevation"][:]
             self.channels['slope'] = hf["slope"][:]
+            self.channels['nir'] = hf["nir"][:]
+            self.channels['topographic_roughness'] = hf["topographic_roughness"][:]
             self.features = hf["features"][:]
 
 

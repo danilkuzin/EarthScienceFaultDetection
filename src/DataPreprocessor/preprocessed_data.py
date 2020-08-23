@@ -31,6 +31,7 @@ class PreprocessedData:
             hf.create_dataset("panchromatic", data=self.channels['panchromatic'])
             hf.create_dataset("curve", data=self.channels['curve'])
             hf.create_dataset("erosion", data=self.channels['erosion'])
+            hf.create_dataset("topographic_roughness", data=self.channels['topographic_roughness'])
             hf.create_dataset("features", data=self.features)
 
     def load(self):
@@ -41,4 +42,6 @@ class PreprocessedData:
             self.channels['optical_rgb'] = np.stack((optical_r, optical_g, optical_b), axis=-1)
             self.channels['elevation'] = hf["elevation"][:]
             self.channels['slope'] = hf["slope"][:]
+            self.channels['nir'] = hf["nir"][:]
+            self.channels['topographic_roughness'] = hf["topographic_roughness"][:]
             self.features = hf["features"][:]

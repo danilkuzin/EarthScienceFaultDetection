@@ -22,6 +22,9 @@ from src.DataPreprocessor.DataIOBackend.utm_coord import UtmCoord
 
 region_ind = 6
 region_data_folder = "Region 7 - Nevada train"
+channel_list = ['nir', 'elevation', 'topographic_roughness']
+output_path = f"{data_path}/train_data/regions_{region_ind}_segmentation_mask_nir_elevation_tri/"
+
 data_io_backend = GdalBackend()
 with open(
         f"{data_path}/preprocessed/{region_ind}/gdal_params.yaml",
@@ -97,7 +100,6 @@ for non_fault_point in non_fault_coords:
         (non_fault_point[1], non_fault_point[0])] = FeatureValue.NONFAULT.value
 
 region_dataset = RegionDataset(region_ind)
-output_path = f"{data_path}/train_data/regions_{region_ind}_segmentation_mask/"
 if os.path.exists(output_path):
     shutil.rmtree(output_path)
 os.makedirs(output_path)
@@ -121,7 +123,7 @@ for line in fault_lines:
                                top_border, bottom_border))
             imgs = region_dataset.concatenate_full_patch(
                 left_border, right_border, top_border,
-                bottom_border)
+                bottom_border, channel_list=channel_list)
 
             lbls = np.copy(segmentation_mask_np[left_border:right_border,
                            top_border:bottom_border])
@@ -158,7 +160,7 @@ for non_fault_point in non_fault_coords:
             (left_border, right_border, top_border, bottom_border))
         imgs = region_dataset.concatenate_full_patch(
             left_border, right_border, top_border,
-            bottom_border)
+            bottom_border, channel_list=channel_list)
 
         lbls = np.copy(segmentation_mask_np[left_border:right_border,
                        top_border:bottom_border])

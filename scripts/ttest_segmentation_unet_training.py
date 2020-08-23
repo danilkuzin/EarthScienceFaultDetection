@@ -34,8 +34,8 @@ tf.enable_eager_execution()
 
 np.random.seed(1000)
 
-cnn_model = UNet(n_classes=1)
-criterion = FocalLoss(gamma=0.5, alpha=0.5) # LossBinary(jaccard_weight=5) # nn.BCEWithLogitsLoss()
+cnn_model = UNet(n_input_channels=3, n_classes=1)
+criterion = FocalLoss(reduction='mean') # FocalLoss(gamma=0.5, alpha=0.5) # LossBinary(jaccard_weight=5) # nn.BCEWithLogitsLoss()
 optimizer = optim.Adam(cnn_model.parameters(), lr=1e-4)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10,
                                        gamma=0.1)

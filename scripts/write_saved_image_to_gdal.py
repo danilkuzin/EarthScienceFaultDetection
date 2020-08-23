@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
 from src.config import data_path
 
-folder = f"{data_path}/results/test_training_segmentation_unet_on_6_torch_batchnorm_dice"
+folder = f"{data_path}/results/test_training_segmentation_unet_on_6_torch_focal_alpha_0.5"
 saved_image_path = folder + '/prediction_on_6.npz'
 mask_prediction = numpy.load(saved_image_path)['prediction']
 mask_prediction_max = mask_prediction.max()
 mask_prediction_min = mask_prediction.min()
 mask_prediction_scaled = (mask_prediction-mask_prediction_min)/(mask_prediction_max-mask_prediction_min)
-clip_lower = 0
+clip_lower = 0.4
 clip_higher = 1 #0.9
 mask_prediction_clipped = (mask_prediction_scaled.clip(clip_lower, clip_higher)-clip_lower)/(clip_higher-clip_lower)
 seaborn.distplot(mask_prediction_clipped.flatten())
