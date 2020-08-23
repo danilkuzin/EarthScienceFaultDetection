@@ -5,6 +5,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim import lr_scheduler
 
+from fvcore.nn import sigmoid_focal_loss
+
 
 class Flatten(nn.Module):
     def forward(self, input):
@@ -433,12 +435,12 @@ class LossBinary:
         return loss
 
 
-class FocalLoss(nn.Module):
+class FocalLossManual(nn.Module):
     """
     adapted from mbsariyildiz
     """
     def __init__(self, gamma=0, alpha=None, size_average=True):
-        super(FocalLoss, self).__init__()
+        super(FocalLossManual, self).__init__()
         self.gamma = gamma
         self.alpha = alpha
         self.size_average = size_average
@@ -464,6 +466,19 @@ class FocalLoss(nn.Module):
             return loss.mean()
         else:
             return loss.sum()
+
+
+class FocalLoss:
+
+    def __init__(self, alpha=-1, gamma=2, reduction="none"):
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def __call__(self, outputs, targets):
+        loss = sigmoid_focal_loss(outputs, targets, alpha=self.alpha,
+                                  gamma=self.gamma, reduction=self.reduction)
+        return loss
 
 # def cnn_150x150x5_fully_conv_with_transposes_torch(input):
 #     # cnn_model = nn.Sequential()
