@@ -39,8 +39,9 @@ def is_point_strictly_inside_box(point, box):
 
 region_ind = 6
 region_data_folder = "Region 7 - Nevada train"
-channel_list = ['nir', 'elevation', 'topographic_roughness']
-output_path = f"{data_path}/train_data/regions_{region_ind}_segmentation_mask_nir_elevation_tri/"
+channel_list = ['optical_rgb', 'elevation', 'slope', 'nir',
+                'topographic_roughness', 'ultrablue', 'swir1', 'swir2']
+output_path = f"{data_path}/train_data/regions_{region_ind}_segmentation_mask_rgb_elev_slope_nir_tri_ultb_swirs/"
 
 
 data_io_backend = GdalBackend()

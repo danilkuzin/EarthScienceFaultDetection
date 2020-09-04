@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
 from src.config import data_path
 
-folder = f"{data_path}/results/test_training_segmentation_unet_on_6_torch_focal_alpha_0.5"
+folder = f"{data_path}/results/unet_on_6_rgb_elev_slope_focal_alpha_0.9"
 saved_image_path = folder + '/prediction_on_6.npz'
 mask_prediction = numpy.load(saved_image_path)['prediction']
 mask_prediction_max = mask_prediction.max()

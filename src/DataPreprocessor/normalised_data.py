@@ -23,6 +23,12 @@ class NormalisedData:
             hf.create_dataset("optical_b", data=self.channels['optical_rgb'][:, :, 2])
             hf.create_dataset("nir", data=self.channels['nir'])
             hf.create_dataset("topographic_roughness", data=self.channels['topographic_roughness'])
+            hf.create_dataset("ultrablue",
+                              data=self.channels['ultrablue'])
+            hf.create_dataset("swir1",
+                              data=self.channels['swir1'])
+            hf.create_dataset("swir2",
+                              data=self.channels['swir2'])
             hf.create_dataset("features", data=self.features)
 
     def load(self):
@@ -35,6 +41,9 @@ class NormalisedData:
             self.channels['slope'] = hf["slope"][:]
             self.channels['nir'] = hf["nir"][:]
             self.channels['topographic_roughness'] = hf["topographic_roughness"][:]
+            self.channels['ultrablue'] = hf["ultrablue"][:]
+            self.channels['swir1'] = hf["swir1"][:]
+            self.channels['swir2'] = hf["swir2"][:]
             self.features = hf["features"][:]
 
 

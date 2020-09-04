@@ -28,6 +28,15 @@ class GdalBackend(DataIOBackend):
             raise FileNotFoundError(path)
         return np.array(dataset.ReadAsArray())
 
+    def __load_1d_uint16(self, path: str) -> np.array:
+        opt_string = '-ot Byte -of GTiff -scale 0 65535 0 255'
+        dataset = gdal.Translate(NamedTemporaryFile(delete=False).name,
+                                 gdal.Open(path, gdal.GA_ReadOnly),
+                                 options=opt_string)
+        if not dataset:
+            raise FileNotFoundError(path)
+        return np.array(dataset.ReadAsArray())
+
     def load_elevation(self, path: str) -> np.array:
         return self.__load_1d_raster(path)
 
@@ -55,22 +64,20 @@ class GdalBackend(DataIOBackend):
         return np.dstack((optical_r, optical_g, optical_b))
 
     def load_nir(self, path: str) -> np.array:
-        opt_string = '-ot Byte -of GTiff -scale 0 65535 0 255'
-        dataset = gdal.Translate(NamedTemporaryFile(delete=False).name,
-                                 gdal.Open(path, gdal.GA_ReadOnly),
-                                 options=opt_string)
-        if not dataset:
-            raise FileNotFoundError(path)
-        return np.array(dataset.ReadAsArray())
+        # ToDo check whether this is the best approach to load this channel
+        return self.__load_1d_uint16(path)
 
     def load_ultrablue(self, path: str) -> np.array:
-        return self.__load_1d_raster(path)
+        # ToDo check whether this is the best approach to load this channel
+        return self.__load_1d_uint16(path)
 
     def load_swir1(self, path: str) -> np.array:
-        return self.__load_1d_raster(path)
+        # ToDo check whether this is the best approach to load this channel
+        return self.__load_1d_uint16(path)
 
     def load_swir2(self, path: str) -> np.array:
-        return self.__load_1d_raster(path)
+        # ToDo check whether this is the best approach to load this channel
+        return self.__load_1d_uint16(path)
 
     def load_panchromatic(self, path: str) -> np.array:
         return self.__load_1d_raster(path)

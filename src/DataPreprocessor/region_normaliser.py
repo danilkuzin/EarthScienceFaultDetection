@@ -49,6 +49,18 @@ class RegionNormaliser:
 
         self.normalised_data.channels['nir'] = (self.preprocessed_data.channels['nir'] - self.optical_mean) / self.optical_std
 
+        self.normalised_data.channels['ultrablue'] = \
+            (self.preprocessed_data.channels['ultrablue'] -
+             self.optical_mean) / self.optical_std
+
+        self.normalised_data.channels['swir1'] = \
+            (self.preprocessed_data.channels['swir1'] -
+             self.optical_mean) / self.optical_std
+
+        self.normalised_data.channels['swir2'] = \
+            (self.preprocessed_data.channels['swir2'] -
+             self.optical_mean) / self.optical_std
+
         self.normalised_data.channels['topographic_roughness'] = \
             (self.preprocessed_data.channels['topographic_roughness'] -
              self.roughness_mean) / self.roughness_std
