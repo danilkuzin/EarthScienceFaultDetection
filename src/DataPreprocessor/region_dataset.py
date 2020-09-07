@@ -28,6 +28,7 @@ class FeatureValue(Enum):
     FAULT = 0
     FAULT_LOOKALIKE = 1
     NONFAULT = 2
+    BASIN_FAULT = 3
 
 
 class RegionDataset:

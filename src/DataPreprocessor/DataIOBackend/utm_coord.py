@@ -92,16 +92,17 @@ class UtmCoord(object):
         geometries = []
         coords = []
         for line in content:
+            if line.startswith('>'):
+                if coords:
+                    geometries.append(coords)
+                    coords = []
+                    continue
             extracted_utm_floats = UtmCoord.extract_floats_from_string(line)
             # 3 below is specific for current input files format
             if len(extracted_utm_floats) == 3:
                 pixel_coords = self.transform_coordinates(
                     extracted_utm_floats[0], extracted_utm_floats[1])
                 coords.append(pixel_coords)
-            if line.startswith('>'):
-                if coords:
-                    geometries.append(coords)
-                    coords = []
 
         if coords:
             geometries.append(coords)

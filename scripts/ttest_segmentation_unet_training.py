@@ -18,7 +18,8 @@ from src.pipeline_torch.dataset import ToTensor, RandomRotation, ToTFImageInput,
     RandomHorizontalFlip, RandomVerticalFlip, RandomBrightness, RandomContrast, \
     FromTFImageOutput
 
-from src.LearningTorch.net_architecture import UNet, LossBinary, FocalLoss
+from src.LearningTorch.net_architecture import UNet, LossBinary, FocalLoss, \
+    LossCrossDice
 from src.pipeline_torch.training import datasets_on_single_files_torch, \
     train_on_preloaded_single_files_torch_unet, \
     datasets_on_single_files_torch_segmentation
@@ -34,8 +35,8 @@ tf.enable_eager_execution()
 
 np.random.seed(1000)
 
-cnn_model = UNet(n_input_channels=3, n_classes=1)
-criterion = FocalLoss(reduction='mean') # FocalLoss(gamma=0.5, alpha=0.5) # LossBinary(jaccard_weight=5) # nn.BCEWithLogitsLoss()
+cnn_model = UNet(n_input_channels=5, n_classes=3)
+criterion = nn.CrossEntropyLoss() # LossCrossDice(jaccard_weight=5) # FocalLoss(reduction='mean') # FocalLoss(gamma=0.5, alpha=0.5) # LossBinary(jaccard_weight=5) # nn.BCEWithLogitsLoss()
 optimizer = optim.Adam(cnn_model.parameters(), lr=1e-4)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10,
                                        gamma=0.1)
@@ -68,7 +69,7 @@ train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
     datasets_on_single_files_torch_segmentation(
         device=device,
         regions=[6], path_prefix=f'{data_path}/train_data',
-        channels=[0, 1, 2],
+        channels=[0, 1, 2, 3, 4],
         train_ratio=0.80, batch_size=batch_size,
         num_workers=num_workers,
         transform=transform
@@ -76,7 +77,7 @@ train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
 
 train_on_preloaded_single_files_torch_unet(
     cnn_model, train_dataset, train_dataset_size, valid_dataset, valid_dataset_size,
-    folder=f"{data_path}/results/test_training_segmentation_unet_on_6_torch",
+    folder=f"{data_path}/results/test",
     epochs=10,
     batch_size=batch_size,
     optimizer=optimizer,

@@ -223,6 +223,18 @@ def get_jaccard(y_true, y_pred):
     return (intersection / (union - intersection + epsilon)).mean()
 
 
+def get_jaccard_non_binary(y_true, y_pred):
+    epsilon = 1e-15
+    y_true_binary = y_true > 0
+    y_pred_class = torch.argmax(y_pred, dim=1)
+    y_pred_binary = y_pred_class > 0
+    intersection = (y_pred_binary * y_true_binary).sum(dim=-2).sum(dim=-1).sum(dim=-1)
+    union = y_true_binary.sum(dim=-2).sum(dim=-1).sum(dim=-1) + \
+            y_pred_binary.sum(dim=-2).sum(dim=-1).sum(dim=-1)
+
+    return (intersection / (union - intersection + epsilon)).mean()
+
+
 def train_on_preloaded_single_files_torch_unet(
         model, train_dataset, train_dataset_size,
         valid_dataset, valid_dataset_size,
@@ -273,10 +285,11 @@ def train_on_preloaded_single_files_torch_unet(
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
                     #_, preds = torch.max(outputs, 1)
-                    dim1_cropping = (labels.shape[1] - outputs.shape[1]) // 2
-                    dim2_cropping = (labels.shape[2] - outputs.shape[2]) // 2
+                    dim1_cropping = (labels.shape[1] - outputs.shape[-2]) // 2
+                    dim2_cropping = (labels.shape[2] - outputs.shape[-1]) // 2
                     labels = labels[:, dim1_cropping:-dim1_cropping,
                              dim2_cropping:-dim2_cropping]
+                    labels = labels.long()
                     loss = criterion(outputs,
                                      labels)
 
@@ -287,8 +300,10 @@ def train_on_preloaded_single_files_torch_unet(
 
                 # print statistics
                 running_loss += loss.item() * inputs.size(0)
-                running_iou += get_jaccard(labels,
-                                           (outputs > 0).float()).item()
+                running_iou += get_jaccard_non_binary(
+                    labels, outputs).item()
+                # running_iou += get_jaccard(labels,
+                #                            (outputs > 0).float()).item()
 
             if phase == 'train':
                 scheduler.step()
