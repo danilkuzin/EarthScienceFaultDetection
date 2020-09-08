@@ -90,7 +90,8 @@ def datasets_on_single_files_torch_segmentation(device, regions,
         channels=channels,
         transform=ToTensor(device))
     valid_dataset = DataLoader(valid_path_ds, batch_size=BATCH_SIZE,
-                               shuffle=True, num_workers=num_workers)
+                               shuffle=True, num_workers=num_workers,
+                               drop_last=True) # ToDo remove this)
 
     return train_dataset, train_dataset_size, valid_dataset, valid_dataset_size
 
