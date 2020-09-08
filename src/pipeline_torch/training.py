@@ -82,7 +82,8 @@ def datasets_on_single_files_torch_segmentation(device, regions,
         channels=channels,
         transform=transform)
     train_dataset = DataLoader(train_path_ds, batch_size=BATCH_SIZE,
-                               shuffle=True, num_workers=num_workers)
+                               shuffle=True, num_workers=num_workers,
+                               drop_last=True) # ToDo remove this
 
     valid_path_ds = h5_loader_segmentation(
         np.array(valid_paths).flatten(),
