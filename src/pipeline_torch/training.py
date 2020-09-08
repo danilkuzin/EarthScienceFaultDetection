@@ -273,7 +273,7 @@ def train_on_preloaded_single_files_torch_unet(
             running_iou = 0
 
             for i, data in enumerate(datasets[phase], 0):
-                print(8*'-')
+                # print(8*'-')
                 # get the inputs; data is a list of [inputs, labels]
                 inputs, labels = data['image'], data['label']
                 inputs = inputs.to(device)
