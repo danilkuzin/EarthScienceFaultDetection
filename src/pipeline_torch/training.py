@@ -222,7 +222,7 @@ def get_jaccard(y_true, y_pred):
     union = y_true.sum(dim=-2).sum(dim=-1).sum(dim=-1) + \
             y_pred.sum(dim=-2).sum(dim=-1).sum(dim=-1)
 
-    return (intersection / (union - intersection + epsilon)).mean()
+    return ((intersection + epsilon) / (union - intersection + epsilon)).mean()
 
 
 def get_jaccard_non_binary(y_true, y_pred):
@@ -234,7 +234,7 @@ def get_jaccard_non_binary(y_true, y_pred):
     union = y_true_binary.sum(dim=-2).sum(dim=-1).sum(dim=-1) + \
             y_pred_binary.sum(dim=-2).sum(dim=-1).sum(dim=-1)
 
-    return (intersection / (union - intersection + epsilon)).mean()
+    return ((intersection + epsilon) / (union - intersection + epsilon)).mean()
 
 
 def train_on_preloaded_single_files_torch_unet(

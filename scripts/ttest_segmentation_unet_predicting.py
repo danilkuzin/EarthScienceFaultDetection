@@ -56,76 +56,75 @@ def convert_box_to_mirror_image_coordinates(input_box, number_rows_mirrored, num
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # cnn_model = FCNet()
 
-folder = f"{data_path}/results/test_training_segmentation_unet_on_6_torch"
-training_output = torch.load(folder + '/model_epoch_19.pth', map_location=device)
-cnn_model = training_output['model']
-cnn_model.eval()
+folder = f"{data_path}/results/unet_on_6_rgb_elev_slope_two_fault_classes_crossval"
+# training_output = torch.load(folder + '/model_epoch_39.pth', map_location=device)
+# cnn_model = training_output['model']
+# cnn_model.eval()
 
 data_preprocessor = RegionDataset(6)
 
 input_image = data_preprocessor.get_full_image(
-    channel_list=['optical_rgb', 'elevation', 'slope', 'nir',
-                  'topographic_roughness', 'ultrablue', 'swir1', 'swir2'])
+    channel_list=['optical_rgb', 'elevation', 'slope'])
 im_width = input_image.shape[1]
 im_height = input_image.shape[0]
 
-# # mirror on edges
-# image_patch_size = 156
-# output_patch_size = 68
-#
-# mirrored_image = mirror_image(input_image, image_patch_size, image_patch_size)
-#
-# image_patch_coordinate_list = []
-# center_image_patch_coordinate_list = []
-# counter = 0
-# for i in range(0, im_width, output_patch_size):
-#     xmin_center = i
-#     if i + output_patch_size < im_width:
-#         xmax_center = i + output_patch_size
-#     else:
-#         xmax_center = im_width
-#
-#     for j in range(0, im_height, output_patch_size):
-#         ymin_center = j
-#
-#         if j + output_patch_size < im_height:
-#             ymax_center = j + output_patch_size
-#         else:
-#             ymax_center = im_height
-#
-#         center_box = (xmin_center, ymin_center, xmax_center, ymax_center)
-#         center_image_patch_coordinate_list.append(center_box)
-#
-#         outer_box = get_outer_box_coordinates(
-#             xmin_center, ymin_center, (image_patch_size, image_patch_size),
-#             (output_patch_size, output_patch_size))
-#         outer_box_in_mirrored_image_coordinates = \
-#             convert_box_to_mirror_image_coordinates(
-#                 outer_box, image_patch_size, image_patch_size)
-#
-#         image_patch_coordinate_list.append(
-#             outer_box_in_mirrored_image_coordinates)
-#
-#
-# full_prediction = np.zeros((input_image.shape[0], input_image.shape[1]),
-#                            dtype=np.float)
-# for image_patch_num in range(len(image_patch_coordinate_list)):
-#     xmin, ymin, xmax, ymax = image_patch_coordinate_list[image_patch_num]
-#     sliced_input_image = mirrored_image[ymin:ymax, xmin:xmax, :]
-#     input_data = np.expand_dims(
-#         sliced_input_image.astype(np.float32).transpose((2, 0, 1)),
-#         axis=0)
-#
-#     prediction = cnn_model(torch.tensor(input_data).to(device))
-#     prediction_np = prediction.detach().cpu().numpy()
-#
-#     xmin_center, ymin_center, xmax_center, ymax_center = \
-#         center_image_patch_coordinate_list[image_patch_num]
-#     full_prediction[ymin_center:ymax_center, xmin_center:xmax_center] = \
-#         prediction_np[:ymax_center-ymin_center, :xmax_center-xmin_center].copy()
-#
-#     counter += 1
-#     print(counter)
+# mirror on edges
+image_patch_size = 156
+output_patch_size = 68
+
+mirrored_image = mirror_image(input_image, image_patch_size, image_patch_size)
+
+image_patch_coordinate_list = []
+center_image_patch_coordinate_list = []
+counter = 0
+for i in range(0, im_width, output_patch_size):
+    xmin_center = i
+    if i + output_patch_size < im_width:
+        xmax_center = i + output_patch_size
+    else:
+        xmax_center = im_width
+
+    for j in range(0, im_height, output_patch_size):
+        ymin_center = j
+
+        if j + output_patch_size < im_height:
+            ymax_center = j + output_patch_size
+        else:
+            ymax_center = im_height
+
+        center_box = (xmin_center, ymin_center, xmax_center, ymax_center)
+        center_image_patch_coordinate_list.append(center_box)
+
+        outer_box = get_outer_box_coordinates(
+            xmin_center, ymin_center, (image_patch_size, image_patch_size),
+            (output_patch_size, output_patch_size))
+        outer_box_in_mirrored_image_coordinates = \
+            convert_box_to_mirror_image_coordinates(
+                outer_box, image_patch_size, image_patch_size)
+
+        image_patch_coordinate_list.append(
+            outer_box_in_mirrored_image_coordinates)
+
+
+full_prediction = np.zeros((3, input_image.shape[0], input_image.shape[1]),
+                           dtype=np.float)
+for image_patch_num in range(len(image_patch_coordinate_list)):
+    xmin, ymin, xmax, ymax = image_patch_coordinate_list[image_patch_num]
+    sliced_input_image = mirrored_image[ymin:ymax, xmin:xmax, :]
+    input_data = np.expand_dims(
+        sliced_input_image.astype(np.float32).transpose((2, 0, 1)),
+        axis=0)
+
+    prediction = cnn_model(torch.tensor(input_data).to(device))
+    prediction_np = prediction.detach().cpu().numpy()
+
+    xmin_center, ymin_center, xmax_center, ymax_center = \
+        center_image_patch_coordinate_list[image_patch_num]
+    full_prediction[:, ymin_center:ymax_center, xmin_center:xmax_center] = \
+        prediction_np[:ymax_center-ymin_center, :xmax_center-xmin_center].copy()
+
+    counter += 1
+    print(counter)
 
 # sliced_input_image = input_image[4440:4590, 3528:3678, :]
 #

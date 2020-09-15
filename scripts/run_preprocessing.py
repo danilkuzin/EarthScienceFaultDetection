@@ -28,7 +28,7 @@ def preprocess_single_region(path: pathlib.Path, region_id: int):
 # for region_id, region_params in enumerate(data_preprocessor_params):
 #     path = pathlib.Path(region_params[0])
 #     preprocess_single_region(path=path, region_id=region_id)
-# preprocess_single_region(path=pathlib.Path(data_preprocessor_params[6][0]), region_id=6)
+preprocess_single_region(path=pathlib.Path(data_preprocessor_params[7][0]), region_id=7)
 
 # for key_area, val_area in areas.items():
 #     normalise_area(val_area)
@@ -37,4 +37,4 @@ def preprocess_single_region(path: pathlib.Path, region_id: int):
 #     path = pathlib.Path(region_params[0])
 #     normalise_region(region_id, area_ind=region_params[1])
 
-normalise_region(6, area_ind=data_preprocessor_params[6][1])
+normalise_region(7, area_ind=data_preprocessor_params[7][1])

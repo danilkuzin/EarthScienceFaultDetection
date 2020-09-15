@@ -436,6 +436,40 @@ class LossBinary:
         return loss
 
 
+class LossMulti:
+    """
+         Implementation based on https://github.com/ternaus/robot-surgery-segmentation
+    """
+    def __init__(self, jaccard_weight=0, class_weights=None, num_classes=1):
+        if class_weights is not None:
+            nll_weight = utils.cuda(
+                torch.from_numpy(class_weights.astype(np.float32)))
+        else:
+            nll_weight = None
+        # self.nll_loss = nn.NLLLoss2d(weight=nll_weight)
+        self.nll_loss = nn.CrossEntropyLoss()
+        self.jaccard_weight = jaccard_weight
+        self.num_classes = num_classes
+
+    def __call__(self, outputs, targets):
+        # loss = (1 - self.jaccard_weight) * self.nll_loss(outputs, targets)
+        loss = self.nll_loss(outputs, targets)
+
+        if self.jaccard_weight:
+            eps = 1e-15
+            jaccard_output = F.softmax(outputs, dim=1)
+            for cls in range(1, self.num_classes):
+                jaccard_target = (targets == cls).float()
+                jaccard_output_cl = jaccard_output[:, cls]
+                intersection = (jaccard_output_cl * jaccard_target).sum()
+
+                union = jaccard_output_cl.sum() + jaccard_target.sum()
+                dice_component = torch.log((2 * intersection + eps) / (union + eps))
+                dice_component_value = float(dice_component)
+                loss -= dice_component * self.jaccard_weight / (self.num_classes - 1)
+        return loss
+
+
 class LossCrossDice:
     """
      Implementation based  https://github.com/ternaus/robot-surgery-segmentation
