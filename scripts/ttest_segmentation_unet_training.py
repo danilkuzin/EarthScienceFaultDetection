@@ -2,14 +2,9 @@ import sys
 import numpy as np
 import torch
 
-import torch.nn as nn
 
 import torch.optim as optim
 from torch.optim import lr_scheduler
-
-import tensorflow as tf
-
-import os
 
 sys.path.extend(['../../EarthScienceFaultDetection'])
 #os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -24,14 +19,10 @@ from src.pipeline_torch.training import datasets_on_single_files_torch, \
     train_on_preloaded_single_files_torch_unet, \
     datasets_on_single_files_torch_segmentation
 
-from src.pipeline.training import train_on_preloaded, load_data, datasets_on_single_files, \
-    train_on_preloaded_single_files
-from src.LearningKeras.net_architecture import cnn_150x150x5
 from src.config import data_path
 
 import torchvision
 
-tf.enable_eager_execution()
 
 np.random.seed(1000)
 
