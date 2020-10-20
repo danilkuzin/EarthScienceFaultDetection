@@ -19,7 +19,7 @@ from src.pipeline_torch.dataset import ToTensor, RandomRotation, ToTFImageInput,
     FromTFImageOutput
 
 from src.LearningTorch.net_architecture import UNet, LossBinary, FocalLoss, \
-    LossCrossDice, LossMulti
+    LossCrossDice, LossMulti, LossMultiSemiSupervised, Res34_Unet
 from src.pipeline_torch.training import datasets_on_single_files_torch, \
     train_on_preloaded_single_files_torch_unet, \
     datasets_on_single_files_torch_segmentation
@@ -35,8 +35,9 @@ tf.enable_eager_execution()
 
 np.random.seed(1000)
 
-cnn_model = UNet(n_input_channels=7, n_classes=3)
-criterion = LossMulti(jaccard_weight=5, num_classes=3) # nn.CrossEntropyLoss() # LossCrossDice(jaccard_weight=5) # FocalLoss(reduction='mean') # FocalLoss(gamma=0.5, alpha=0.5) # LossBinary(jaccard_weight=5) # nn.BCEWithLogitsLoss()
+cnn_model = Res34_Unet(n_input_channels=7, n_classes=3)
+criterion = LossMultiSemiSupervised(
+    jaccard_weight=5, ignore_class_for_nll=3, ignore_classes_for_jaccard=[0]) # LossMulti(jaccard_weight=5, num_classes=3) # nn.CrossEntropyLoss() # LossCrossDice(jaccard_weight=5) # FocalLoss(reduction='mean') # FocalLoss(gamma=0.5, alpha=0.5) # LossBinary(jaccard_weight=5) # nn.BCEWithLogitsLoss()
 optimizer = optim.Adam(cnn_model.parameters(), lr=1e-4)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10,
                                        gamma=0.1)
@@ -70,14 +71,14 @@ train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
         device=device,
         regions=[6], path_prefix=f'{data_path}/train_data',
         channels=[0, 1, 2, 3, 4, 5, 6],
-        train_ratio=0.80, batch_size=batch_size,
+        train_ratio=0.8, batch_size=batch_size,
         num_workers=num_workers,
         transform=transform
 )
 
 train_on_preloaded_single_files_torch_unet(
     cnn_model, train_dataset, train_dataset_size, valid_dataset, valid_dataset_size,
-    folder=f"{data_path}/results/test",
+    folder=f"{data_path}/results/semisupervised",
     epochs=10,
     batch_size=batch_size,
     optimizer=optimizer,

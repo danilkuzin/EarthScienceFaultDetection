@@ -9,7 +9,7 @@ if IN_COLAB:
     data_path = '/gdrive/My Drive/Work/fault_detection/data'
     drive.mount('/gdrive')
 else:
-    data_path = "/mnt/data/datasets/DataForEarthScienceFaultDetection"
+    data_path = "/mnt/data/datasets/DataForEarthScienceFaultDetection" #"../../DataForEarthScienceFaultDetection"
 areas = {"Tibet": 0, "Nevada": 1, "Turkey": 2}
 # path, area, trainable
 data_preprocessor_params = [
