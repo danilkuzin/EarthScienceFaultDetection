@@ -448,7 +448,7 @@ class Res34_Unet(nn.Module):
 
         encoder = torchvision.models.resnet34(pretrained=pretrained)
         encoder.conv1 = nn.Conv2d(
-            n_input_channels, encoder.inplanes, kernel_size=7, stride=2,
+            n_input_channels, 64, kernel_size=7, stride=2,
             padding=3, bias=False)
         self.conv1 = nn.Sequential(
             encoder.conv1,
