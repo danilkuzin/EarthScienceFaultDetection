@@ -45,6 +45,8 @@ num_workers = 0
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+cnn_model = cnn_model.to(device)
+
 transform = torchvision.transforms.Compose([
     ToTFImageInput(),
     RandomRotation(),
