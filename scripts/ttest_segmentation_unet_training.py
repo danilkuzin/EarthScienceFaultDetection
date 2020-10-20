@@ -40,7 +40,7 @@ exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10,
 # print(output.shape)
 
 
-batch_size = 32
+batch_size = 4
 num_workers = 0
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
