@@ -7,6 +7,9 @@ import yaml
 import numpy as np
 from PIL import Image, ImageDraw
 
+import sys
+sys.path.extend(['/home/oi260/github/EarthScienceFaultDetection/'])
+
 from src.DataPreprocessor.region_dataset import FeatureValue, RegionDataset, \
     OutOfBoundsException
 from src.config import data_path
