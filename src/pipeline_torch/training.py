@@ -288,10 +288,10 @@ def train_on_preloaded_single_files_torch_unet(
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
                     #_, preds = torch.max(outputs, 1)
-                    dim1_cropping = (labels.shape[1] - outputs.shape[-2]) // 2
-                    dim2_cropping = (labels.shape[2] - outputs.shape[-1]) // 2
-                    labels = labels[:, dim1_cropping:-dim1_cropping,
-                             dim2_cropping:-dim2_cropping]
+                    # dim1_cropping = (labels.shape[1] - outputs.shape[-2]) // 2
+                    # dim2_cropping = (labels.shape[2] - outputs.shape[-1]) // 2
+                    # labels = labels[:, dim1_cropping:-dim1_cropping,
+                    #          dim2_cropping:-dim2_cropping]
                     labels = labels.long()
                     loss = criterion(outputs,
                                      labels)
