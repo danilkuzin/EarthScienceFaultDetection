@@ -31,6 +31,7 @@ def mirror_image(input_image, number_rows_to_mirror, number_columns_to_mirror):
 
     return mirrored_image
 
+
 def get_outer_box_coordinates(xmin_center, ymin_center, outer_box_size, center_box_size):
     xshift = (outer_box_size[0] - center_box_size[0]) // 2
     xmin_outer = xmin_center - xshift
@@ -41,6 +42,7 @@ def get_outer_box_coordinates(xmin_center, ymin_center, outer_box_size, center_b
     ymax_outer = ymin_outer + outer_box_size[1]
 
     return (xmin_outer, ymin_outer, xmax_outer, ymax_outer)
+
 
 def convert_box_to_mirror_image_coordinates(input_box, number_rows_mirrored, number_columns_mirrored):
     """
@@ -134,6 +136,9 @@ for image_patch_num in range(len(image_patch_coordinate_list)):
 
     prediction = cnn_model(torch.tensor(input_data).to(device))
     prediction_np = prediction.detach().cpu().numpy()
+
+    print(prediction_np.shape)
+    break
 
     xmin_center, ymin_center, xmax_center, ymax_center = \
         center_image_patch_coordinate_list[image_patch_num]
