@@ -53,6 +53,7 @@ for i in range(20):
     label = torch.from_numpy(lbl).to(device)
 
     prediction = cnn_model(image)
+    prediction_np = prediction.cpu().detach().numpy().squeeze()
 
     fig, axs = plt.subplots(1, 5)
     axs[0].imshow(img[:, :, 3])
@@ -61,13 +62,13 @@ for i in range(20):
     axs[1].imshow(lbl == 1)
     axs[1].set_title('true mask front range')
     axs[1].axis('off')
-    axs[2].imshow(prediction.cpu().detach().numpy()[1])
+    axs[2].imshow(prediction_np[1])
     axs[2].set_title('prediction front range')
     axs[2].axis('off')
     axs[3].imshow(lbl == 2)
     axs[3].set_title('true mask basin')
     axs[3].axis('off')
-    axs[4].imshow(prediction.cpu().detach().numpy()[2])
+    axs[4].imshow(prediction_np[2])
     axs[4].set_title('prediction basin')
     axs[4].axis('off')
     plt.savefig(f"{folder}/prediction_on_train_patches/patch_{i}.png")
