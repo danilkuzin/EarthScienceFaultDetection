@@ -10,12 +10,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 sys.path.extend(['../../EarthScienceFaultDetection'])
 
 from src.DataPreprocessor.region_dataset import RegionDataset
-from src.pipeline_torch.predicting import predict_torch
 
-
-
-from src.LearningTorch.net_architecture import FCNet
-from src.pipeline.predicting import predict, postprocess
 from src.config import data_path
 
 
