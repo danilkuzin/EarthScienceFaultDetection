@@ -137,13 +137,10 @@ for image_patch_num in range(len(image_patch_coordinate_list)):
     prediction = cnn_model(torch.tensor(input_data).to(device))
     prediction_np = prediction.detach().cpu().numpy()
 
-    print(prediction_np.shape)
-    break
-
     xmin_center, ymin_center, xmax_center, ymax_center = \
         center_image_patch_coordinate_list[image_patch_num]
     full_prediction[:, ymin_center:ymax_center, xmin_center:xmax_center] = \
-        prediction_np[:, :ymax_center - ymin_center,
+        prediction_np[0, :, :ymax_center - ymin_center,
         :xmax_center - xmin_center].copy()
 
     counter += 1
