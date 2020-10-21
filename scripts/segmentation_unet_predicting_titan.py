@@ -75,29 +75,29 @@ plt.legend()
 plt.savefig(folder + '/loss.png')
 plt.clf()
 
-plt
+plt.figure()
 plt.plot(all_train_iou, label='train')
 plt.plot(all_val_iou, label='val')
 plt.legend()
 plt.savefig(folder + '/mean_iou.png')
-plt.show()
+plt.clf()
 
 data_preprocessor = RegionDataset(6)
 
 input_image = data_preprocessor.get_full_image(
-    channel_list=['optical_rgb', 'elevation', 'slope'])
+    channel_list=['optical_rgb', 'elevation', 'slope', 'nir',
+                  'topographic_roughness'])
 im_width = input_image.shape[1]
 im_height = input_image.shape[0]
 
 # mirror on edges
-image_patch_size = 156
-output_patch_size = 68
+image_patch_size = 736
+output_patch_size = 736
 
 mirrored_image = mirror_image(input_image, image_patch_size, image_patch_size)
 
 image_patch_coordinate_list = []
 center_image_patch_coordinate_list = []
-counter = 0
 for i in range(0, im_width, output_patch_size):
     xmin_center = i
     if i + output_patch_size < im_width:
@@ -126,9 +126,9 @@ for i in range(0, im_width, output_patch_size):
         image_patch_coordinate_list.append(
             outer_box_in_mirrored_image_coordinates)
 
-
 full_prediction = np.zeros((3, input_image.shape[0], input_image.shape[1]),
                            dtype=np.float)
+counter = 0
 for image_patch_num in range(len(image_patch_coordinate_list)):
     xmin, ymin, xmax, ymax = image_patch_coordinate_list[image_patch_num]
     sliced_input_image = mirrored_image[ymin:ymax, xmin:xmax, :]
@@ -142,10 +142,14 @@ for image_patch_num in range(len(image_patch_coordinate_list)):
     xmin_center, ymin_center, xmax_center, ymax_center = \
         center_image_patch_coordinate_list[image_patch_num]
     full_prediction[:, ymin_center:ymax_center, xmin_center:xmax_center] = \
-        prediction_np[:ymax_center-ymin_center, :xmax_center-xmin_center].copy()
+        prediction_np[:, :ymax_center - ymin_center,
+        :xmax_center - xmin_center].copy()
 
     counter += 1
     print(counter)
+
+np.savez(f"{folder}/prediction_on_6",
+         prediction=full_prediction)
 
 # sliced_input_image = input_image[4440:4590, 3528:3678, :]
 #
