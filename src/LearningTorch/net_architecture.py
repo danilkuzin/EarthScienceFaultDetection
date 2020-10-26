@@ -626,7 +626,7 @@ class LossMultiSemiSupervisedEachClass:
          for each class, i.e. the final activation is not softmax,
          but sigmoid for each class (output vector does not have to sum to 1)
     """
-    def __init__(self, nll_weight=0, jaccard_weight=0,
+    def __init__(self, device, nll_weight=0, jaccard_weight=0,
                  focal_weight=0, ignore_classes_for_nll=[-100],
                  ignore_classes_for_jaccard=[],
                  alpha=-1, gamma=2, reduction='mean'):
@@ -655,6 +655,7 @@ class LossMultiSemiSupervisedEachClass:
         self.ignore_classes_for_jaccard = (
                 ignore_classes_for_jaccard + ignore_classes_for_nll
         )
+        self.device = device
 
     def __call__(self, outputs, targets):
         num_classes = outputs.shape[1]
@@ -665,7 +666,7 @@ class LossMultiSemiSupervisedEachClass:
             full_class_range, self.ignore_classes_for_jaccard)
 
         eps = 1e-6
-        loss = torch.zeros(1)
+        loss = torch.zeros(1).to(self.device)
         for cls in nll_class_range:
             target_cl = (targets == cls).float()
             output_cl = outputs[:, cls]

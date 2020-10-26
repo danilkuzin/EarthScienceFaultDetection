@@ -27,11 +27,14 @@ import torchvision
 
 np.random.seed(1000)
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 cnn_model = Res34_Unet(n_input_channels=7, n_classes=3)
-criterion = LossMultiSemiSupervisedEachClass(nll_weight=1, jaccard_weight=5,
-                 focal_weight=12, ignore_classes_for_nll=[3],
-                 ignore_classes_for_jaccard=[0],
-                 alpha=0.9, gamma=2, reduction='mean')
+criterion = LossMultiSemiSupervisedEachClass(
+    device=device, nll_weight=1, jaccard_weight=5,
+    focal_weight=12, ignore_classes_for_nll=[3],
+    ignore_classes_for_jaccard=[0],
+    alpha=0.9, gamma=2, reduction='mean')
 
 #LossMultiSemiSupervised(jaccard_weight=5, ignore_class_for_nll=3, ignore_classes_for_jaccard=[0])
 # LossMulti(jaccard_weight=5, num_classes=3) # nn.CrossEntropyLoss()
@@ -53,8 +56,6 @@ exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10,
 
 batch_size = 4
 num_workers = 0
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 cnn_model = cnn_model.to(device)
 
