@@ -604,7 +604,7 @@ class LossMultiSemiSupervised:
             class_range = np.setdiff1d(
                 class_range, self.ignore_classes_for_jaccard)
 
-            eps = 1e-15
+            eps = 1e-6
             jaccard_output = F.softmax(outputs, dim=1)
             for cls in class_range:
                 jaccard_target = (targets == cls).float()
@@ -615,6 +615,80 @@ class LossMultiSemiSupervised:
                 dice_component = torch.log((2 * intersection + eps) / (union + eps))
                 dice_component_value = float(dice_component)
                 loss -= dice_component * self.jaccard_weight / (num_classes - 1)
+
+        return loss
+
+
+class LossMultiSemiSupervisedEachClass:
+    """
+         Implementation based on https://github.com/ternaus/robot-surgery-segmentation
+         This loss would train a model to output an independent probability
+         for each class, i.e. the final activation is not softmax,
+         but sigmoid for each class (output vector does not have to sum to 1)
+    """
+    def __init__(self, nll_weight=0, jaccard_weight=0,
+                 focal_weight=0, ignore_classes_for_nll=[-100],
+                 ignore_classes_for_jaccard=[],
+                 alpha=-1, gamma=2, reduction='mean'):
+        """
+
+        Args:
+            jaccard_weight:
+            class_weights:
+            num_classes:
+            ignore_classes_for_nll: int, targets with this value will be ignored
+            in calculating cross-entropy loss
+            ignore_classes_for_jaccard: list, jaccard loss will ignore both ignore
+            target values equal to ignore_class_for_nll and any of
+            ignore_classes_for_jaccard
+        """
+        if ignore_classes_for_jaccard is None:
+            ignore_classes_for_jaccard = []
+        # self.nll_loss = nn.NLLLoss2d(weight=nll_weight)
+        self.nll_weight = nll_weight
+        self.nll_loss = nn.BCEWithLogitsLoss()
+        self.jaccard_weight = jaccard_weight
+        self.focal_weight = focal_weight
+        self.focal_loss = FocalLoss(
+            alpha=alpha, gamma=gamma, reduction=reduction)
+        self.ignore_classes_for_nll = ignore_classes_for_nll
+        self.ignore_classes_for_jaccard = (
+                ignore_classes_for_jaccard + ignore_classes_for_nll
+        )
+
+    def __call__(self, outputs, targets):
+        num_classes = outputs.shape[1]
+        full_class_range = np.arange(num_classes)
+        nll_class_range = np.setdiff1d(
+            full_class_range, self.ignore_classes_for_nll)
+        jaccard_class_range = np.setdiff1d(
+            full_class_range, self.ignore_classes_for_jaccard)
+
+        eps = 1e-6
+        loss = torch.zeros(1)
+        for cls in nll_class_range:
+            target_cl = (targets == cls).float()
+            output_cl = outputs[:, cls]
+
+            if self.nll_weight:
+                loss += self.nll_weight * self.nll_loss(output_cl, target_cl)
+
+            if cls in jaccard_class_range:
+                if self.focal_weight:
+                    loss += self.focal_weight * self.focal_loss(
+                        output_cl, target_cl)
+
+                if self.jaccard_weight:
+                    jaccard_output_cl = torch.sigmoid(output_cl)
+                    intersection = (jaccard_output_cl * target_cl).sum()
+
+                    union = jaccard_output_cl.sum() + target_cl.sum()
+                    dice_component = torch.log(
+                        (2 * intersection + eps) / (union + eps))
+                    # dice_component_value = float(dice_component)
+                    loss -= (dice_component * self.jaccard_weight /
+                             (num_classes - 1))
+
         return loss
 
 

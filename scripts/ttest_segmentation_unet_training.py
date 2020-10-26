@@ -14,7 +14,8 @@ from src.pipeline_torch.dataset import ToTensor, RandomRotation, ToTFImageInput,
     FromTFImageOutput
 
 from src.LearningTorch.net_architecture import UNet, LossBinary, FocalLoss, \
-    LossCrossDice, LossMulti, LossMultiSemiSupervised, Res34_Unet
+    LossCrossDice, LossMulti, LossMultiSemiSupervised, Res34_Unet, \
+    LossMultiSemiSupervisedEachClass
 from src.pipeline_torch.training import datasets_on_single_files_torch, \
     train_on_preloaded_single_files_torch_unet, \
     datasets_on_single_files_torch_segmentation
@@ -27,8 +28,18 @@ import torchvision
 np.random.seed(1000)
 
 cnn_model = Res34_Unet(n_input_channels=7, n_classes=3)
-criterion = LossMultiSemiSupervised(
-    jaccard_weight=5, ignore_class_for_nll=3, ignore_classes_for_jaccard=[0]) # LossMulti(jaccard_weight=5, num_classes=3) # nn.CrossEntropyLoss() # LossCrossDice(jaccard_weight=5) # FocalLoss(reduction='mean') # FocalLoss(gamma=0.5, alpha=0.5) # LossBinary(jaccard_weight=5) # nn.BCEWithLogitsLoss()
+criterion = LossMultiSemiSupervisedEachClass(nll_weight=1, jaccard_weight=5,
+                 focal_weight=12, ignore_classes_for_nll=[3],
+                 ignore_classes_for_jaccard=[0],
+                 alpha=0.9, gamma=2, reduction='mean')
+
+#LossMultiSemiSupervised(jaccard_weight=5, ignore_class_for_nll=3, ignore_classes_for_jaccard=[0])
+# LossMulti(jaccard_weight=5, num_classes=3) # nn.CrossEntropyLoss()
+# LossCrossDice(jaccard_weight=5)
+# FocalLoss(reduction='mean')
+# FocalLoss(gamma=0.5, alpha=0.5)
+# LossBinary(jaccard_weight=5) # nn.BCEWithLogitsLoss()
+
 optimizer = optim.Adam(cnn_model.parameters(), lr=1e-4)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10,
                                        gamma=0.1)
@@ -71,7 +82,7 @@ train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
 
 train_on_preloaded_single_files_torch_unet(
     cnn_model, train_dataset, train_dataset_size, valid_dataset, valid_dataset_size,
-    folder=f"{data_path}/results/semisupervised",
+    folder=f"{data_path}/results/semisupervised_individual_class",
     epochs=100,
     batch_size=batch_size,
     optimizer=optimizer,
