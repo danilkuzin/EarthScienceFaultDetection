@@ -56,7 +56,7 @@ def convert_box_to_mirror_image_coordinates(input_box, number_rows_mirrored, num
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # cnn_model = FCNet()
 
-folder = f"{data_path}/results/semisupervised_individual_class"
+folder = f"{data_path}/results/semisupervised_one_class"
 training_output = torch.load(folder + '/model_epoch_99.pth', map_location=device)
 cnn_model = training_output['model'].to(device)
 cnn_model.eval()
