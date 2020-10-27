@@ -47,7 +47,7 @@ input_path = f'/mnt/data/datasets/DataForEarthScienceFaultDetection/' \
              f'labels_from_Philip/Faults/'
 output_path = f"/mnt/data/datasets/DataForEarthScienceFaultDetection/" \
               f"train_data/regions_{region_ind}_" \
-              f"regions_6_segmentation_mask"
+              f"regions_6_segmentation_mask/"
 
 front_range_fault_files = ['LQ_Longer_than_5_km_Range_Front.utm',
                            'LLQ_Longer_than_5_km_Range_Front.utm']
