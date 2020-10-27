@@ -47,13 +47,13 @@ input_path = f'/mnt/data/datasets/DataForEarthScienceFaultDetection/' \
              f'labels_from_Philip/Faults/'
 output_path = f"/mnt/data/datasets/DataForEarthScienceFaultDetection/" \
               f"train_data/regions_{region_ind}_" \
-              f"segmentation_mask_rgb_elev_slope_nir_tri_two_classes_" \
-              f"semisupervised/"
+              f"regions_6_segmentation_mask"
 
 front_range_fault_files = ['LQ_Longer_than_5_km_Range_Front.utm',
                            'LLQ_Longer_than_5_km_Range_Front.utm']
-basin_fault_files = ['LQ_Piedmont_and_Basins.utm',
-                     'LLQ_Piedmont_and_Basins.utm']
+basin_fault_files = []
+                    # ['LQ_Piedmont_and_Basins.utm',
+                    #  'LLQ_Piedmont_and_Basins.utm']
 non_fault_files = ['RTW_Not_Faults_Edited.utm',
                    'RTW_Not_Faults_Edited.utm',
                    'RTW_Not_Faults_Edited.utm',
