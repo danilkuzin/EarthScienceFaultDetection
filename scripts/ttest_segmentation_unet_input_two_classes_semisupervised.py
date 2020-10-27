@@ -45,13 +45,14 @@ region_data_folder = "Region 7 - Nevada train"
 channel_list = ['optical_rgb', 'elevation', 'slope', 'nir', 'topographic_roughness']
 input_path = f'{data_path}/labels_from_Philip/Faults/'
 output_path = f"{data_path}/train_data/regions_{region_ind}_" \
-              f"segmentation_mask_rgb_elev_slope_nir_tri_two_classes_" \
+              f"segmentation_mask_rgb_elev_slope_nir_tri_one_class_" \
               f"semisupervised/"
 
 front_range_fault_files = ['LQ_Longer_than_5_km_Range_Front.utm',
                            'LLQ_Longer_than_5_km_Range_Front.utm']
-basin_fault_files = ['LQ_Piedmont_and_Basins.utm',
-                     'LLQ_Piedmont_and_Basins.utm']
+basin_fault_files = []
+                    #['LQ_Piedmont_and_Basins.utm',
+                    # 'LLQ_Piedmont_and_Basins.utm']
 non_fault_files = ['RTW_Not_Faults_Edited.utm',
                    'RTW_Not_Faults_Edited.utm',
                    'RTW_Not_Faults_Edited.utm',
@@ -157,7 +158,6 @@ segmentation_mask_np[segmentation_front_range_mask_np == 1] = \
     FeatureValue.FAULT.value
 segmentation_mask_np[segmentation_basin_mask_np == 1] = \
     FeatureValue.BASIN_FAULT.value
-
 
 
 segmentation_mask_np_vis = np.zeros((im_height, im_width, 3), dtype=np.uint8)
