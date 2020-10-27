@@ -14,8 +14,8 @@ mask_prediction_front_range = prediction[1]
 mask_prediction_front_range_max = mask_prediction_front_range.max()
 mask_prediction_front_range_min = mask_prediction_front_range.min()
 mask_prediction_front_range_scaled = (mask_prediction_front_range-mask_prediction_front_range_min)/(mask_prediction_front_range_max-mask_prediction_front_range_min)
-clip_lower = 0.4
-clip_higher = 0.8 #0.9
+clip_lower = 0.2
+clip_higher = 0.65 #0.9
 mask_prediction_front_range_clipped = (mask_prediction_front_range_scaled.clip(clip_lower, clip_higher)-clip_lower)/(clip_higher-clip_lower)
 seaborn.distplot(mask_prediction_front_range_clipped.flatten())
 plt.title("front range")
@@ -25,8 +25,8 @@ mask_prediction_basin = prediction[2]
 mask_prediction_basin_max = mask_prediction_basin.max()
 mask_prediction_basin_min = mask_prediction_basin.min()
 mask_prediction_basin_scaled = (mask_prediction_basin-mask_prediction_basin_min)/(mask_prediction_basin_max-mask_prediction_basin_min)
-clip_lower = 0.6
-clip_higher = 1 #0.9
+clip_lower = 0.4
+clip_higher = 0.9 #0.9
 mask_prediction_basin_clipped = (mask_prediction_basin_scaled.clip(clip_lower, clip_higher)-clip_lower)/(clip_higher-clip_lower)
 seaborn.distplot(mask_prediction_basin_clipped.flatten())
 plt.title("basin")
