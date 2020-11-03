@@ -79,10 +79,10 @@ class RandomVerticalFlip(torch.nn.Module):
 class ColorJitter(torchvision.transforms.ColorJitter):
     def __init__(self, brightness=0., contrast=0., saturation=0., hue=0.):
         super().__init__(brightness, contrast, saturation, hue)
-        self.brightness = brightness
-        self.contrast = contrast
-        self.saturation = saturation
-        self.hue = hue
+        # self.brightness = brightness
+        # self.contrast = contrast
+        # self.saturation = saturation
+        # self.hue = hue
 
     def forward(self, sample):
         return {
