@@ -7,6 +7,7 @@ This is a wrapper for torchvision.transforms for multi-target transformations.
 See also torchvision segmentation transforms as examples
 """
 
+
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
 
@@ -22,7 +23,20 @@ class ToTensor(object):
             'label': torch.as_tensor(np.array(label), dtype=torch.int32)
         }
 
+
+class UnsqueezeLabel(torch.nn.Module):
+    def __call__(self, sample):
+        sample['label'] = torch.unsqueeze(sample['label'], 1)
+        return sample
+
+
+class SqueezeLabel(torch.nn.Module):
+    def __call__(self, sample):
+        sample['label'] = torch.squeeze(sample['label'], 1)
+        return sample
+
 # todo add resize, randomcrop
+
 
 class RandomHorizontalFlip(torch.nn.Module):
     """Randomly flip input horizontally"""
@@ -57,12 +71,10 @@ class RandomVerticalFlip(torch.nn.Module):
 
         return {'image': image, 'label': label}
 
-
-
-
 # todo RandomPerspective
 # todo RandomResizedCrop
 # todo RandomSizedCrop
+
 
 class ColorJitter(torchvision.transforms.ColorJitter):
     def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):

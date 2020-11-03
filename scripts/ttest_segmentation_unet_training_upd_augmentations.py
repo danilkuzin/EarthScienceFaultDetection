@@ -11,7 +11,7 @@ sys.path.extend(['../../EarthScienceFaultDetection'])
 
 from src.pipeline_torch.dataset_torchvision import h5_loader_segmentation
 from src.pipeline_torch.transforms_torchvision import RandomRotation, \
-    RandomHorizontalFlip, RandomVerticalFlip, ColorJitter
+    RandomHorizontalFlip, RandomVerticalFlip, ColorJitter, UnsqueezeLabel, SqueezeLabel
 
 from src.LearningTorch.net_architecture import Res34_Unet, \
     LossMultiSemiSupervisedEachClass
@@ -68,10 +68,12 @@ cnn_model = cnn_model.to(device)
 
 transform_train = torch.nn.Sequential(
     # ToTensor(),
+    UnsqueezeLabel(),
     RandomRotation(degrees=[-45., 45.]),
     RandomHorizontalFlip(p=0.5),
     RandomVerticalFlip(p=0.5),
     ColorJitter(brightness=10, contrast=10),
+    SqueezeLabel()
 )
 
 # train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
