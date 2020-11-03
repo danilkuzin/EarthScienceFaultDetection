@@ -1,6 +1,7 @@
 import copy
 import pathlib
 import sys
+
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -12,17 +13,11 @@ from src.pipeline_torch.dataset_torchvision import h5_loader_segmentation
 from src.pipeline_torch.transforms_torchvision import RandomRotation, \
     RandomHorizontalFlip, RandomVerticalFlip, ColorJitter
 
-from src.LearningTorch.net_architecture import UNet, LossBinary, FocalLoss, \
-    LossCrossDice, LossMulti, LossMultiSemiSupervised, Res34_Unet, \
+from src.LearningTorch.net_architecture import Res34_Unet, \
     LossMultiSemiSupervisedEachClass
-from src.pipeline_torch.training import datasets_on_single_files_torch, \
-    train_on_preloaded_single_files_torch_unet, \
-    datasets_on_single_files_torch_segmentation, get_jaccard_non_binary
+from src.pipeline_torch.training import get_jaccard_non_binary
 
-from src.config import data_path
-
-import torchvision
-
+data_path = '/mnt/data/datasets/DataForEarthScienceFaultDetection'
 
 # np.random.seed(1000)
 
