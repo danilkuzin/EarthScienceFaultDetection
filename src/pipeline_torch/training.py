@@ -1,4 +1,6 @@
 import copy
+import glob
+import os
 import pathlib
 
 import numpy as np
@@ -244,22 +246,47 @@ def train_on_preloaded_single_files_torch_unet(
         criterion, scheduler):
     pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
 
-    best_model_wts = copy.deepcopy(model.state_dict())
-    best_iou = 0.0
-    best_iou_epoch_num = -1
-
-    all_train_loss = []
-    all_train_iou = []
-
-    all_val_loss = []
-    all_val_iou = []
-
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    # check existing checkpoints
+    existing_checkpoints = glob.glob(os.path.join(folder, 'model_epoch_*'))
+    if len(existing_checkpoints) > 0:
+        existing_checkpoints = [os.path.split(checkpoint)[1] for checkpoint in existing_checkpoints]
+        epoch_nums = np.array([int(checkpoint.split('_')[-1][:-4]) for checkpoint in existing_checkpoints])
+        max_checkpoint = existing_checkpoints[np.argmax(epoch_nums)]
+
+        saved_output = torch.load(os.path.join(folder, max_checkpoint), map_location=device)
+        model = saved_output['model']
+        optimizer = saved_output['optimizer']
+        scheduler = saved_output['scheduler']
+        start_epoch = np.max(epoch_nums) + 1
+
+        best_model_wts = saved_output['best_model_wts']
+        best_iou = saved_output['best_iou']
+        best_iou_epoch_num = saved_output['best_iou_epoch_num']
+
+        all_train_loss = saved_output['all_train_loss']
+        all_train_iou = saved_output['all_train_iou']
+
+        all_val_loss = saved_output['all_val_loss']
+        all_val_iou = saved_output['all_val_iou']
+        print(f'Discovered existing checkpoint, resuming training from epoch={start_epoch}')
+    else:
+        start_epoch = 0
+        best_model_wts = copy.deepcopy(model.state_dict())
+        best_iou = 0.0
+        best_iou_epoch_num = -1
+
+        all_train_loss = []
+        all_train_iou = []
+
+        all_val_loss = []
+        all_val_iou = []
 
     datasets = {'train': train_dataset, 'val': valid_dataset}
     dataset_sizes = {'train': train_dataset_size, 'val': valid_dataset_size}
 
-    for epoch in range(epochs):  # loop over the dataset multiple times
+    for epoch in range(start_epoch, epochs):  # loop over the dataset multiple times
         print('Epoch {}/{}'.format(epoch, epochs - 1))
         print('-' * 10)
 
