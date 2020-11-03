@@ -15,7 +15,18 @@ from src.pipeline_torch.transforms_torchvision import RandomRotation, \
 
 from src.LearningTorch.net_architecture import Res34_Unet, \
     LossMultiSemiSupervisedEachClass
-from src.pipeline_torch.training import get_jaccard_non_binary
+#from src.pipeline_torch.training import get_jaccard_non_binary
+
+def get_jaccard_non_binary(y_true, y_pred):
+    epsilon = 1e-15
+    y_true_binary = y_true > 0
+    y_pred_class = torch.argmax(y_pred, dim=1)
+    y_pred_binary = y_pred_class > 0
+    intersection = (y_pred_binary * y_true_binary).sum(dim=-2).sum(dim=-1).sum(dim=-1)
+    union = y_true_binary.sum(dim=-2).sum(dim=-1).sum(dim=-1) + \
+                   y_pred_binary.sum(dim=-2).sum(dim=-1).sum(dim=-1)
+
+    return ((intersection + epsilon) / (union - intersection + epsilon)).mean()
 
 data_path = '/mnt/data/datasets/DataForEarthScienceFaultDetection'
 
@@ -29,6 +40,8 @@ criterion = LossMultiSemiSupervisedEachClass(
     focal_weight=12, ignore_classes_for_nll=[3],
     ignore_classes_for_jaccard=[0],
     alpha=0.9, gamma=2, reduction='mean')
+
+
 
 #LossMultiSemiSupervised(jaccard_weight=5, ignore_class_for_nll=3, ignore_classes_for_jaccard=[0])
 # LossMulti(jaccard_weight=5, num_classes=3) # nn.CrossEntropyLoss()
@@ -55,7 +68,7 @@ cnn_model = cnn_model.to(device)
 
 transform_train = torch.nn.Sequential(
     # ToTensor(),
-    RandomRotation(degrees=45),
+    RandomRotation(degrees=[-45., 45.]),
     RandomHorizontalFlip(p=0.5),
     RandomVerticalFlip(p=0.5),
     ColorJitter(brightness=10, contrast=10),

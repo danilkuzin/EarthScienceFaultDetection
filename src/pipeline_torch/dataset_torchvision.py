@@ -5,7 +5,7 @@ import torch
 from src.pipeline_torch.transforms_torchvision import ToTensor
 
 
-class h5_loader_segmentation(torch.data.Dataset):
+class h5_loader_segmentation(torch.utils.data.Dataset):
     def __init__(self, filepaths, channels, device, transform=None):
         self.filepaths = filepaths
         self.channels = channels
@@ -21,7 +21,9 @@ class h5_loader_segmentation(torch.data.Dataset):
     def __getitem__(self, index):
         image, label = self.__parse_file__(self.filepaths[index])
         sample = {'image': image, 'label': label}
-        sample = ToTensor()(sample).to(self.device)
+        sample = ToTensor()(sample)
+        sample['image'] = sample['image'].to(self.device)
+        sample['label'] = sample['label'].to(self.device)
 
         if self.transform:
             sample = self.transform(sample)

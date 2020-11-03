@@ -18,7 +18,7 @@ class ToTensor(object):
         # torch image: C X H X W
         image = image.transpose((2, 0, 1))
         return {
-            'image': torch.transforms.functional.to_tensor(image),
+            'image': torchvision.transforms.functional.to_tensor(image),
             'label': torch.as_tensor(np.array(label), dtype=torch.int32)
         }
 
@@ -84,7 +84,7 @@ class RandomRotation(torch.nn.Module):
 
     def __init__(self, degrees):
         super().__init__()
-        self.degrees = torchvision.transforms._setup_angle(degrees, name="degrees", req_sizes=(2,))
+        self.degrees = degrees
 
     def forward(self, sample):
         image, label = sample['image'], sample['label']
