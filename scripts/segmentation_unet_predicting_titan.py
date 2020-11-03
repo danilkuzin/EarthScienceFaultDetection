@@ -55,10 +55,10 @@ def convert_box_to_mirror_image_coordinates(input_box, number_rows_mirrored, num
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # cnn_model = FCNet()
-region_id = 7
+region_id = 6
 
 folder = f"{data_path}/results/semisupervised_one_class"
-training_output = torch.load(folder + '/model_epoch_99.pth', map_location=device)
+training_output = torch.load(folder + '/model_epoch_199.pth', map_location=device)
 cnn_model = training_output['model'].to(device)
 cnn_model.eval()
 
@@ -147,7 +147,7 @@ for image_patch_num in range(len(image_patch_coordinate_list)):
     counter += 1
     print(counter)
 
-np.savez(f"{folder}/prediction_on_{region_id}",
+np.savez(f"{folder}/prediction_on_{region_id}_200_epochs",
          prediction=full_prediction)
 
 # sliced_input_image = input_image[4440:4590, 3528:3678, :]

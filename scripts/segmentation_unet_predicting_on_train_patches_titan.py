@@ -21,7 +21,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # cnn_model = FCNet()
 
 folder = f"{data_path}/results/semisupervised_one_class"
-training_output = torch.load(folder + '/model_epoch_99.pth', map_location=device)
+training_output = torch.load(folder + '/model_epoch_199.pth', map_location=device)
 cnn_model = training_output['model'].to(device)
 cnn_model.eval()
 
@@ -36,7 +36,7 @@ all_image_paths = np.array([str(path) for path in list(reg_path.glob('*.h5'))])
 
 channels = [0, 1, 2, 3, 4, 5, 6]
 
-os.makedirs(f"{folder}/prediction_on_train_patches/", exist_ok=True)
+os.makedirs(f"{folder}/prediction_on_train_patches_200_epochs/", exist_ok=True)
 
 for i in range(20):
     image_path = all_image_paths[i]
@@ -71,7 +71,7 @@ for i in range(20):
     axs[4].imshow(prediction_np[2])
     axs[4].set_title('prediction basin')
     axs[4].axis('off')
-    plt.savefig(f"{folder}/prediction_on_train_patches/patch_{i}.png")
+    plt.savefig(f"{folder}/prediction_on_train_patches_200_epochs/patch_{i}.png")
     plt.cla()
 
 
