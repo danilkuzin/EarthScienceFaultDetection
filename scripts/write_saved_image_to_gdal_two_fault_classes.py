@@ -7,8 +7,8 @@ from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
 from src.config import data_path
 
 folder = f"{data_path}/results/unet_on_6_rgb_elev_slope_nir_tri_one_fault_class_3xlookalike_dice_focal_alpha_0.9_semisupervised"
-prediction_region = 7
-saved_image_path = folder + f'/prediction_on_{prediction_region}.npz'
+prediction_region = 6
+saved_image_path = folder + f'/prediction_on_{prediction_region}_200_epochs.npz'
 prediction = numpy.load(saved_image_path)['prediction']
 mask_prediction_front_range = prediction[1]
 mask_prediction_front_range_max = mask_prediction_front_range.max()
@@ -25,7 +25,7 @@ mask_prediction_basin = prediction[2]
 mask_prediction_basin_max = mask_prediction_basin.max()
 mask_prediction_basin_min = mask_prediction_basin.min()
 mask_prediction_basin_scaled = (mask_prediction_basin-mask_prediction_basin_min)/(mask_prediction_basin_max-mask_prediction_basin_min)
-clip_lower = 0.5
+clip_lower = 0.6
 clip_higher = 1 #0.9
 mask_prediction_basin_clipped = (mask_prediction_basin_scaled.clip(clip_lower, clip_higher)-clip_lower)/(clip_higher-clip_lower)
 seaborn.distplot(mask_prediction_basin_clipped.flatten())

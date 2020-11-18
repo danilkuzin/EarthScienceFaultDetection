@@ -98,8 +98,8 @@ class UtmCoord(object):
                     coords = []
                     continue
             extracted_utm_floats = UtmCoord.extract_floats_from_string(line)
-            # 3 below is specific for current input files format
-            if len(extracted_utm_floats) == 3:
+            # 3 and 5 below are specific for current input files format
+            if len(extracted_utm_floats) == 3 or len(extracted_utm_floats) == 5:
                 pixel_coords = self.transform_coordinates(
                     extracted_utm_floats[0], extracted_utm_floats[1])
                 coords.append(pixel_coords)

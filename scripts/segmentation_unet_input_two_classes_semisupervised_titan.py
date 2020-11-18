@@ -44,20 +44,21 @@ region_ind = 6
 region_data_folder = "Region 7 - Nevada train"
 channel_list = ['optical_rgb', 'elevation', 'slope', 'nir', 'topographic_roughness']
 input_path = f'/mnt/data/datasets/DataForEarthScienceFaultDetection/' \
-             f'labels_from_Philip/Faults/'
+             f'labels_from_Philip/'
 output_path = f"/mnt/data/datasets/DataForEarthScienceFaultDetection/" \
               f"train_data/regions_{region_ind}_" \
               f"regions_6_segmentation_mask/"
 
-front_range_fault_files = ['LQ_Longer_than_5_km_Range_Front.utm',
-                           'LLQ_Longer_than_5_km_Range_Front.utm']
+front_range_fault_files = ['HazMaps/Region_6_Fault_Picks.utm']
+                          #['LQ_Longer_than_5_km_Range_Front.utm',
+                          # 'LLQ_Longer_than_5_km_Range_Front.utm']
 basin_fault_files = []
                     # ['LQ_Piedmont_and_Basins.utm',
                     #  'LLQ_Piedmont_and_Basins.utm']
-non_fault_files = ['RTW_Not_Faults_Edited.utm',
-                   'RTW_Not_Faults_Edited.utm',
-                   'RTW_Not_Faults_Edited.utm',
-                   'No_Faults_June.utm']
+non_fault_files = ['Faults/RTW_Not_Faults_Edited.utm',
+                   'Faults/RTW_Not_Faults_Edited.utm',
+                   'Faults/RTW_Not_Faults_Edited.utm',
+                   'Faults/No_Faults_June.utm']
 
 data_io_backend = GdalBackend()
 with open(
