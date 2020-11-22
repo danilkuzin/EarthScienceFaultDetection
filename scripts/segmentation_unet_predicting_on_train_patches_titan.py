@@ -20,8 +20,8 @@ from src.config import data_path
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # cnn_model = FCNet()
 
-folder = f"{data_path}/results/semisupervised_one_class"
-training_output = torch.load(folder + '/model_epoch_199.pth', map_location=device)
+folder = f"{data_path}/results/hazmap_semisupervised_one_class"
+training_output = torch.load(folder + '/model_epoch_99.pth', map_location=device)
 cnn_model = training_output['model'].to(device)
 cnn_model.eval()
 
@@ -55,23 +55,23 @@ for i in range(20):
     prediction = cnn_model(image)
     prediction_np = prediction.cpu().detach().numpy().squeeze()
 
-    fig, axs = plt.subplots(1, 5)
+    fig, axs = plt.subplots(1, 3)
     axs[0].imshow(img[:, :, 3])
     axs[0].set_title('elevation')
     axs[0].axis('off')
     axs[1].imshow(lbl == 1)
-    axs[1].set_title('true mask front range')
+    axs[1].set_title('true mask\nfront range')
     axs[1].axis('off')
     axs[2].imshow(prediction_np[1])
-    axs[2].set_title('prediction front range')
+    axs[2].set_title('prediction\nfront range')
     axs[2].axis('off')
-    axs[3].imshow(lbl == 2)
-    axs[3].set_title('true mask basin')
-    axs[3].axis('off')
-    axs[4].imshow(prediction_np[2])
-    axs[4].set_title('prediction basin')
-    axs[4].axis('off')
-    plt.savefig(f"{folder}/prediction_on_train_patches_200_epochs/patch_{i}.png")
+    # axs[3].imshow(lbl == 2)
+    # axs[3].set_title('true mask basin')
+    # axs[3].axis('off')
+    # axs[4].imshow(prediction_np[2])
+    # axs[4].set_title('prediction basin')
+    # axs[4].axis('off')
+    plt.savefig(f"{folder}/prediction_on_train_patches/patch_{i}.png")
     plt.cla()
 
 
