@@ -36,7 +36,7 @@ all_image_paths = np.array([str(path) for path in list(reg_path.glob('*.h5'))])
 
 channels = [0, 1, 2, 3, 4, 5, 6]
 
-os.makedirs(f"{folder}/prediction_on_train_patches_200_epochs/", exist_ok=True)
+os.makedirs(f"{folder}/prediction_on_train_patches/", exist_ok=True)
 
 for i in range(20):
     image_path = all_image_paths[i]
