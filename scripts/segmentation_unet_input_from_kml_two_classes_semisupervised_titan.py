@@ -64,7 +64,7 @@ data_io_backend = GdalBackend()
 with open(
         f"/mnt/data/datasets/DataForEarthScienceFaultDetection/"
         f"preprocessed/{region_ind}/gdal_params.yaml",
-        'r')) as stream:
+        'r') as stream:
     gdal_params = yaml.safe_load(stream)
 
 data_io_backend.set_params(gdal_params['driver_name'],
