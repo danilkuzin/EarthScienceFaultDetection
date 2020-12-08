@@ -29,8 +29,8 @@ class AreaNormaliser:
             elevations_list[i] = elevations_list[i].flatten()
 
         elevations_array = np.concatenate(elevations_list)
-        mean_elevation = np.mean(elevations_array)
-        std_elevation = np.std(elevations_array)
+        mean_elevation = np.nanmean(elevations_array)
+        std_elevation = np.nanstd(elevations_array)
 
         output_path = f"{data_path}/normalised"
         pathlib.Path(output_path).mkdir(exist_ok=True, parents=True)

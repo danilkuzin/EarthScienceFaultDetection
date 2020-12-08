@@ -120,11 +120,103 @@ class RawDataPreprocessor:
         self.__check_crop_features()
         logging.info('loaded')
 
+    def load_landsat(self):
+        logging.info('loading...')
+        self.preprocessed_data.channels['elevation'] = \
+            self.data_io_backend.load_elevation(
+                path=str(self.data_dir / 'elev_landsat.tif'))
+        self.preprocessed_data.channels['optical_rgb'] = \
+            self.data_io_backend.load_optical_landsat(
+                path_r=str(self.data_dir / 'r_landsat.tif'),
+                path_g=str(self.data_dir / 'g_landsat.tif'),
+                path_b=str(self.data_dir / 'b_landsat.tif'))
+
+        # try:
+        #     self.preprocessed_data.channels['slope'] = \
+        #         self.data_io_backend.load_nir_landsat(
+        #             path=str(self.data_dir / 'slope_landsat.tif'))
+        # except FileNotFoundError as err:
+        #     self.preprocessed_data.channels['slope'] = np.zeros_like(
+        #         self.preprocessed_data.channels['elevation'])
+        #     logging.warning("Error: {}".format(err))
+
+        try:
+            self.preprocessed_data.channels['nir'] = \
+                self.data_io_backend.load_nir_landsat(
+                    path=str(self.data_dir / 'nir_landsat.tif'))
+        except FileNotFoundError as err:
+            self.preprocessed_data.channels['nir'] = np.zeros_like(
+                self.preprocessed_data.channels['elevation'])
+            logging.warning("Error: {}".format(err))
+
+        try:
+            self.preprocessed_data.channels['swir1'] = \
+                self.data_io_backend.load_swir1_landsat(
+                    path=str(self.data_dir / 'swir1_landsat.tif'))
+        except FileNotFoundError as err:
+            self.preprocessed_data.channels['swir1'] = np.zeros_like(
+                self.preprocessed_data.channels['elevation'])
+            logging.warning("Error: {}".format(err))
+
+        try:
+            self.preprocessed_data.channels['swir2'] = \
+                self.data_io_backend.load_swir2_landsat(
+                    path=str(self.data_dir / 'swir2_landsat.tif'))
+        except FileNotFoundError as err:
+            self.preprocessed_data.channels['swir2'] = np.zeros_like(
+                self.preprocessed_data.channels['elevation'])
+            logging.warning("Error: {}".format(err))
+
+        try:
+            self.preprocessed_data.channels['topographic_roughness'] = \
+                self.data_io_backend.load_log_roughness(
+                    path=str(self.data_dir / 'tri_landsat.tif'))
+        except FileNotFoundError as err:
+            self.preprocessed_data.channels['topographic_roughness'] = \
+                np.zeros_like(self.preprocessed_data.channels['elevation'])
+            logging.warning("Error: {}".format(err))
+
+        try:
+            self.preprocessed_data.channels['flow'] = \
+                self.data_io_backend.load_log_flow(
+                    path=str(self.data_dir / 'flow_log.tif'))
+        except FileNotFoundError as err:
+            self.preprocessed_data.channels['flow'] = \
+                np.zeros_like(self.preprocessed_data.channels['elevation'])
+            logging.warning("Error: {}".format(err))
+
+        # self.__check_crop_data()
+
+        try:
+            self.preprocessed_data.features = \
+                self.data_io_backend.load_features(
+                    path=str(self.data_dir / 'features.tif'))
+        except FileNotFoundError:
+            logging.warning(
+                "no features file presented, initialise with undefined")
+            self.preprocessed_data.features = \
+                FeatureValue.UNDEFINED.value * \
+                np.ones_like(self.preprocessed_data.channels['elevation'])
+        self.preprocessed_data.features = \
+            self.data_io_backend.append_additional_features(
+                path=str(self.data_dir / 'additional_data/'),
+                features=self.preprocessed_data.features)
+        # self.__check_crop_features()
+        logging.info('loaded')
+
     def get_data_shape(self):
-        return self.preprocessed_data.channels['optical_rgb'].shape[0], self.preprocessed_data.channels['optical_rgb'].shape[1], len(self.preprocessed_data.channels)
+        return self.preprocessed_data.channels['optical_rgb'].shape[0], \
+               self.preprocessed_data.channels['optical_rgb'].shape[1], \
+               len(self.preprocessed_data.channels)
 
     def write_data(self):
         self.preprocessed_data.save()
+        output_path = f"{data_path}/preprocessed/{self.region_id}"
+        with io.open(f"{output_path}/gdal_params.yaml", 'w', encoding='utf8') as outfile:
+            yaml.dump(self.data_io_backend.get_params(), outfile, default_flow_style=False, allow_unicode=True)
+
+    def write_data_landsat(self):
+        self.preprocessed_data.save_landsat()
         output_path = f"{data_path}/preprocessed/{self.region_id}"
         with io.open(f"{output_path}/gdal_params.yaml", 'w', encoding='utf8') as outfile:
             yaml.dump(self.data_io_backend.get_params(), outfile, default_flow_style=False, allow_unicode=True)

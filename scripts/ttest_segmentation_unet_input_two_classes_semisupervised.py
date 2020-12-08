@@ -1,7 +1,7 @@
 import os
 import shutil
 
-import gdal
+from osgeo import gdal
 import h5py
 import yaml
 import numpy as np
@@ -45,12 +45,13 @@ region_data_folder = "Region 7 - Nevada train"
 channel_list = ['optical_rgb', 'elevation', 'slope', 'nir', 'topographic_roughness']
 input_path = f'{data_path}/labels_from_Philip/'
 output_path = f"{data_path}/train_data/regions_{region_ind}_" \
-              f"segmentation_mask_rgb_elev_slope_nir_tri_hazmap_one_class_" \
+              f"segmentation_mask_rgb_elev_slope_nir_tri_one_class_" \
               f"semisupervised/"
 
-front_range_fault_files = ['HazMaps/Region_6_Fault_Picks.utm']
-                          #['LQ_Longer_than_5_km_Range_Front.utm',
-                          # 'LLQ_Longer_than_5_km_Range_Front.utm']
+front_range_fault_files = ['Faults/LQ_Longer_than_5_km_Range_Front.utm',
+                           'Faults/LLQ_Longer_than_5_km_Range_Front.utm']
+                        # ['HazMaps/Region_6_Fault_Picks.utm']
+
 basin_fault_files = []
                     #['LQ_Piedmont_and_Basins.utm',
                     # 'LLQ_Piedmont_and_Basins.utm']

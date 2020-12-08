@@ -74,7 +74,7 @@ transform = torchvision.transforms.Compose([
 train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
     datasets_on_single_files_torch_segmentation(
         device=device,
-        regions=[6], path_prefix=f'{data_path}/train_data',
+        regions=[12], path_prefix=f'{data_path}/train_data',
         channels=[0, 1, 2, 3, 4, 5, 6],
         train_ratio=0.8, batch_size=batch_size,
         num_workers=num_workers,
@@ -83,7 +83,7 @@ train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
 
 train_on_preloaded_single_files_torch_unet(
     cnn_model, train_dataset, train_dataset_size, valid_dataset, valid_dataset_size,
-    folder=f"{data_path}/results/hazmap_semisupervised_one_class",
+    folder=f"{data_path}/results/cal_hazmap_semisupervised",
     epochs=100,
     batch_size=batch_size,
     optimizer=optimizer,

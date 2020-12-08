@@ -20,6 +20,8 @@ class RegionNormaliser:
     slope_std = 90.
     roughness_mean = 50.
     roughness_std = 100.
+    roughness_log_mean = 0.7
+    roughness_log_std = 4
 
     def __init__(self, region_id, area_ind):
         self.region_id = region_id
@@ -31,7 +33,7 @@ class RegionNormaliser:
         self.preprocessed_data = PreprocessedData(self.region_id)
         self.preprocessed_data.load()
 
-    def normalise(self):
+    def normalise(self, is_roughness_log=False):
 
         optical_r_normalised = (self.preprocessed_data.channels['optical_rgb'][:, :, 0] - self.optical_mean) / self.optical_std
         optical_g_normalised = (self.preprocessed_data.channels['optical_rgb'][:, :, 1] - self.optical_mean) / self.optical_std
@@ -45,25 +47,48 @@ class RegionNormaliser:
         elevation_mean, elevation_std = features_areawide['mean_elevation'], features_areawide['std_elevation']
         self.normalised_data.channels['elevation'] = (self.preprocessed_data.channels['elevation'] - elevation_mean) / elevation_std
 
-        self.normalised_data.channels['slope'] = (self.preprocessed_data.channels['slope'] - self.slope_mean) / self.slope_std
+        self.normalised_data.channels['elevation'][
+            np.isnan(self.normalised_data.channels['elevation'])] = 0
 
-        self.normalised_data.channels['nir'] = (self.preprocessed_data.channels['nir'] - self.optical_mean) / self.optical_std
+        if self.preprocessed_data.channels['slope'] is not None:
+            self.normalised_data.channels['slope'] = \
+                (self.preprocessed_data.channels['slope'] - self.slope_mean) / \
+                self.slope_std
 
-        self.normalised_data.channels['ultrablue'] = \
-            (self.preprocessed_data.channels['ultrablue'] -
-             self.optical_mean) / self.optical_std
+        if self.preprocessed_data.channels['nir'] is not None:
+            self.normalised_data.channels['nir'] = \
+                (self.preprocessed_data.channels['nir'] - self.optical_mean) / \
+                self.optical_std
 
-        self.normalised_data.channels['swir1'] = \
-            (self.preprocessed_data.channels['swir1'] -
-             self.optical_mean) / self.optical_std
+        if self.preprocessed_data.channels['ultrablue'] is not None:
+            self.normalised_data.channels['ultrablue'] = \
+                (self.preprocessed_data.channels['ultrablue'] -
+                 self.optical_mean) / self.optical_std
 
-        self.normalised_data.channels['swir2'] = \
-            (self.preprocessed_data.channels['swir2'] -
-             self.optical_mean) / self.optical_std
+        if self.preprocessed_data.channels['swir1'] is not None:
+            self.normalised_data.channels['swir1'] = \
+                (self.preprocessed_data.channels['swir1'] -
+                 self.optical_mean) / self.optical_std
 
-        self.normalised_data.channels['topographic_roughness'] = \
-            (self.preprocessed_data.channels['topographic_roughness'] -
-             self.roughness_mean) / self.roughness_std
+        if self.preprocessed_data.channels['swir2'] is not None:
+            self.normalised_data.channels['swir2'] = \
+                (self.preprocessed_data.channels['swir2'] -
+                 self.optical_mean) / self.optical_std
+
+        if self.preprocessed_data.channels['topographic_roughness'] is not None:
+            if is_roughness_log:
+                self.normalised_data.channels['topographic_roughness'] = \
+                    (self.preprocessed_data.channels['topographic_roughness'] -
+                     self.roughness_log_mean) / self.roughness_log_std
+            else:
+                self.normalised_data.channels['topographic_roughness'] = \
+                    (self.preprocessed_data.channels['topographic_roughness'] -
+                     self.roughness_mean) / self.roughness_std
+
+        if self.preprocessed_data.channels['flow'] is not None:
+            self.normalised_data.channels['flow'] = \
+                (self.preprocessed_data.channels['flow'] -
+                 self.optical_mean) / self.optical_std
 
         self.normalised_data.features = self.preprocessed_data.features
 

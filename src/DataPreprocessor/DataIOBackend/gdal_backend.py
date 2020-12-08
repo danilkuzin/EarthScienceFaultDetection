@@ -7,7 +7,7 @@ from tempfile import NamedTemporaryFile
 
 from src.DataPreprocessor.DataIOBackend.backend import DataIOBackend
 import numpy as np
-import gdal
+from osgeo import gdal
 import logging
 
 import matplotlib.pyplot as plt
@@ -63,9 +63,21 @@ class GdalBackend(DataIOBackend):
         self.parse_meta_with_gdal(path_r) # to save gdal meta for writing
         return np.dstack((optical_r, optical_g, optical_b))
 
+    def load_optical_landsat(self, path_r: str, path_g: str, path_b: str) -> np.array:
+        optical_r = self.__load_1d_raster(path_r)
+        optical_g = self.__load_1d_raster(path_g)
+        optical_b = self.__load_1d_raster(path_b)
+
+        self.parse_meta_with_gdal(path_r) # to save gdal meta for writing
+        return np.dstack((optical_r, optical_g, optical_b))
+
     def load_nir(self, path: str) -> np.array:
         # ToDo check whether this is the best approach to load this channel
         return self.__load_1d_uint16(path)
+
+    def load_nir_landsat(self, path: str) -> np.array:
+        # ToDo check whether this is the best approach to load this channel
+        return self.__load_1d_raster(path)
 
     def load_ultrablue(self, path: str) -> np.array:
         # ToDo check whether this is the best approach to load this channel
@@ -75,9 +87,17 @@ class GdalBackend(DataIOBackend):
         # ToDo check whether this is the best approach to load this channel
         return self.__load_1d_uint16(path)
 
+    def load_swir1_landsat(self, path: str) -> np.array:
+        # ToDo check whether this is the best approach to load this channel
+        return self.__load_1d_raster(path)
+
     def load_swir2(self, path: str) -> np.array:
         # ToDo check whether this is the best approach to load this channel
         return self.__load_1d_uint16(path)
+
+    def load_swir2_landsat(self, path: str) -> np.array:
+        # ToDo check whether this is the best approach to load this channel
+        return self.__load_1d_raster(path)
 
     def load_panchromatic(self, path: str) -> np.array:
         return self.__load_1d_raster(path)
@@ -96,6 +116,14 @@ class GdalBackend(DataIOBackend):
         return self.__load_1d_raster(path)
 
     def load_roughness(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
+    def load_log_roughness(self, path: str) -> np.array:
+        log_roughness = self.__load_1d_raster(path)
+        log_roughness[log_roughness < 0] = 0
+        return log_roughness
+
+    def load_log_flow(self, path: str) -> np.array:
         return self.__load_1d_raster(path)
 
     def parse_meta_with_gdal(self, path: str):

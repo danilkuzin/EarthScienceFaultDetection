@@ -10,7 +10,7 @@ from tqdm import trange
 
 from src.DataPreprocessor.DataIOBackend.backend import DataIOBackend
 from src.DataPreprocessor.PatchesOutputBackend.backend import PatchesOutputBackend
-from src.DataPreprocessor.image_augmentation import ImageAugmentation
+# from src.DataPreprocessor.image_augmentation import ImageAugmentation
 from src.DataPreprocessor.normalised_data import NormalisedData
 from src.config import data_preprocessor_params, areas, data_path
 
@@ -29,6 +29,8 @@ class FeatureValue(Enum):
     FAULT_LOOKALIKE = 1
     NONFAULT = 2
     BASIN_FAULT = 3
+    STRIKE_SLIP_FAULT = 4
+    THRUST_FAULT = 5
 
 
 class RegionDataset:
@@ -190,25 +192,25 @@ class RegionDataset:
         else:
             raise NotImplementedError(f"class label {label}")
 
-    def sample_batch(self, batch_size, class_labels, patch_size, channels):
-        # todo consider random preprocessing for rgb channels, such is tf.image.random_brightness, etc
-        img_batch = np.zeros((batch_size,
-                              patch_size[0],
-                              patch_size[1],
-                              channels.shape[0]))
-
-        coords_batch = np.zeros((batch_size, 4))
-
-        for i in range(batch_size):
-            patch, coords = self.sample_patch(label=class_labels[i], patch_size=patch_size)
-            augment_probability = np.random.rand()
-            if augment_probability < 0.5:
-                img_batch[i] = ImageAugmentation.augment(patch[:, :, channels])
-            else:
-                img_batch[i] = patch
-            coords_batch[i] = coords
-
-        return img_batch, coords_batch
+    # def sample_batch(self, batch_size, class_labels, patch_size, channels):
+    #     # todo consider random preprocessing for rgb channels, such is tf.image.random_brightness, etc
+    #     img_batch = np.zeros((batch_size,
+    #                           patch_size[0],
+    #                           patch_size[1],
+    #                           channels.shape[0]))
+    #
+    #     coords_batch = np.zeros((batch_size, 4))
+    #
+    #     for i in range(batch_size):
+    #         patch, coords = self.sample_patch(label=class_labels[i], patch_size=patch_size)
+    #         augment_probability = np.random.rand()
+    #         if augment_probability < 0.5:
+    #             img_batch[i] = ImageAugmentation.augment(patch[:, :, channels])
+    #         else:
+    #             img_batch[i] = patch
+    #         coords_batch[i] = coords
+    #
+    #     return img_batch, coords_batch
 
     def get_sample_3class(self, batch_size, class_probabilities, patch_size, channels, verbose:int):
         lbl_batch = np.zeros((batch_size, 3))

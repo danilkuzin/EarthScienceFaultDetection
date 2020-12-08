@@ -15,6 +15,11 @@ class DataIOBackend:
 
     @abc.abstractmethod
     def load_optical(self, path_r: str, path_g: str, path_b:str) -> np.array:
+        """standard red / green / blue optical bands from the Landsat-8 platform, each converted to 0 - 255"""
+        pass
+
+    @abc.abstractmethod
+    def load_optical_landsat(self, path_r: str, path_g: str, path_b: str) -> np.array:
         """standard red / green / blue optical bands from the Landsat-8 platform, each 0 - 255"""
         pass
 
@@ -33,6 +38,11 @@ class DataIOBackend:
         pass
 
     @abc.abstractmethod
+    def load_nir_landsat(self, path: str) -> np.array:
+        """near infrared from Landsat which is uint8"""
+        pass
+
+    @abc.abstractmethod
     def load_ultrablue(self, path: str) -> np.array:
         """ultrablue from Landsat"""
         pass
@@ -43,8 +53,18 @@ class DataIOBackend:
         pass
 
     @abc.abstractmethod
+    def load_swir1_landsat(self, path: str) -> np.array:
+        """shortwave infrared1 from Landsat which is uint8"""
+        pass
+
+    @abc.abstractmethod
     def load_swir2(self, path: str) -> np.array:
         """shortwave infrared2 from Landsat"""
+        pass
+
+    @abc.abstractmethod
+    def load_swir2_landsat(self, path: str) -> np.array:
+        """shortwave infrared2 from Landsat which is uint8"""
         pass
 
     @abc.abstractmethod
@@ -63,6 +83,14 @@ class DataIOBackend:
 
     @abc.abstractmethod
     def load_roughness(self, path: str) -> np.array:
+        pass
+
+    @abc.abstractmethod
+    def load_log_roughness(self, path: str) -> np.array:
+        pass
+
+    @abc.abstractmethod
+    def load_log_flow(self, path: str) -> np.array:
         pass
 
     @abc.abstractmethod
