@@ -2,13 +2,15 @@ import numpy as np
 import torch
 import torchvision
 
+import torchvision.transforms.functional
+
 """
 This is a wrapper for torchvision.transforms for multi-target transformations. 
 See also torchvision segmentation transforms as examples
 """
 
 
-class ToTensor(object):
+class ToTensor(torch.nn.Module):
     """Convert ndarrays in sample to Tensors."""
 
     def __call__(self, sample):
@@ -16,8 +18,8 @@ class ToTensor(object):
 
         # swap color axis because
         # numpy image: H x W x C
-        # torch image: C X H X W
-        image = image.transpose((2, 0, 1))
+        # torch image: C X H X W - torchvision.transforms does that inside!
+        # image = image.transpose((2, 0, 1))
         return {
             'image': torchvision.transforms.functional.to_tensor(image),
             'label': torch.as_tensor(np.array(label), dtype=torch.int32)
