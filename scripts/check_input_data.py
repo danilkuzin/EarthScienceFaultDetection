@@ -1,12 +1,13 @@
-import gdal
+from osgeo import gdal
 import numpy as np
 import os
 
-input_folder = '/Users/danilkuzin/Downloads/CCAL_Files/'
-file_prefix = 'CCAL_'
+input_folder = '/Users/olgaisupova/Documents/GitHub/DataForEarthScienceFaultDetection/raw_data/NCAL_Files/'
+file_prefix = 'NCAL_'
 files = ['B2_UTM.tif', 'B3_UTM.tif', 'B4_UTM.tif', 'B5_UTM.tif',
          'B6_UTM.tif', 'B7_UTM.tif', 'Elev_UTM.tif',
-         'Flow_Log_Scale.tif', 'TRI_Log_Scale.tif']
+         'Log10_FLOW_Scaled_UTM.tif', 'TRI_UTM.tif',
+         'Erode_UTM.tif']
 
 for file in files:
     full_name = os.path.join(
