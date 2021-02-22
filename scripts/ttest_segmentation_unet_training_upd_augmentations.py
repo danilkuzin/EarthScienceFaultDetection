@@ -72,7 +72,7 @@ transform_train = torch.nn.Sequential(
     RandomRotation(degrees=[-45., 45.]),
     RandomHorizontalFlip(p=0.5),
     RandomVerticalFlip(p=0.5),
-    ColorJitter(brightness=.1, contrast=.1, saturation=.1, hue=.1),
+    # ColorJitter(brightness=0, contrast=0, saturation=0, hue=0),
     SqueezeLabel()
 )
 
