@@ -174,6 +174,33 @@ class GdalBackend(DataIOBackend):
             image = image[crop[0]:crop[2], crop[1]:crop[3]]
             plt.imsave(path+".png", image)
 
+    def write_float(self, path, image, crop=None):
+        if crop is None:
+            # image is self.optical_rgb.shape[0] X self.optical_rgb.shape[1] in this case
+            driver = gdal.GetDriverByName(self.driver_name)
+            if not driver:
+                raise Exception("driver not created")
+            if image.ndim == 3:
+                bands = image.shape[2]
+            elif image.ndim == 2:
+                bands = 1
+            else:
+                raise Exception("Bands number incorrect")
+            dst_ds = driver.Create(path+".tif", xsize=image.shape[1], ysize=image.shape[0], bands=bands, eType=gdal.GDT_Float64)
+
+            dst_ds.SetGeoTransform(self.geotransform)
+            dst_ds.SetProjection(self.projection)
+            raster = image.astype(np.float64)
+            if image.ndim == 3:
+                for band_ind in range(bands):
+                    dst_ds.GetRasterBand(band_ind + 1).WriteArray(raster[:, :, band_ind])
+            elif image.ndim == 2:
+                dst_ds.GetRasterBand(1).WriteArray(raster)
+            dst_ds = None
+        else:
+            image = image[crop[0]:crop[2], crop[1]:crop[3]]
+            plt.imsave(path+".png", image)
+
     def write_surface(self, path, image, crop=None):
         #todo use gdal dem
 

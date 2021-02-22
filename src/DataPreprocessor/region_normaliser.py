@@ -1,3 +1,5 @@
+import copy
+
 import h5py
 import yaml
 from PIL import Image
@@ -18,8 +20,8 @@ class RegionNormaliser:
     optical_std = 255.
     slope_mean = 45.
     slope_std = 90.
-    roughness_mean = 50.
-    roughness_std = 100.
+    roughness_mean = 200. # 50.
+    roughness_std = 400. # 100.
     roughness_log_mean = 0.7
     roughness_log_std = 4
 
@@ -45,7 +47,13 @@ class RegionNormaliser:
             features_areawide = yaml.safe_load(stream)
 
         elevation_mean, elevation_std = features_areawide['mean_elevation'], features_areawide['std_elevation']
-        self.normalised_data.channels['elevation'] = (self.preprocessed_data.channels['elevation'] - elevation_mean) / elevation_std
+        self.normalised_data.channels['elevation'] = copy.deepcopy(
+            self.preprocessed_data.channels['elevation']).astype(np.float32)
+        self.normalised_data.channels['elevation'][
+            self.normalised_data.channels['elevation'] < 0] = np.nan
+        self.normalised_data.channels['elevation'] = (
+                (self.normalised_data.channels['elevation'] - elevation_mean) /
+                elevation_std)
 
         self.normalised_data.channels['elevation'][
             np.isnan(self.normalised_data.channels['elevation'])] = 0
@@ -82,13 +90,31 @@ class RegionNormaliser:
                      self.roughness_log_mean) / self.roughness_log_std
             else:
                 self.normalised_data.channels['topographic_roughness'] = \
+                    copy.deepcopy(self.preprocessed_data.channels[
+                                      'topographic_roughness']).astype(
+                        np.float32)
+                self.normalised_data.channels[
+                    'topographic_roughness'][
+                    self.normalised_data.channels[
+                        'topographic_roughness'] < 0] = np.nan
+                self.normalised_data.channels['topographic_roughness'] = \
                     (self.preprocessed_data.channels['topographic_roughness'] -
                      self.roughness_mean) / self.roughness_std
+                self.normalised_data.channels[
+                    'topographic_roughness'][
+                    np.isnan(self.normalised_data.channels[
+                                 'topographic_roughness'])] = 0
 
         if self.preprocessed_data.channels['flow'] is not None:
+            self.normalised_data.channels['flow'] = copy.deepcopy(
+                self.preprocessed_data.channels['flow']).astype(np.float32)
+            self.normalised_data.channels['flow'][
+                self.normalised_data.channels['flow'] < 0] = np.nan
             self.normalised_data.channels['flow'] = \
                 (self.preprocessed_data.channels['flow'] -
                  self.optical_mean) / self.optical_std
+            self.normalised_data.channels['flow'][
+                np.isnan(self.normalised_data.channels['flow'])] = 0
 
         self.normalised_data.features = self.preprocessed_data.features
 

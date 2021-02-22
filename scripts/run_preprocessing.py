@@ -7,9 +7,9 @@ from src.DataPreprocessor.region_normaliser import RegionNormaliser
 from src.config import data_preprocessor_params, areas
 
 
-def normalise_area(area_id):
+def normalise_area(area_id, landsat: bool = False):
     area_normaliser = AreaNormaliser(area_id)
-    area_normaliser.normalise()
+    area_normaliser.normalise(landsat)
 
 
 def normalise_region(region_id, area_ind, is_roughness_log=False):
@@ -42,11 +42,11 @@ def preprocess_single_region(path: pathlib.Path, region_id: int,
 
 # for key_area, val_area in areas.items():
 #     normalise_area(val_area)
-# normalise_area(3)
+# normalise_area(3, landsat=True)
 #
 # for region_id, region_params in enumerate(data_preprocessor_params):
 #     path = pathlib.Path(region_params[0])
 #     normalise_region(region_id, area_ind=region_params[1])
 
 normalise_region(12, area_ind=data_preprocessor_params[12][1],
-                 is_roughness_log=True)
+                 is_roughness_log=False)

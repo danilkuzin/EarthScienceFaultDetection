@@ -11,7 +11,8 @@ sys.path.extend(['../../EarthScienceFaultDetection'])
 
 from src.pipeline_torch.dataset_torchvision import h5_loader_segmentation
 from src.pipeline_torch.transforms_torchvision import RandomRotation, \
-    RandomHorizontalFlip, RandomVerticalFlip, ColorJitter, UnsqueezeLabel, SqueezeLabel
+    RandomHorizontalFlip, RandomVerticalFlip, ColorJitter, UnsqueezeLabel, \
+    SqueezeLabel, ToTensor
 
 from src.LearningTorch.net_architecture import Res34_Unet, \
     LossMultiSemiSupervisedEachClass
@@ -28,7 +29,7 @@ def get_jaccard_non_binary(y_true, y_pred):
 
     return ((intersection + epsilon) / (union - intersection + epsilon)).mean()
 
-data_path = '/mnt/data/datasets/DataForEarthScienceFaultDetection'
+data_path = "../../DataForEarthScienceFaultDetection" #'/mnt/data/datasets/DataForEarthScienceFaultDetection'
 
 # np.random.seed(1000)
 
@@ -97,7 +98,7 @@ valid_dataset_size = 0
 regions = [6]
 path_prefix = f'{data_path}/train_data'
 train_ratio = 0.8
-channels=[0, 1, 2, 3, 4, 5, 6]
+channels = [0, 1, 2, 3, 4, 5, 6]
 
 for reg_id in regions:
     reg_path = pathlib.Path(path_prefix + f'/regions_{reg_id}_segmentation_mask/')
@@ -141,9 +142,9 @@ valid_dataset = DataLoader(valid_path_ds, batch_size=BATCH_SIZE,
 #     optimizer=optimizer,
 #     criterion=criterion,
 #     scheduler=exp_lr_scheduler)
-folder=f"{data_path}/results/semisupervised_one_class_upd_transforms"
+folder = f"{data_path}/results/semisupervised_one_class_upd_transforms"
 pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
-epochs=100
+epochs = 2
 
 best_model_wts = copy.deepcopy(cnn_model.state_dict())
 best_iou = 0.0

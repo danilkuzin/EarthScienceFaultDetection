@@ -168,6 +168,15 @@ class RawDataPreprocessor:
             logging.warning("Error: {}".format(err))
 
         try:
+            self.preprocessed_data.channels['erosion'] = \
+                self.data_io_backend.load_erosion(
+                    path=str(self.data_dir / 'erode_landsat.tif'))
+        except FileNotFoundError as err:
+            self.preprocessed_data.channels['erosion'] = \
+                np.zeros_like(self.preprocessed_data.channels['elevation'])
+            logging.warning("Error: {}".format(err))
+
+        try:
             self.preprocessed_data.channels['topographic_roughness'] = \
                 self.data_io_backend.load_log_roughness(
                     path=str(self.data_dir / 'tri_landsat.tif'))
