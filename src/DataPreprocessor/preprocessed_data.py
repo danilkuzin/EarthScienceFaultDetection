@@ -56,6 +56,8 @@ class PreprocessedData:
             hf.create_dataset("topographic_roughness", data=self.channels['topographic_roughness'])
             hf.create_dataset("flow",
                               data=self.channels['flow'])
+            hf.create_dataset("erosion",
+                              data=self.channels['erosion'])
             hf.create_dataset("features", data=self.features)
 
     def load(self):

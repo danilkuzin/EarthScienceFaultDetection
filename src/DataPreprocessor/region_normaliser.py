@@ -23,7 +23,9 @@ class RegionNormaliser:
     roughness_mean = 200. # 50.
     roughness_std = 400. # 100.
     roughness_log_mean = 0.7
-    roughness_log_std = 4
+    roughness_log_std = 4.
+    erosion_mean = 12600.
+    erosion_std = 25200
 
     def __init__(self, region_id, area_ind):
         self.region_id = region_id
@@ -115,6 +117,12 @@ class RegionNormaliser:
                  self.optical_mean) / self.optical_std
             self.normalised_data.channels['flow'][
                 np.isnan(self.normalised_data.channels['flow'])] = 0
+
+        if self.preprocessed_data.channels['erosion'] is not None:
+            self.normalised_data.channels['erosion'] = \
+                (self.preprocessed_data.channels['erosion'] -
+                 self.erosion_mean) / \
+                self.erosion_std
 
         self.normalised_data.features = self.preprocessed_data.features
 

@@ -30,6 +30,9 @@ class NormalisedData:
             if 'flow' in self.channels:
                 hf.create_dataset("flow",
                                   data=self.channels['flow'])
+            if 'erosion' in self.channels:
+                hf.create_dataset("erosion",
+                                  data=self.channels['erosion'])
             if 'ultrablue' in self.channels:
                 hf.create_dataset("ultrablue",
                                   data=self.channels['ultrablue'])
@@ -77,6 +80,10 @@ class NormalisedData:
                 self.channels['flow'] = hf["flow"][:]
             else:
                 self.channels['flow'] = None
+            if "erosion" in hf:
+                self.channels['erosion'] = hf["erosion"][:]
+            else:
+                self.channels['erosion'] = None
             self.features = hf["features"][:]
 
 
