@@ -49,7 +49,7 @@ class RegionDataset:
     def get_data_shape(self):
         # return self.normalised_data.channels['optical_rgb'].shape[0], self.normalised_data.channels['optical_rgb'].shape[1], len(self.normalised_data.channels)
         return self.normalised_data.channels['elevation'].shape[0], \
-               self.normalised_data.channels['elevation'].shape[1], len(
+               self.normalised_data.channels['optical_rgb'].shape[1], len(
             self.normalised_data.channels)
 
     def _borders_from_center(self, center, patch_size):
