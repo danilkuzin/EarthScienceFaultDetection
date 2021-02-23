@@ -57,7 +57,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # cnn_model = FCNet()
 region_id = 12
 
-folder = f"{data_path}/results/cal_hazmap_semisupervised"
+folder = f"{data_path}/results/ncal_hazmap_semisupervised"
 training_output = torch.load(folder + '/model_epoch_99.pth', map_location=device)
 cnn_model = training_output['model'].to(device)
 cnn_model.eval()
@@ -85,7 +85,7 @@ data_preprocessor = RegionDataset(region_id)
 
 input_image = data_preprocessor.get_full_image(
     channel_list=['optical_rgb', 'elevation', 'nir', 'topographic_roughness',
-                  'flow'])
+                  'flow', 'erosion'])
 im_width = input_image.shape[1]
 im_height = input_image.shape[0]
 
