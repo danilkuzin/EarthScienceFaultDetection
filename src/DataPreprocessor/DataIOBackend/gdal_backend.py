@@ -49,24 +49,21 @@ class GdalBackend(DataIOBackend):
         return t
 
     def load_optical(self, path_r: str, path_g: str, path_b: str) -> np.array:
-        opt_string = '-ot Byte -of GTiff -scale 0 65535 0 255'
-        dataset_r = gdal.Translate(NamedTemporaryFile(delete=False).name, gdal.Open(path_r, gdal.GA_ReadOnly),
-                                   options=opt_string)
-        optical_r = np.array(dataset_r.ReadAsArray())
-        dataset_g = gdal.Translate(NamedTemporaryFile(delete=False).name, gdal.Open(path_g, gdal.GA_ReadOnly),
-                                   options=opt_string)
-        optical_g = np.array(dataset_g.ReadAsArray())
-        dataset_b = gdal.Translate(NamedTemporaryFile(delete=False).name, gdal.Open(path_b, gdal.GA_ReadOnly),
-                                   options=opt_string)
-        optical_b = np.array(dataset_b.ReadAsArray())
+        optical_r = self.__load_1d_uint16(path_r)
+        optical_g = self.__load_1d_uint16(path_g)
+        optical_b = self.__load_1d_uint16(path_b)
 
         self.parse_meta_with_gdal(path_r) # to save gdal meta for writing
         return np.dstack((optical_r, optical_g, optical_b))
 
     def load_optical_landsat(self, path_r: str, path_g: str, path_b: str) -> np.array:
-        optical_r = self.__load_1d_raster(path_r)
-        optical_g = self.__load_1d_raster(path_g)
-        optical_b = self.__load_1d_raster(path_b)
+        # optical_r = self.__load_1d_raster(path_r)
+        # optical_g = self.__load_1d_raster(path_g)
+        # optical_b = self.__load_1d_raster(path_b)
+
+        optical_r = self.__load_1d_uint16(path_r)
+        optical_g = self.__load_1d_uint16(path_g)
+        optical_b = self.__load_1d_uint16(path_b)
 
         self.parse_meta_with_gdal(path_r) # to save gdal meta for writing
         return np.dstack((optical_r, optical_g, optical_b))
@@ -77,7 +74,8 @@ class GdalBackend(DataIOBackend):
 
     def load_nir_landsat(self, path: str) -> np.array:
         # ToDo check whether this is the best approach to load this channel
-        return self.__load_1d_raster(path)
+        # return self.__load_1d_raster(path)
+        return self.__load_1d_uint16(path)
 
     def load_ultrablue(self, path: str) -> np.array:
         # ToDo check whether this is the best approach to load this channel
@@ -89,7 +87,8 @@ class GdalBackend(DataIOBackend):
 
     def load_swir1_landsat(self, path: str) -> np.array:
         # ToDo check whether this is the best approach to load this channel
-        return self.__load_1d_raster(path)
+        # return self.__load_1d_raster(path)
+        return self.__load_1d_uint16(path)
 
     def load_swir2(self, path: str) -> np.array:
         # ToDo check whether this is the best approach to load this channel
@@ -97,7 +96,8 @@ class GdalBackend(DataIOBackend):
 
     def load_swir2_landsat(self, path: str) -> np.array:
         # ToDo check whether this is the best approach to load this channel
-        return self.__load_1d_raster(path)
+        # return self.__load_1d_raster(path)
+        return self.__load_1d_uint16(path)
 
     def load_panchromatic(self, path: str) -> np.array:
         return self.__load_1d_raster(path)

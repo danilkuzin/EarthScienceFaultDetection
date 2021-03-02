@@ -20,12 +20,12 @@ class RegionNormaliser:
     optical_std = 255.
     slope_mean = 45.
     slope_std = 90.
-    roughness_mean = 200. # 50.
-    roughness_std = 400. # 100.
+    roughness_mean = 50. # 200. # 50.
+    roughness_std = 100. # 400. # 100.
     roughness_log_mean = 0.7
     roughness_log_std = 4.
-    erosion_mean = 12600.
-    erosion_std = 25200
+    erosion_mean = 150. # 12600.
+    erosion_std = 300. # 25200
 
     def __init__(self, region_id, area_ind):
         self.region_id = region_id
