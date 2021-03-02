@@ -42,7 +42,8 @@ def is_point_strictly_inside_box(point, box):
 
 region_ind = 6
 region_data_folder = "Region 7 - Nevada train"
-channel_list = ['optical_rgb', 'elevation', 'slope', 'nir', 'topographic_roughness']
+channel_list = ['optical_rgb', 'elevation', 'nir', 'topographic_roughness',
+                'flow', 'erosion']
 input_path = f'/mnt/data/datasets/DataForEarthScienceFaultDetection/' \
              f'labels_from_Philip/'
 output_path = f"/mnt/data/datasets/DataForEarthScienceFaultDetection/" \
@@ -108,7 +109,7 @@ for file in non_fault_files:
 # debug visualisation
 im_np = np.array(gdal.Open(f'/mnt/data/datasets/'
                            f'DataForEarthScienceFaultDetection/raw_data/'
-                           f'{region_data_folder}/r.tif',
+                           f'{region_data_folder}/r_landsat.tif',
                  gdal.GA_ReadOnly).ReadAsArray())
 
 im = Image.fromarray(im_np).convert("RGB")
