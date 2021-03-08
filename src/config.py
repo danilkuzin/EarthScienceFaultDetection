@@ -9,15 +9,15 @@ if IN_COLAB:
     data_path = '/gdrive/My Drive/Work/fault_detection/data'
     drive.mount('/gdrive')
 else:
-    data_path = "/mnt/data/datasets/DataForEarthScienceFaultDetection" # "../../DataForEarthScienceFaultDetection" #
-areas = {"Tibet": 0, "Nevada": 1, "Turkey": 2, "California": 3}
+    data_path = "../../DataForEarthScienceFaultDetection" # "/mnt/data/datasets/DataForEarthScienceFaultDetection" #  #
+areas = {"Tibet": 0, "Nevada": 1, "Turkey": 2, "California": 3, "Nevada_other": 4}
 # path, area, trainable
 data_preprocessor_params = [
     (f"{data_path}/raw_data/Region 1 - Lopukangri/", 0, True),
     (f"{data_path}/raw_data/Region 2 - Muga Puruo/", 0, True),
     (f"{data_path}/raw_data/Region 3 - Muggarboibo/", 0, False),
-    (f"{data_path}/raw_data/Region 4 - Austin-Tonopah/", 1, False),
-    (f"{data_path}/raw_data/Region 5 - Las Vegas Nevada/", 1, False),
+    (f"{data_path}/raw_data/Region 4 - Austin-Tonopah/", 4, False),
+    (f"{data_path}/raw_data/Region 5 - Las Vegas Nevada/", 4, False),
     (f"{data_path}/raw_data/Region 6 - Izmir Turkey/", 2, False),
     (f"{data_path}/raw_data/Region 7 - Nevada train/", 1, True),
     (f"{data_path}/raw_data/Region 8 - Nevada test/", 1, True),
