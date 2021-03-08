@@ -49,11 +49,11 @@ def is_point_strictly_inside_box(point, box):
 region_ind = 12
 region_data_folder = "Region 12 - Nothern California"
 channel_list = ['optical_rgb', 'elevation', 'nir', 'topographic_roughness',
-                'flow', 'erosion']
-input_path = f'{data_path}/raw_data/{region_data_folder}'
-output_path = f"{data_path}/train_data/regions_{region_ind}_" \
-              f"segmentation_mask_rgb_elev_nir_tri_flow_erode_" \
-              f"semisupervised/"
+                'flow']
+input_path = f'{data_path}/' \
+             f'raw_data/{region_data_folder}'
+output_path = f"{data_path}/train_data/" \
+              f"regions_{region_ind}_segmentation_mask/"
 
 fault_files = ["HAZMAP.kml"]
 fiona.drvsupport.supported_drivers['libkml'] = 'rw'
@@ -65,7 +65,8 @@ points_per_non_fault_polygon = 50
 
 data_io_backend = GdalBackend()
 with open(
-        f"{data_path}/preprocessed/{region_ind}/gdal_params.yaml",
+        f"{data_path}/"
+        f"preprocessed/{region_ind}/gdal_params.yaml",
         'r') as stream:
     gdal_params = yaml.safe_load(stream)
 
@@ -79,7 +80,8 @@ utm_coord = UtmCoord(data_io_backend.geotransform[0],
                      data_io_backend.geotransform[3],
                      data_io_backend.geotransform[5])
 
-dataset = rasterio.open(f'{data_path}/raw_data/{region_data_folder}/r_landsat.tif')
+dataset = rasterio.open(f'{data_path}/raw_data/'
+                        f'{region_data_folder}/r_landsat.tif')
 latlon_bounds = rasterio.warp.transform_bounds(
     dataset.crs, "EPSG:4326", *dataset.bounds)
 
@@ -170,7 +172,8 @@ for file in non_fault_files:
     #             non_fault_coords.append(pixel_coords)
 
 # debug visualisation
-im_np = np.array(gdal.Open(f'{data_path}/raw_data/{region_data_folder}/r_landsat.tif',
+im_np = np.array(gdal.Open(f'{data_path}/raw_data/'
+                           f'{region_data_folder}/r_landsat.tif',
                  gdal.GA_ReadOnly).ReadAsArray())
 
 im = Image.fromarray(im_np).convert("RGB")
@@ -186,13 +189,20 @@ im.show()
 
 im_np = np.array(im).astype(np.uint8)
 
-# data_io_backend.write_image('test_points.tif', im_np)
+data_io_backend.write_image('test_points.tif', im_np)
+
+land_mask_np = np.array(
+    gdal.Open(f'{data_path}/raw_data/'
+              f'{region_data_folder}/land_mask.tif',
+                 gdal.GA_ReadOnly).ReadAsArray()).astype(bool)
 
 empty_placeholder = np.zeros((im_height, im_width), dtype=bool)
 segmentation_mask = Image.fromarray(empty_placeholder)
 for ind, line_coord in enumerate(strike_slip_fault_lines):
     ImageDraw.Draw(segmentation_mask).line(line_coord, fill='white', width=4)
 segmentation_strike_slip_mask_np = np.array(segmentation_mask)
+segmentation_strike_slip_mask_np = np.logical_and(
+    segmentation_strike_slip_mask_np, land_mask_np)
 # for ind, line_coord in enumerate(strike_slip_fault_lines):
 #     ImageDraw.Draw(segmentation_mask).line(line_coord, fill='white', width=150)
 # segmentation_strike_slip_non_fault_mask_np = np.array(segmentation_mask)
@@ -201,6 +211,8 @@ segmentation_mask = Image.fromarray(empty_placeholder)
 for ind, line_coord in enumerate(thrust_fault_lines):
     ImageDraw.Draw(segmentation_mask).line(line_coord, fill='white', width=4)
 segmentation_thrust_mask_np = np.array(segmentation_mask)
+segmentation_thrust_mask_np = np.logical_and(
+    segmentation_thrust_mask_np, land_mask_np)
 # for ind, line_coord in enumerate(thrust_fault_lines):
 #     ImageDraw.Draw(segmentation_mask).line(line_coord, fill='white', width=150)
 # segmentation_thrust_non_fault_mask_np = np.array(segmentation_mask)
@@ -240,81 +252,81 @@ vis_mask = Image.fromarray(segmentation_mask_np_vis)
 vis_mask.show()
 data_io_backend.write_image('train_data_vis.tif', segmentation_mask_np_vis)
 
-region_dataset = RegionDataset(region_ind)
-if os.path.exists(output_path):
-    shutil.rmtree(output_path)
-os.makedirs(output_path)
-
-patch_counter = 0
-lines = strike_slip_fault_lines + thrust_fault_lines
-for ind, line in enumerate(lines):
-    for fault_point_ind in range(len(line)):
-
-        fault_point = line[fault_point_ind]
-
-        try:
-            # we use these coordinates for numpy arrays and fault_point in
-            # xy-coordinates
-            left_border, right_border, top_border, bottom_border = \
-                region_dataset._borders_from_center(
-                    (fault_point[1], fault_point[0]),
-                    patch_size=(736, 736))
-            coords = np.array((left_border, right_border,
-                               top_border, bottom_border))
-
-            imgs = region_dataset.concatenate_full_patch(
-                left_border, right_border, top_border,
-                bottom_border, channel_list=channel_list)
-
-            lbls = np.copy(segmentation_mask_np[left_border:right_border,
-                           top_border:bottom_border])
-            PLACEHOLDER = 1000
-            lbls[lbls == FeatureValue.STRIKE_SLIP_FAULT.value] = PLACEHOLDER
-            lbls[lbls == FeatureValue.NONFAULT.value] = 0
-            lbls[lbls == PLACEHOLDER] = 1
-            lbls[lbls == FeatureValue.THRUST_FAULT.value] = 2
-            lbls[lbls == FeatureValue.UNDEFINED.value] = 3
-
-            with h5py.File(f'{output_path}data_{patch_counter}.h5', 'w') as hf:
-                hf.create_dataset("img", data=imgs)
-                hf.create_dataset("lbl", data=lbls)
-                hf.create_dataset("coord", data=coords)
-
-            patch_counter += 1
-
-        except OutOfBoundsException:
-            pass
-
-for non_fault_point in non_fault_coords:
-    try:
-        left_border, right_border, top_border, bottom_border = \
-            region_dataset._borders_from_center(
-                (non_fault_point[1], non_fault_point[0]), patch_size=(736, 736))
-        coords = np.array(
-            (left_border, right_border, top_border, bottom_border))
-        imgs = region_dataset.concatenate_full_patch(
-            left_border, right_border, top_border,
-            bottom_border, channel_list=channel_list)
-
-        lbls = np.copy(segmentation_mask_np[left_border:right_border,
-                       top_border:bottom_border])
-
-        PLACEHOLDER = 1000
-        lbls[lbls == FeatureValue.STRIKE_SLIP_FAULT.value] = PLACEHOLDER
-        lbls[lbls == FeatureValue.NONFAULT.value] = 0
-        lbls[lbls == PLACEHOLDER] = 1
-        lbls[lbls == FeatureValue.THRUST_FAULT.value] = 2
-        lbls[lbls == FeatureValue.UNDEFINED.value] = 3
-
-        with h5py.File(f'{output_path}data_{patch_counter}.h5', 'w') as hf:
-            hf.create_dataset("img", data=imgs)
-            hf.create_dataset("lbl", data=lbls)
-            hf.create_dataset("coord", data=coords)
-
-        patch_counter += 1
-
-    except OutOfBoundsException:
-        pass
+# region_dataset = RegionDataset(region_ind)
+# if os.path.exists(output_path):
+#     shutil.rmtree(output_path)
+# os.makedirs(output_path)
+#
+# patch_counter = 0
+# lines = strike_slip_fault_lines + thrust_fault_lines
+# for ind, line in enumerate(lines):
+#     for fault_point_ind in range(len(line)):
+#
+#         fault_point = line[fault_point_ind]
+#
+#         try:
+#             # we use these coordinates for numpy arrays and fault_point in
+#             # xy-coordinates
+#             left_border, right_border, top_border, bottom_border = \
+#                 region_dataset._borders_from_center(
+#                     (fault_point[1], fault_point[0]),
+#                     patch_size=(736, 736))
+#             coords = np.array((left_border, right_border,
+#                                top_border, bottom_border))
+#
+#             imgs = region_dataset.concatenate_full_patch(
+#                 left_border, right_border, top_border,
+#                 bottom_border, channel_list=channel_list)
+#
+#             lbls = np.copy(segmentation_mask_np[left_border:right_border,
+#                            top_border:bottom_border])
+#             PLACEHOLDER = 1000
+#             lbls[lbls == FeatureValue.STRIKE_SLIP_FAULT.value] = PLACEHOLDER
+#             lbls[lbls == FeatureValue.NONFAULT.value] = 0
+#             lbls[lbls == PLACEHOLDER] = 1
+#             lbls[lbls == FeatureValue.THRUST_FAULT.value] = 2
+#             lbls[lbls == FeatureValue.UNDEFINED.value] = 3
+#
+#             with h5py.File(f'{output_path}data_{patch_counter}.h5', 'w') as hf:
+#                 hf.create_dataset("img", data=imgs)
+#                 hf.create_dataset("lbl", data=lbls)
+#                 hf.create_dataset("coord", data=coords)
+#
+#             patch_counter += 1
+#
+#         except OutOfBoundsException:
+#             pass
+#
+# for non_fault_point in non_fault_coords:
+#     try:
+#         left_border, right_border, top_border, bottom_border = \
+#             region_dataset._borders_from_center(
+#                 (non_fault_point[1], non_fault_point[0]), patch_size=(736, 736))
+#         coords = np.array(
+#             (left_border, right_border, top_border, bottom_border))
+#         imgs = region_dataset.concatenate_full_patch(
+#             left_border, right_border, top_border,
+#             bottom_border, channel_list=channel_list)
+#
+#         lbls = np.copy(segmentation_mask_np[left_border:right_border,
+#                        top_border:bottom_border])
+#
+#         PLACEHOLDER = 1000
+#         lbls[lbls == FeatureValue.STRIKE_SLIP_FAULT.value] = PLACEHOLDER
+#         lbls[lbls == FeatureValue.NONFAULT.value] = 0
+#         lbls[lbls == PLACEHOLDER] = 1
+#         lbls[lbls == FeatureValue.THRUST_FAULT.value] = 2
+#         lbls[lbls == FeatureValue.UNDEFINED.value] = 3
+#
+#         with h5py.File(f'{output_path}data_{patch_counter}.h5', 'w') as hf:
+#             hf.create_dataset("img", data=imgs)
+#             hf.create_dataset("lbl", data=lbls)
+#             hf.create_dataset("coord", data=coords)
+#
+#         patch_counter += 1
+#
+#     except OutOfBoundsException:
+#         pass
 
 
 

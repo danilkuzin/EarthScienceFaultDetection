@@ -49,10 +49,10 @@ def is_point_strictly_inside_box(point, box):
 region_ind = 12
 region_data_folder = "Region 12 - Nothern California"
 channel_list = ['optical_rgb', 'elevation', 'nir', 'topographic_roughness',
-                'flow', 'erosion']
+                'flow']
 input_path = f'/mnt/data/datasets/DataForEarthScienceFaultDetection/' \
              f'raw_data/{region_data_folder}'
-output_path = f"{data_path}/train_data/regions_{region_ind}_" \
+output_path = f"{data_path}/train_data/" \
               f"regions_{region_ind}_segmentation_mask/"
 
 fault_files = ["HAZMAP.kml"]
@@ -193,11 +193,19 @@ im_np = np.array(im).astype(np.uint8)
 
 # data_io_backend.write_image('test_points.tif', im_np)
 
+land_mask_np = np.array(
+    gdal.Open(f'/mnt/data/datasets/'
+              f'DataForEarthScienceFaultDetection/raw_data/'
+              f'{region_data_folder}/land_mask.tif',
+                 gdal.GA_ReadOnly).ReadAsArray()).astype(bool)
+
 empty_placeholder = np.zeros((im_height, im_width), dtype=bool)
 segmentation_mask = Image.fromarray(empty_placeholder)
 for ind, line_coord in enumerate(strike_slip_fault_lines):
     ImageDraw.Draw(segmentation_mask).line(line_coord, fill='white', width=4)
 segmentation_strike_slip_mask_np = np.array(segmentation_mask)
+segmentation_strike_slip_mask_np = np.logical_and(
+    segmentation_strike_slip_mask_np, land_mask_np)
 # for ind, line_coord in enumerate(strike_slip_fault_lines):
 #     ImageDraw.Draw(segmentation_mask).line(line_coord, fill='white', width=150)
 # segmentation_strike_slip_non_fault_mask_np = np.array(segmentation_mask)
@@ -206,6 +214,8 @@ segmentation_mask = Image.fromarray(empty_placeholder)
 for ind, line_coord in enumerate(thrust_fault_lines):
     ImageDraw.Draw(segmentation_mask).line(line_coord, fill='white', width=4)
 segmentation_thrust_mask_np = np.array(segmentation_mask)
+segmentation_thrust_mask_np = np.logical_and(
+    segmentation_thrust_mask_np, land_mask_np)
 # for ind, line_coord in enumerate(thrust_fault_lines):
 #     ImageDraw.Draw(segmentation_mask).line(line_coord, fill='white', width=150)
 # segmentation_thrust_non_fault_mask_np = np.array(segmentation_mask)
