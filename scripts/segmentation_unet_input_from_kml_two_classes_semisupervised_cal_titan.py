@@ -50,8 +50,8 @@ region_ind = 12
 region_data_folder = "Region 12 - Nothern California"
 channel_list = ['optical_rgb', 'elevation', 'nir', 'topographic_roughness',
                 'flow']
-input_path = f'/mnt/data/datasets/DataForEarthScienceFaultDetection/' \
-             f'raw_data/{region_data_folder}'
+input_path = f"/mnt/data/datasets/DataForEarthScienceFaultDetection/" \
+             f"raw_data/{region_data_folder}"
 output_path = f"{data_path}/train_data/" \
               f"regions_{region_ind}_segmentation_mask/"
 
