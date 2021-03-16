@@ -58,6 +58,10 @@ class PreprocessedData:
                               data=self.channels['flow'])
             hf.create_dataset("erosion",
                               data=self.channels['erosion'])
+            hf.create_dataset("sar1",
+                              data=self.channels['sar1'])
+            hf.create_dataset("sar2",
+                              data=self.channels['sar2'])
             hf.create_dataset("features", data=self.features)
 
     def load(self):
@@ -108,6 +112,14 @@ class PreprocessedData:
                 self.channels['flow'] = hf['flow'][:]
             else:
                 self.channels['flow'] = None
+            if "sar1" in hf:
+                self.channels['sar1'] = hf['sar1'][:]
+            else:
+                self.channels['sar1'] = None
+            if "sar2" in hf:
+                self.channels['sar2'] = hf['sar2'][:]
+            else:
+                self.channels['sar2'] = None
             self.features = hf["features"][:]
 
 
@@ -118,9 +130,12 @@ class PreprocessedData:
             optical_b = hf["optical_b"][:]
             self.channels['optical_rgb'] = np.stack((optical_r, optical_g, optical_b), axis=-1)
             self.channels['elevation'] = hf["elevation"][:]
+            self.channels['erosion'] = hf["erosion"][:]
             self.channels['nir'] = hf["nir"][:]
             self.channels['topographic_roughness'] = hf["topographic_roughness"][:]
             self.channels['flow'] = hf["flow"][:]
             self.channels['swir1'] = hf["swir1"][:]
             self.channels['swir2'] = hf["swir2"][:]
+            self.channels['sar1'] = hf["sar1"][:]
+            self.channels['sar2'] = hf["sar2"][:]
             self.features = hf["features"][:]

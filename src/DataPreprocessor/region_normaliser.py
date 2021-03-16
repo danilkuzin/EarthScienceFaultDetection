@@ -20,14 +20,18 @@ class RegionNormaliser:
     optical_std = 255.
     slope_mean = 45.
     slope_std = 90.
-    roughness_mean = 3600. # 200. # 50.
-    roughness_std = 7200. # 400. # 100.
+    roughness_mean = 4000. # 200. # 50.
+    roughness_std = 6000. # 400. # 100.
     roughness_log_mean = 0.7
     roughness_log_std = 4.
     erosion_mean = 150. # 12600.
     erosion_std = 300. # 25200
-    flow_mean = 4.5
-    flow_std = 7.
+    flow_mean = 500.
+    flow_std = 400.
+    sar1_mean = 2250.
+    sar1_std = 4500.
+    sar2_mean = 2250.
+    sar2_std = 4500.
 
     def __init__(self, region_id, area_ind):
         self.region_id = region_id
@@ -125,6 +129,18 @@ class RegionNormaliser:
                 (self.preprocessed_data.channels['erosion'] -
                  self.erosion_mean) / \
                 self.erosion_std
+
+        if self.preprocessed_data.channels['sar1'] is not None:
+            self.normalised_data.channels['sar1'] = \
+                (self.preprocessed_data.channels['sar1'] -
+                 self.sar1_mean) / \
+                self.sar1_std
+
+        if self.preprocessed_data.channels['sar2'] is not None:
+            self.normalised_data.channels['sar2'] = \
+                (self.preprocessed_data.channels['sar2'] -
+                 self.sar2_mean) / \
+                self.sar2_std
 
         self.normalised_data.features = self.preprocessed_data.features
 

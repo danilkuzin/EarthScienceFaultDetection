@@ -42,6 +42,12 @@ class NormalisedData:
             if 'swir2' in self.channels:
                 hf.create_dataset("swir2",
                                   data=self.channels['swir2'])
+            if 'sar1' in self.channels:
+                hf.create_dataset("sar1",
+                                  data=self.channels['sar1'])
+            if 'sar2' in self.channels:
+                hf.create_dataset("sar2",
+                                  data=self.channels['sar2'])
             hf.create_dataset("features", data=self.features)
 
     def load(self):
@@ -84,6 +90,14 @@ class NormalisedData:
                 self.channels['erosion'] = hf["erosion"][:]
             else:
                 self.channels['erosion'] = None
+            if "sar1" in hf:
+                self.channels['sar1'] = hf["sar1"][:]
+            else:
+                self.channels['sar1'] = None
+            if "sar1" in hf:
+                self.channels['sar2'] = hf["sar2"][:]
+            else:
+                self.channels['sar2'] = None
             self.features = hf["features"][:]
 
 

@@ -94,5 +94,13 @@ class DataIOBackend:
         pass
 
     @abc.abstractmethod
+    def load_sar1(self, path: str) -> np.array:
+        pass
+
+    @abc.abstractmethod
+    def load_sar2(self, path: str) -> np.array:
+        pass
+
+    @abc.abstractmethod
     def append_additional_features(self, path, features):
         pass

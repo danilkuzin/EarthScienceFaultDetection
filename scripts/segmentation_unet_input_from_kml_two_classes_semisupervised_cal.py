@@ -49,7 +49,7 @@ def is_point_strictly_inside_box(point, box):
 region_ind = 12
 region_data_folder = "Region 12 - Nothern California"
 channel_list = ['optical_rgb', 'elevation', 'nir', 'topographic_roughness',
-                'flow']
+                'flow', 'sar1', 'sar2']
 input_path = f'{data_path}/' \
              f'raw_data/{region_data_folder}'
 output_path = f"{data_path}/train_data/" \
@@ -59,7 +59,7 @@ fault_files = ["HAZMAP.kml"]
 fiona.drvsupport.supported_drivers['libkml'] = 'rw'
 fiona.drvsupport.supported_drivers['LIBKML'] = 'rw'
 
-non_fault_files = ['NotFault_polygons_NorCal_utm10.kml']
+non_fault_files = ['NotFault_polygons_NorCal_v2.kml']
 
 points_per_non_fault_polygon = 50
 

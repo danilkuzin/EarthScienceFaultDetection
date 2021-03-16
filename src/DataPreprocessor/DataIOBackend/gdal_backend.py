@@ -126,6 +126,12 @@ class GdalBackend(DataIOBackend):
     def load_log_flow(self, path: str) -> np.array:
         return self.__load_1d_raster(path)
 
+    def load_sar1(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
+    def load_sar2(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
     def parse_meta_with_gdal(self, path: str):
         """to be used for parsing gdal headers and recreating them in output results
            based on https://www.gdal.org/gdal_tutorial.html
