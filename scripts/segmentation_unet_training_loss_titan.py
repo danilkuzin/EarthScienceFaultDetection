@@ -12,7 +12,7 @@ from src.config import data_path
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # cnn_model = FCNet()
 
-folder = f"{data_path}/results/ncal_hazmap_semisupervised"
+folder = f"{data_path}/results/ncal_hazmap_semisupervised_sar"
 training_output = torch.load(folder + '/model.pth', map_location=device)
 cnn_model = training_output['model'].to(device)
 cnn_model.eval()
