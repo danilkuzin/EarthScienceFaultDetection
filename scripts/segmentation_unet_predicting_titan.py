@@ -85,7 +85,7 @@ data_preprocessor = RegionDataset(region_id)
 
 input_image = data_preprocessor.get_full_image(
     channel_list=['optical_rgb', 'elevation', 'nir', 'topographic_roughness',
-                  'flow'])
+                  'flow', 'sar1', 'sar2'])
 im_width = input_image.shape[1]
 im_height = input_image.shape[0]
 
