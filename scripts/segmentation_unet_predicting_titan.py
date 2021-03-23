@@ -58,7 +58,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 region_id = 12
 
 folder = f"{data_path}/results/ncal_hazmap_semisupervised_sar"
-training_output = torch.load(folder + '/model_epoch_99.pth', map_location=device)
+training_output = torch.load(folder + '/model_epoch_174.pth', map_location=device)
 cnn_model = training_output['model'].to(device)
 cnn_model.eval()
 
@@ -71,14 +71,14 @@ plt.figure()
 plt.plot(all_train_loss, label='train')
 plt.plot(all_val_loss, label='val')
 plt.legend()
-plt.savefig(folder + '/loss.png')
+plt.savefig(folder + '/loss_174.png')
 plt.clf()
 
 plt.figure()
 plt.plot(all_train_iou, label='train')
 plt.plot(all_val_iou, label='val')
 plt.legend()
-plt.savefig(folder + '/mean_iou.png')
+plt.savefig(folder + '/mean_iou_174.png')
 plt.clf()
 
 data_preprocessor = RegionDataset(region_id)
@@ -147,7 +147,7 @@ for image_patch_num in range(len(image_patch_coordinate_list)):
     counter += 1
     print(counter)
 
-np.savez(f"{folder}/prediction_on_{region_id}",
+np.savez(f"{folder}/prediction_on_{region_id}_174_epochs",
          prediction=full_prediction)
 
 # sliced_input_image = input_image[4440:4590, 3528:3678, :]
