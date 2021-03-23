@@ -85,7 +85,7 @@ train_on_preloaded_single_files_torch_unet(
     cnn_model, train_dataset, train_dataset_size, valid_dataset,
     valid_dataset_size,
     folder=f"{data_path}/results/ncal_hazmap_semisupervised_sar",
-    epochs=100,
+    epochs=200,
     batch_size=batch_size,
     optimizer=optimizer,
     criterion=criterion,
