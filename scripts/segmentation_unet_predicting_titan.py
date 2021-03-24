@@ -57,8 +57,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # cnn_model = FCNet()
 region_id = 12
 
-folder = f"{data_path}/results/ncal_hazmap_semisupervised_sar"
-training_output = torch.load(folder + '/model_epoch_174.pth', map_location=device)
+folder = f"{data_path}/results/ncal_hazmap_semisupervised_topo_sar_only"
+training_output = torch.load(folder + '/model_epoch_99.pth', map_location=device)
 cnn_model = training_output['model'].to(device)
 cnn_model.eval()
 
@@ -71,20 +71,20 @@ plt.figure()
 plt.plot(all_train_loss, label='train')
 plt.plot(all_val_loss, label='val')
 plt.legend()
-plt.savefig(folder + '/loss_174.png')
+plt.savefig(folder + '/loss.png')
 plt.clf()
 
 plt.figure()
 plt.plot(all_train_iou, label='train')
 plt.plot(all_val_iou, label='val')
 plt.legend()
-plt.savefig(folder + '/mean_iou_174.png')
+plt.savefig(folder + '/mean_iou.png')
 plt.clf()
 
 data_preprocessor = RegionDataset(region_id)
 
 input_image = data_preprocessor.get_full_image(
-    channel_list=['optical_rgb', 'elevation', 'nir', 'topographic_roughness',
+    channel_list=['elevation', 'topographic_roughness',
                   'flow', 'sar1', 'sar2'])
 im_width = input_image.shape[1]
 im_height = input_image.shape[0]
@@ -147,7 +147,7 @@ for image_patch_num in range(len(image_patch_coordinate_list)):
     counter += 1
     print(counter)
 
-np.savez(f"{folder}/prediction_on_{region_id}_174_epochs",
+np.savez(f"{folder}/prediction_on_{region_id}",
          prediction=full_prediction)
 
 # sliced_input_image = input_image[4440:4590, 3528:3678, :]
