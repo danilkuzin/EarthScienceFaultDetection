@@ -30,8 +30,8 @@ mask_prediction_strike_slip_min = mask_prediction_strike_slip.min()
 mask_prediction_strike_slip_scaled = \
     (mask_prediction_strike_slip-mask_prediction_strike_slip_min)/\
     (mask_prediction_strike_slip_max-mask_prediction_strike_slip_min)
-clip_lower = 0.3 # 0.3 - hazmap on 6
-clip_higher = 0.8 # 0.7 - hazmap on 6
+clip_lower = 0.3 # 0.3 - hazmap on 12
+clip_higher = 0.8 # 0.8 - hazmap on 12
 mask_prediction_strike_slip_clipped = (mask_prediction_strike_slip_scaled.clip(clip_lower, clip_higher)-clip_lower)/(clip_higher-clip_lower)
 seaborn.distplot(mask_prediction_strike_slip_clipped.flatten())
 plt.title("strike slip")
@@ -53,7 +53,7 @@ mask_prediction_thrust = prediction[2]
 mask_prediction_thrust_max = mask_prediction_thrust.max()
 mask_prediction_thrust_min = mask_prediction_thrust.min()
 mask_prediction_thrust_scaled = (mask_prediction_thrust-mask_prediction_thrust_min)/(mask_prediction_thrust_max-mask_prediction_thrust_min)
-clip_lower = 0.3
+clip_lower = 0.3 # 0.3
 clip_higher = 0.9 #0.9
 mask_prediction_thrust_clipped = (mask_prediction_thrust_scaled.clip(clip_lower, clip_higher)-clip_lower)/(clip_higher-clip_lower)
 seaborn.distplot(mask_prediction_thrust_clipped.flatten())
@@ -78,6 +78,23 @@ plt.imshow(mask_prediction_strike_slip_clipped)
 plt.title('strike slip')
 plt.show()
 
+
+geotiff_path = folder + f'/prediction_strike_slip_on_{prediction_region}_geo_greyscale.tiff'
+
+gdal_backend = GdalBackend()
+with open(f"{data_path}/preprocessed/{prediction_region}/gdal_params.yaml", 'r') as stream:
+    gdal_params = yaml.safe_load(stream)
+gdal_backend.set_params(gdal_params['driver_name'], gdal_params['projection'],
+                        eval(gdal_params['geotransform']))
+
+gdal_backend.write_surface(geotiff_path, mask_prediction_strike_slip_scaled,
+                           colour=False)
+
+plt.imshow(mask_prediction_strike_slip_scaled, cmap='gray')
+plt.title('strike slip greyscale')
+plt.show()
+
+
 geotiff_path = folder + f'/prediction_thrust_on_{prediction_region}_geo.tiff'
 
 gdal_backend = GdalBackend()
@@ -91,6 +108,23 @@ gdal_backend.write_surface(geotiff_path, mask_prediction_thrust_clipped)
 plt.imshow(mask_prediction_thrust_clipped)
 plt.title('thrust')
 plt.show()
+
+
+geotiff_path = folder + f'/prediction_thrust_on_{prediction_region}_geo_greyscale.tiff'
+
+gdal_backend = GdalBackend()
+with open(f"{data_path}/preprocessed/{prediction_region}/gdal_params.yaml", 'r') as stream:
+    gdal_params = yaml.safe_load(stream)
+gdal_backend.set_params(gdal_params['driver_name'], gdal_params['projection'],
+                        eval(gdal_params['geotransform']))
+
+gdal_backend.write_surface(geotiff_path, mask_prediction_thrust_scaled,
+                           colour=False)
+
+plt.imshow(mask_prediction_thrust_scaled, cmap='gray')
+plt.title('thrust greyscale')
+plt.show()
+
 
 geotiff_path = folder + f'/prediction_strike_slip_on_{prediction_region}_geo_binary.tiff'
 

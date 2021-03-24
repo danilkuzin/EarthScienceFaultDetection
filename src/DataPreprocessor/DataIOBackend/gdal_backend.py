@@ -207,7 +207,7 @@ class GdalBackend(DataIOBackend):
             image = image[crop[0]:crop[2], crop[1]:crop[3]]
             plt.imsave(path+".png", image)
 
-    def write_surface(self, path, image, crop=None):
+    def write_surface(self, path, image, crop=None, colour=True):
         #todo use gdal dem
 
         # driver = self.gdal_options['driver']
@@ -236,7 +236,10 @@ class GdalBackend(DataIOBackend):
         # dst_ds_2 = None
         # dst_ds = None
 
-        cmap = plt.get_cmap('jet')
+        if colour:
+            cmap = plt.get_cmap('jet')
+        else:
+            cmap = plt.get_cmap('gray')
         if crop is None:
             rgba_img_faults = cmap(image)
             rgb_img_faults = np.delete(rgba_img_faults, 3, 2)
