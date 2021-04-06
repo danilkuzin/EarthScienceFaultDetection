@@ -61,6 +61,7 @@ fiona.drvsupport.supported_drivers['LIBKML'] = 'rw'
 non_fault_files = ['NotFault_polygons_NorCal_v2.kml']
 
 points_per_non_fault_polygon = 50
+line_width = 10
 
 data_io_backend = GdalBackend()
 with open(
@@ -201,7 +202,8 @@ land_mask_np = np.array(
 empty_placeholder = np.zeros((im_height, im_width), dtype=bool)
 segmentation_mask = Image.fromarray(empty_placeholder)
 for ind, line_coord in enumerate(strike_slip_fault_lines):
-    ImageDraw.Draw(segmentation_mask).line(line_coord, fill='white', width=4)
+    ImageDraw.Draw(segmentation_mask).line(
+        line_coord, fill='white', width=line_width)
 segmentation_strike_slip_mask_np = np.array(segmentation_mask)
 segmentation_strike_slip_mask_np = np.logical_and(
     segmentation_strike_slip_mask_np, land_mask_np)
@@ -211,7 +213,8 @@ segmentation_strike_slip_mask_np = np.logical_and(
 
 segmentation_mask = Image.fromarray(empty_placeholder)
 for ind, line_coord in enumerate(thrust_fault_lines):
-    ImageDraw.Draw(segmentation_mask).line(line_coord, fill='white', width=4)
+    ImageDraw.Draw(segmentation_mask).line(
+        line_coord, fill='white', width=line_width)
 segmentation_thrust_mask_np = np.array(segmentation_mask)
 segmentation_thrust_mask_np = np.logical_and(
     segmentation_thrust_mask_np, land_mask_np)

@@ -84,7 +84,7 @@ train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
 train_on_preloaded_single_files_torch_unet(
     cnn_model, train_dataset, train_dataset_size, valid_dataset,
     valid_dataset_size,
-    folder=f"{data_path}/results/ncal_hazmap_truly_semisupervised_topo_sar_only",
+    folder=f"{data_path}/results/ncal_hazmap_truly_semisupervised_topo_sar_only_300m_linewidth",
     epochs=100,
     batch_size=batch_size,
     optimizer=optimizer,
