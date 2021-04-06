@@ -252,81 +252,81 @@ vis_mask = Image.fromarray(segmentation_mask_np_vis)
 vis_mask.show()
 data_io_backend.write_image('train_data_vis.tif', segmentation_mask_np_vis)
 
-# region_dataset = RegionDataset(region_ind)
-# if os.path.exists(output_path):
-#     shutil.rmtree(output_path)
-# os.makedirs(output_path)
-#
-# patch_counter = 0
-# lines = strike_slip_fault_lines + thrust_fault_lines
-# for ind, line in enumerate(lines):
-#     for fault_point_ind in range(len(line)):
-#
-#         fault_point = line[fault_point_ind]
-#
-#         try:
-#             # we use these coordinates for numpy arrays and fault_point in
-#             # xy-coordinates
-#             left_border, right_border, top_border, bottom_border = \
-#                 region_dataset._borders_from_center(
-#                     (fault_point[1], fault_point[0]),
-#                     patch_size=(736, 736))
-#             coords = np.array((left_border, right_border,
-#                                top_border, bottom_border))
-#
-#             imgs = region_dataset.concatenate_full_patch(
-#                 left_border, right_border, top_border,
-#                 bottom_border, channel_list=channel_list)
-#
-#             lbls = np.copy(segmentation_mask_np[left_border:right_border,
-#                            top_border:bottom_border])
-#             PLACEHOLDER = 1000
-#             lbls[lbls == FeatureValue.STRIKE_SLIP_FAULT.value] = PLACEHOLDER
-#             lbls[lbls == FeatureValue.NONFAULT.value] = 0
-#             lbls[lbls == PLACEHOLDER] = 1
-#             lbls[lbls == FeatureValue.THRUST_FAULT.value] = 2
-#             lbls[lbls == FeatureValue.UNDEFINED.value] = 3
-#
-#             with h5py.File(f'{output_path}data_{patch_counter}.h5', 'w') as hf:
-#                 hf.create_dataset("img", data=imgs)
-#                 hf.create_dataset("lbl", data=lbls)
-#                 hf.create_dataset("coord", data=coords)
-#
-#             patch_counter += 1
-#
-#         except OutOfBoundsException:
-#             pass
-#
-# for non_fault_point in non_fault_coords:
-#     try:
-#         left_border, right_border, top_border, bottom_border = \
-#             region_dataset._borders_from_center(
-#                 (non_fault_point[1], non_fault_point[0]), patch_size=(736, 736))
-#         coords = np.array(
-#             (left_border, right_border, top_border, bottom_border))
-#         imgs = region_dataset.concatenate_full_patch(
-#             left_border, right_border, top_border,
-#             bottom_border, channel_list=channel_list)
-#
-#         lbls = np.copy(segmentation_mask_np[left_border:right_border,
-#                        top_border:bottom_border])
-#
-#         PLACEHOLDER = 1000
-#         lbls[lbls == FeatureValue.STRIKE_SLIP_FAULT.value] = PLACEHOLDER
-#         lbls[lbls == FeatureValue.NONFAULT.value] = 0
-#         lbls[lbls == PLACEHOLDER] = 1
-#         lbls[lbls == FeatureValue.THRUST_FAULT.value] = 2
-#         lbls[lbls == FeatureValue.UNDEFINED.value] = 3
-#
-#         with h5py.File(f'{output_path}data_{patch_counter}.h5', 'w') as hf:
-#             hf.create_dataset("img", data=imgs)
-#             hf.create_dataset("lbl", data=lbls)
-#             hf.create_dataset("coord", data=coords)
-#
-#         patch_counter += 1
-#
-#     except OutOfBoundsException:
-#         pass
+region_dataset = RegionDataset(region_ind)
+if os.path.exists(output_path):
+    shutil.rmtree(output_path)
+os.makedirs(output_path)
+
+patch_counter = 0
+lines = strike_slip_fault_lines + thrust_fault_lines
+for ind, line in enumerate(lines):
+    for fault_point_ind in range(len(line)):
+
+        fault_point = line[fault_point_ind]
+
+        try:
+            # we use these coordinates for numpy arrays and fault_point in
+            # xy-coordinates
+            left_border, right_border, top_border, bottom_border = \
+                region_dataset._borders_from_center(
+                    (fault_point[1], fault_point[0]),
+                    patch_size=(736, 736))
+            coords = np.array((left_border, right_border,
+                               top_border, bottom_border))
+
+            imgs = region_dataset.concatenate_full_patch(
+                left_border, right_border, top_border,
+                bottom_border, channel_list=channel_list)
+
+            lbls = np.copy(segmentation_mask_np[left_border:right_border,
+                           top_border:bottom_border])
+            PLACEHOLDER = 1000
+            lbls[lbls == FeatureValue.STRIKE_SLIP_FAULT.value] = PLACEHOLDER
+            lbls[lbls == FeatureValue.NONFAULT.value] = 0
+            lbls[lbls == PLACEHOLDER] = 1
+            lbls[lbls == FeatureValue.THRUST_FAULT.value] = 2
+            lbls[lbls == FeatureValue.UNDEFINED.value] = 3
+
+            with h5py.File(f'{output_path}data_{patch_counter}.h5', 'w') as hf:
+                hf.create_dataset("img", data=imgs)
+                hf.create_dataset("lbl", data=lbls)
+                hf.create_dataset("coord", data=coords)
+
+            patch_counter += 1
+
+        except OutOfBoundsException:
+            pass
+
+for non_fault_point in non_fault_coords:
+    try:
+        left_border, right_border, top_border, bottom_border = \
+            region_dataset._borders_from_center(
+                (non_fault_point[1], non_fault_point[0]), patch_size=(736, 736))
+        coords = np.array(
+            (left_border, right_border, top_border, bottom_border))
+        imgs = region_dataset.concatenate_full_patch(
+            left_border, right_border, top_border,
+            bottom_border, channel_list=channel_list)
+
+        lbls = np.copy(segmentation_mask_np[left_border:right_border,
+                       top_border:bottom_border])
+
+        PLACEHOLDER = 1000
+        lbls[lbls == FeatureValue.STRIKE_SLIP_FAULT.value] = PLACEHOLDER
+        lbls[lbls == FeatureValue.NONFAULT.value] = 0
+        lbls[lbls == PLACEHOLDER] = 1
+        lbls[lbls == FeatureValue.THRUST_FAULT.value] = 2
+        lbls[lbls == FeatureValue.UNDEFINED.value] = 3
+
+        with h5py.File(f'{output_path}data_{patch_counter}.h5', 'w') as hf:
+            hf.create_dataset("img", data=imgs)
+            hf.create_dataset("lbl", data=lbls)
+            hf.create_dataset("coord", data=coords)
+
+        patch_counter += 1
+
+    except OutOfBoundsException:
+        pass
 
 
 

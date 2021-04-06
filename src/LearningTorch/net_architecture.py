@@ -627,8 +627,8 @@ class LossMultiSemiSupervisedEachClass:
          but sigmoid for each class (output vector does not have to sum to 1)
     """
     def __init__(self, device, nll_weight=0, jaccard_weight=0,
-                 focal_weight=0, ignore_classes_for_nll=[-100],
-                 ignore_classes_for_jaccard=[],
+                 focal_weight=0, ignore_classes_for_nll=None,
+                 ignore_classes_for_jaccard=None,
                  alpha=-1, gamma=2, reduction='mean'):
         """
 
@@ -642,6 +642,8 @@ class LossMultiSemiSupervisedEachClass:
             target values equal to ignore_class_for_nll and any of
             ignore_classes_for_jaccard
         """
+        if ignore_classes_for_nll is None:
+            ignore_classes_for_nll = []
         if ignore_classes_for_jaccard is None:
             ignore_classes_for_jaccard = []
         # self.nll_loss = nn.NLLLoss2d(weight=nll_weight)
@@ -665,11 +667,22 @@ class LossMultiSemiSupervisedEachClass:
         jaccard_class_range = np.setdiff1d(
             full_class_range, self.ignore_classes_for_jaccard)
 
+        not_ignored_ind = torch.ones(
+            targets.shape, dtype=torch.bool).to(self.device)
+        for class_id in self.ignore_classes_for_nll:
+            not_ignored_ind[targets == class_id] = False
+
+        target_not_ignored = targets[not_ignored_ind]
+        output_not_ignored = []
+        for cls in nll_class_range:
+            output_cls = outputs[:, cls, :, :]
+            output_not_ignored.append(output_cls[not_ignored_ind])
+
         eps = 1e-6
         loss = torch.zeros(1).to(self.device)
         for cls in nll_class_range:
-            target_cl = (targets == cls).float()
-            output_cl = outputs[:, cls]
+            target_cl = (target_not_ignored == cls).float()
+            output_cl = output_not_ignored[cls]
 
             if self.nll_weight:
                 loss += self.nll_weight * self.nll_loss(output_cl, target_cl)
