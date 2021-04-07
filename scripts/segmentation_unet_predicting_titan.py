@@ -57,7 +57,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # cnn_model = FCNet()
 region_id = 12
 
-folder = f"{data_path}/results/ncal_hazmap_truly_semisupervised_topo_sar_only"
+folder = f"{data_path}/results/ncal_hazmap_truly_semisupervised_topo_sar_only_300m_linewidth"
 training_output = torch.load(folder + '/model_epoch_99.pth', map_location=device)
 cnn_model = training_output['model'].to(device)
 cnn_model.eval()
