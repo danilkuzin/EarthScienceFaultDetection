@@ -61,7 +61,7 @@ fiona.drvsupport.supported_drivers['LIBKML'] = 'rw'
 non_fault_files = ['NotFault_polygons_NorCal_v2.kml']
 
 points_per_non_fault_polygon = 50
-line_width = 10
+line_width = 33
 
 data_io_backend = GdalBackend()
 with open(
