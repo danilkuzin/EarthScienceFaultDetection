@@ -7,7 +7,8 @@ from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
 from src.config import data_path
 
 folder = f"{data_path}/results/unet_on_12_elev_tri_flow_sar_" \
-         f"v2_no_fault_hazmap_two_classes_dice_focal_alpha_0.9_semisupervised"
+         f"v2_no_fault_hazmap_two_classes_dice_focal_alpha_0.9_" \
+         f"truly_semisupervised_1km_fault_linewidth"
 prediction_region = 12
 saved_image_path = folder + f'/prediction_on_{prediction_region}.npz'
 prediction = numpy.load(saved_image_path)['prediction']
@@ -30,8 +31,8 @@ mask_prediction_strike_slip_min = mask_prediction_strike_slip.min()
 mask_prediction_strike_slip_scaled = \
     (mask_prediction_strike_slip-mask_prediction_strike_slip_min)/\
     (mask_prediction_strike_slip_max-mask_prediction_strike_slip_min)
-clip_lower = 0.45 # 0.3 - hazmap on 12
-clip_higher = 0.95 # 0.8 - hazmap on 12
+clip_lower = 0 # 0.3 - hazmap on 12
+clip_higher = 1 # 0.8 - hazmap on 12
 mask_prediction_strike_slip_clipped = (mask_prediction_strike_slip_scaled.clip(clip_lower, clip_higher)-clip_lower)/(clip_higher-clip_lower)
 seaborn.distplot(mask_prediction_strike_slip_clipped.flatten())
 plt.title("strike slip")
@@ -53,7 +54,7 @@ mask_prediction_thrust = prediction[2]
 mask_prediction_thrust_max = mask_prediction_thrust.max()
 mask_prediction_thrust_min = mask_prediction_thrust.min()
 mask_prediction_thrust_scaled = (mask_prediction_thrust-mask_prediction_thrust_min)/(mask_prediction_thrust_max-mask_prediction_thrust_min)
-clip_lower = 0.55 # 0.3
+clip_lower = 0.3 # 0.3
 clip_higher = 1 #0.9
 mask_prediction_thrust_clipped = (mask_prediction_thrust_scaled.clip(clip_lower, clip_higher)-clip_lower)/(clip_higher-clip_lower)
 seaborn.distplot(mask_prediction_thrust_clipped.flatten())
