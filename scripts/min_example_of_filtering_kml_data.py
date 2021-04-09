@@ -1,14 +1,19 @@
 import geopandas
 import rasterio
+import rasterio.warp
+import shapely
+import shapely.geometry
+import fiona
 
 # please adjust it to match the path to the data on your computer
-import shapely
-
-data_path = "../DataForEarthScienceFaultDetection"
+data_path = "../../DataForEarthScienceFaultDetection"
 region_data_folder = "Region 12 - Nothern California"
 input_path = f'{data_path}/' \
              f'raw_data/{region_data_folder}'
 file = "HAZMAP.kml"
+
+fiona.drvsupport.supported_drivers['libkml'] = 'rw'
+fiona.drvsupport.supported_drivers['LIBKML'] = 'rw'
 
 dataset = rasterio.open(f'{data_path}/raw_data/'
                         f'{region_data_folder}/r_landsat.tif')
