@@ -120,7 +120,7 @@ class GdalBackend(DataIOBackend):
 
     def load_log_roughness(self, path: str) -> np.array:
         log_roughness = self.__load_1d_raster(path)
-        log_roughness[log_roughness < 0] = 0
+        # log_roughness[log_roughness < 0] = 0
         return log_roughness
 
     def load_log_flow(self, path: str) -> np.array:
@@ -130,6 +130,9 @@ class GdalBackend(DataIOBackend):
         return self.__load_1d_raster(path)
 
     def load_sar2(self, path: str) -> np.array:
+        return self.__load_1d_raster(path)
+
+    def load_incision(self, path: str) -> np.array:
         return self.__load_1d_raster(path)
 
     def parse_meta_with_gdal(self, path: str):

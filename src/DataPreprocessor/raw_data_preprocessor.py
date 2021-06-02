@@ -212,6 +212,15 @@ class RawDataPreprocessor:
                 np.zeros_like(self.preprocessed_data.channels['elevation'])
             logging.warning("Error: {}".format(err))
 
+        try:
+            self.preprocessed_data.channels['incision'] = \
+                self.data_io_backend.load_incision(
+                    path=str(self.data_dir / 'incision_landsat.tif'))
+        except FileNotFoundError as err:
+            self.preprocessed_data.channels['incision'] = \
+                np.zeros_like(self.preprocessed_data.channels['elevation'])
+            logging.warning("Error: {}".format(err))
+
         # self.__check_crop_data()
 
         try:

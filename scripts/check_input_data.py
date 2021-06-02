@@ -4,12 +4,12 @@ import os
 
 # import rasterio
 
-input_folder = '/Users/olgaisupova/Documents/GitHub/DataForEarthScienceFaultDetection/raw_data/NCAL_Files_sar/'
-file_prefix = 'NCAL_'
+input_folder = '/Users/danilkuzin/Documents/danilka/study/github/DataForEarthScienceFaultDetection/raw_data/NV7_Files/'
+file_prefix = 'NV7_'
 files = ['B2_UTM.tif', 'B3_UTM.tif', 'B4_UTM.tif', 'B5_UTM.tif',
-         'B6_UTM.tif', 'B7_UTM.tif', 'Elev_UTM.tif',
-         'Accumulation_LOG_10_UTM.tif', 'TRI_LOG_10_UTM.tif',
-         'Mask_UTM.tif', 'HH_LOG_10_UTM.tif', 'HV_LOG_10_UTM.tif']
+         'B6_UTM.tif', 'B7_UTM.tif', 'elev.tif',
+         'Channel_Truncated.tif', 'TRI.tif',
+         'Incision.tif', 'HH_LOG_10_UTM.tif', 'HV_LOG_10_UTM.tif']
 
 for file in files:
     full_name = os.path.join(

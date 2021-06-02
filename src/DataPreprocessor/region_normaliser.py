@@ -16,22 +16,24 @@ import io
 
 
 class RegionNormaliser:
-    optical_mean = 127.5
-    optical_std = 255.
+    optical_mean = 7500. # 127.5
+    optical_std = 14000. # 255.
     slope_mean = 45.
     slope_std = 90.
-    roughness_mean = 4000. # 200. # 50.
-    roughness_std = 6000. # 400. # 100.
+    roughness_mean = 200 # 4000.
+    roughness_std = 400 # 6000.
     roughness_log_mean = 0.7
     roughness_log_std = 4.
     erosion_mean = 150. # 12600.
     erosion_std = 300. # 25200
-    flow_mean = 500.
-    flow_std = 400.
-    sar1_mean = 2250.
-    sar1_std = 4500.
-    sar2_mean = 2250.
-    sar2_std = 4500.
+    flow_mean = 33217.5 # 500.
+    flow_std = 64635. # 400.
+    sar1_mean = 2400. # 2250.
+    sar1_std = 4800. # 4500.
+    sar2_mean = 2400. # 2250.
+    sar2_std = 4800. # 4500.
+    incision_mean = 150
+    incision_std = 300
 
     def __init__(self, region_id, area_ind):
         self.region_id = region_id
@@ -45,16 +47,25 @@ class RegionNormaliser:
 
     def normalise(self, is_roughness_log=False):
 
-        optical_r_normalised = (self.preprocessed_data.channels['optical_rgb'][:, :, 0] - self.optical_mean) / self.optical_std
-        optical_g_normalised = (self.preprocessed_data.channels['optical_rgb'][:, :, 1] - self.optical_mean) / self.optical_std
-        optical_b_normalised = (self.preprocessed_data.channels['optical_rgb'][:, :, 2] - self.optical_mean) / self.optical_std
-        self.normalised_data.channels['optical_rgb'] = np.stack((optical_r_normalised, optical_g_normalised, optical_b_normalised), axis=-1)
+        optical_r_normalised = \
+            (self.preprocessed_data.channels['optical_rgb'][:, :, 0] -
+             self.optical_mean) / self.optical_std
+        optical_g_normalised = \
+            (self.preprocessed_data.channels['optical_rgb'][:, :, 1] -
+             self.optical_mean) / self.optical_std
+        optical_b_normalised = \
+            (self.preprocessed_data.channels['optical_rgb'][:, :, 2] -
+             self.optical_mean) / self.optical_std
+        self.normalised_data.channels['optical_rgb'] = np.stack(
+            (optical_r_normalised, optical_g_normalised, optical_b_normalised),
+            axis=-1)
 
         input_path = f"{data_path}/normalised"
         with open(f"{input_path}/area_{self.area_ind}.yaml", 'r') as stream:
             features_areawide = yaml.safe_load(stream)
 
-        elevation_mean, elevation_std = features_areawide['mean_elevation'], features_areawide['std_elevation']
+        elevation_mean, elevation_std = features_areawide['mean_elevation'], \
+                                        features_areawide['std_elevation']
         self.normalised_data.channels['elevation'] = copy.deepcopy(
             self.preprocessed_data.channels['elevation']).astype(np.float32)
         self.normalised_data.channels['elevation'][
@@ -141,6 +152,12 @@ class RegionNormaliser:
                 (self.preprocessed_data.channels['sar2'] -
                  self.sar2_mean) / \
                 self.sar2_std
+
+        if self.preprocessed_data.channels['incision'] is not None:
+            self.normalised_data.channels['incision'] = \
+                (self.preprocessed_data.channels['incision'] -
+                 self.incision_mean) / \
+                self.incision_std
 
         self.normalised_data.features = self.preprocessed_data.features
 

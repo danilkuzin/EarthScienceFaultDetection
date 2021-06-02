@@ -47,13 +47,17 @@ class PreprocessedData:
             hf.create_dataset("elevation", data=self.channels['elevation'])
             if self.channels['slope'] is not None:
                 hf.create_dataset("slope", data=self.channels['slope'])
-            hf.create_dataset("optical_r", data=self.channels['optical_rgb'][:,:,0])
-            hf.create_dataset("optical_g", data=self.channels['optical_rgb'][:,:,1])
-            hf.create_dataset("optical_b", data=self.channels['optical_rgb'][:,:,2])
+            hf.create_dataset("optical_r",
+                              data=self.channels['optical_rgb'][:, :, 0])
+            hf.create_dataset("optical_g",
+                              data=self.channels['optical_rgb'][:, :, 1])
+            hf.create_dataset("optical_b",
+                              data=self.channels['optical_rgb'][:, :, 2])
             hf.create_dataset("nir", data=self.channels['nir'])
             hf.create_dataset("swir1", data=self.channels['swir1'])
             hf.create_dataset("swir2", data=self.channels['swir2'])
-            hf.create_dataset("topographic_roughness", data=self.channels['topographic_roughness'])
+            hf.create_dataset("topographic_roughness",
+                              data=self.channels['topographic_roughness'])
             hf.create_dataset("flow",
                               data=self.channels['flow'])
             hf.create_dataset("erosion",
@@ -62,6 +66,8 @@ class PreprocessedData:
                               data=self.channels['sar1'])
             hf.create_dataset("sar2",
                               data=self.channels['sar2'])
+            hf.create_dataset("incision",
+                              data=self.channels['incision'])
             hf.create_dataset("features", data=self.features)
 
     def load(self):
@@ -69,7 +75,8 @@ class PreprocessedData:
             optical_r = hf["optical_r"][:]
             optical_g = hf["optical_g"][:]
             optical_b = hf["optical_b"][:]
-            self.channels['optical_rgb'] = np.stack((optical_r, optical_g, optical_b), axis=-1)
+            self.channels['optical_rgb'] = np.stack(
+                (optical_r, optical_g, optical_b), axis=-1)
             self.channels['elevation'] = hf["elevation"][:]
             if "slope" in hf:
                 self.channels['slope'] = hf["slope"][:]
@@ -120,8 +127,11 @@ class PreprocessedData:
                 self.channels['sar2'] = hf['sar2'][:]
             else:
                 self.channels['sar2'] = None
+            if "incision" in hf:
+                self.channels['incision'] = hf['incision'][:]
+            else:
+                self.channels['incision'] = None
             self.features = hf["features"][:]
-
 
     def load_landsat(self):
         with h5py.File(f"{self.storage_path}/data.h5", 'r') as hf:
