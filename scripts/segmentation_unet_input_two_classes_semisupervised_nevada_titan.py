@@ -43,10 +43,10 @@ def is_point_strictly_inside_box(point, box):
 region_ind = 6
 region_data_folder = "Region 7 - Nevada train"
 channel_list = ['optical_rgb', 'elevation', 'nir', 'topographic_roughness',
-                'flow', 'erosion']
-input_path = f'{data_path}/' \
+                'flow', 'incision']
+input_path = f'/mnt/data/datasets/DataForEarthScienceFaultDetection/' \
              f'labels_from_Philip/'
-output_path = f"{data_path}/" \
+output_path = f"/mnt/data/datasets/DataForEarthScienceFaultDetection/" \
               f"train_data/" \
               f"regions_{region_ind}_segmentation_mask/"
 
@@ -63,7 +63,7 @@ non_fault_files = ['Faults/RTW_Not_Faults_Edited.utm',
 
 data_io_backend = GdalBackend()
 with open(
-        f"{data_path}/"
+        f"/mnt/data/datasets/DataForEarthScienceFaultDetection/"
         f"preprocessed/{region_ind}/gdal_params.yaml",
         'r') as stream:
     gdal_params = yaml.safe_load(stream)
@@ -107,7 +107,8 @@ for file in non_fault_files:
                 non_fault_coords.append(pixel_coords)
 
 # debug visualisation
-im_np = np.array(gdal.Open(f'{data_path}/raw_data/'
+im_np = np.array(gdal.Open(f'/mnt/data/datasets/'
+                           f'DataForEarthScienceFaultDetection/raw_data/'
                            f'{region_data_folder}/r_landsat.tif',
                  gdal.GA_ReadOnly).ReadAsArray())
 

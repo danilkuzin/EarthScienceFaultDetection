@@ -43,10 +43,10 @@ def is_point_strictly_inside_box(point, box):
 region_ind = 6
 region_data_folder = "Region 7 - Nevada train"
 channel_list = ['optical_rgb', 'elevation', 'nir', 'topographic_roughness',
-                'flow', 'erosion']
-input_path = f'/mnt/data/datasets/DataForEarthScienceFaultDetection/' \
+                'flow', 'incision']
+input_path = f'{data_path}/' \
              f'labels_from_Philip/'
-output_path = f"/mnt/data/datasets/DataForEarthScienceFaultDetection/" \
+output_path = f"{data_path}/" \
               f"train_data/" \
               f"regions_{region_ind}_segmentation_mask/"
 
@@ -63,7 +63,7 @@ non_fault_files = ['Faults/RTW_Not_Faults_Edited.utm',
 
 data_io_backend = GdalBackend()
 with open(
-        f"/mnt/data/datasets/DataForEarthScienceFaultDetection/"
+        f"{data_path}/"
         f"preprocessed/{region_ind}/gdal_params.yaml",
         'r') as stream:
     gdal_params = yaml.safe_load(stream)
@@ -107,8 +107,7 @@ for file in non_fault_files:
                 non_fault_coords.append(pixel_coords)
 
 # debug visualisation
-im_np = np.array(gdal.Open(f'/mnt/data/datasets/'
-                           f'DataForEarthScienceFaultDetection/raw_data/'
+im_np = np.array(gdal.Open(f'{data_path}/raw_data/'
                            f'{region_data_folder}/r_landsat.tif',
                  gdal.GA_ReadOnly).ReadAsArray())
 
@@ -167,9 +166,12 @@ segmentation_mask_np[segmentation_basin_mask_np == 1] = \
 
 
 segmentation_mask_np_vis = np.zeros((im_height, im_width, 3), dtype=np.uint8)
-segmentation_mask_np_vis[segmentation_mask_np == FeatureValue.FAULT.value, 0] = 255
-segmentation_mask_np_vis[segmentation_mask_np == FeatureValue.BASIN_FAULT.value, 1] = 255
-segmentation_mask_np_vis[segmentation_mask_np == FeatureValue.NONFAULT.value, 2] = 255
+segmentation_mask_np_vis[
+    segmentation_mask_np == FeatureValue.FAULT.value, 0] = 255
+segmentation_mask_np_vis[
+    segmentation_mask_np == FeatureValue.BASIN_FAULT.value, 1] = 255
+segmentation_mask_np_vis[
+    segmentation_mask_np == FeatureValue.NONFAULT.value, 2] = 255
 vis_mask = Image.fromarray(segmentation_mask_np_vis)
 # vis_mask.show()
 # data_io_backend.write_image('train_data_vis.tif', segmentation_mask_np_vis)
