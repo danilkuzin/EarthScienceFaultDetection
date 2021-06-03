@@ -55,10 +55,11 @@ def convert_box_to_mirror_image_coordinates(input_box, number_rows_mirrored, num
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # cnn_model = FCNet()
-region_id = 12
+region_id = 6
 
-folder = f"{data_path}/results/ncal_hazmap_truly_semisupervised_topo_sar_only_1km_linewidth"
-training_output = torch.load(folder + '/model_epoch_99.pth', map_location=device)
+folder = f"{data_path}/results/nevada_hazmap_semisupervised"
+training_output = torch.load(folder + '/model_epoch_99.pth',
+                             map_location=device)
 cnn_model = training_output['model'].to(device)
 cnn_model.eval()
 
@@ -84,8 +85,8 @@ plt.clf()
 data_preprocessor = RegionDataset(region_id)
 
 input_image = data_preprocessor.get_full_image(
-    channel_list=['elevation', 'topographic_roughness',
-                  'flow', 'sar1', 'sar2'])
+    channel_list=['optical_rgb', 'elevation', 'nir', 'topographic_roughness',
+                  'flow', 'incision'])
 im_width = input_image.shape[1]
 im_height = input_image.shape[0]
 
