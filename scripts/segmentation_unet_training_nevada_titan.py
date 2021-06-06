@@ -29,7 +29,7 @@ np.random.seed(1000)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-cnn_model = Res34_Unet(n_input_channels=8, n_classes=3)
+cnn_model = Res34_Unet(n_input_channels=1, n_classes=3)
 criterion = LossMultiSemiSupervisedEachClass(
     device=device, nll_weight=1, jaccard_weight=5,
     focal_weight=12, ignore_classes_for_nll=[3],
@@ -75,7 +75,7 @@ train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
     datasets_on_single_files_torch_segmentation(
         device=device,
         regions=[6], path_prefix=f'{data_path}/train_data',
-        channels=[0, 1, 2, 3, 4, 5, 6, 7],
+        channels=[0],
         train_ratio=0.8, batch_size=batch_size,
         num_workers=num_workers,
         transform=transform
@@ -84,7 +84,7 @@ train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
 train_on_preloaded_single_files_torch_unet(
     cnn_model, train_dataset, train_dataset_size, valid_dataset,
     valid_dataset_size,
-    folder=f"{data_path}/results/nevada_hazmap_semisupervised",
+    folder=f"{data_path}/results/nevada_hazmap_semisupervised_elev",
     epochs=100,
     batch_size=batch_size,
     optimizer=optimizer,

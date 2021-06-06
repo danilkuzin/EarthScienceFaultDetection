@@ -28,8 +28,8 @@ mask_prediction_front_range = prediction[1]
 mask_prediction_front_range_max = mask_prediction_front_range.max()
 mask_prediction_front_range_min = mask_prediction_front_range.min()
 mask_prediction_front_range_scaled = (mask_prediction_front_range-mask_prediction_front_range_min)/(mask_prediction_front_range_max-mask_prediction_front_range_min)
-clip_lower = 0.4 # 0.3 - hazmap on 6, 0.4 - hazmap on 7
-clip_higher = 1 # 0.7 - hazmap on 6, 0.75 - hazmap on 7
+clip_lower = 0.4 # 0.4 - hazmap on 6, 0.4 - hazmap on 7
+clip_higher = 1 # 1 - hazmap on 6, 1 - hazmap on 7
 mask_prediction_front_range_clipped = (mask_prediction_front_range_scaled.clip(clip_lower, clip_higher)-clip_lower)/(clip_higher-clip_lower)
 seaborn.distplot(mask_prediction_front_range_clipped.flatten())
 plt.title("front range")
