@@ -53,7 +53,7 @@ def convert_box_to_mirror_image_coordinates(input_box, number_rows_mirrored, num
 
     return mirrored_image_coordinated
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0") # if torch.cuda.is_available() else "cpu")
 # cnn_model = FCNet()
 region_id = 6
 
@@ -85,8 +85,7 @@ plt.clf()
 data_preprocessor = RegionDataset(region_id)
 
 input_image = data_preprocessor.get_full_image(
-    channel_list=['optical_rgb', 'elevation', 'nir', 'topographic_roughness',
-                  'flow', 'incision'])
+    channel_list=['elevation'])
 im_width = input_image.shape[1]
 im_height = input_image.shape[0]
 
