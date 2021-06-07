@@ -27,7 +27,7 @@ import torchvision
 
 np.random.seed(1000)
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0") # if torch.cuda.is_available() else "cpu")
 
 cnn_model = Res34_Unet(n_input_channels=1, n_classes=3)
 criterion = LossMultiSemiSupervisedEachClass(
