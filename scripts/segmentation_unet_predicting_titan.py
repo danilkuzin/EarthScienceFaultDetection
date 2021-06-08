@@ -85,7 +85,8 @@ plt.clf()
 data_preprocessor = RegionDataset(region_id)
 
 input_image = data_preprocessor.get_full_image(
-    channel_list=['elevation'])
+    channel_list=['elevation', 'topographic_roughness',
+                  'flow', 'sar1', 'sar2'])
 im_width = input_image.shape[1]
 im_height = input_image.shape[0]
 
