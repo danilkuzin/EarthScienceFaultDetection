@@ -75,3 +75,8 @@ sys.path.extend(['../../EarthScienceFaultDetection'])
 
 # Related
 * Related application of cancerous cell detection from DeepSets with Attention by Ilse Tomczak Welling 2018
+
+
+# Interpretability/ feature/pixel importance determination
+* https://arxiv.org/pdf/1805.12233.pdf
+* https://captum.ai/tutorials/Segmentation_Interpret
