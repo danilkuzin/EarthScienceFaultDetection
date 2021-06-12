@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
 from src.config import data_path
 
-folder = f"{data_path}/results/unet_on_6_rgb_elev_nir_tri_flow_incision_two_fault_classes_3xlookalike_dice_focal_alpha_0.9_semisupervised"
+folder = f"{data_path}/results/unet_on_6_elev_two_fault_classes_3xlookalike_dice_focal_alpha_0.9_semisupervised"
 prediction_region = 7
 saved_image_path = folder + f'/prediction_on_{prediction_region}.npz'
 prediction = numpy.load(saved_image_path)['prediction']
@@ -29,7 +29,7 @@ mask_prediction_front_range_max = mask_prediction_front_range.max()
 mask_prediction_front_range_min = mask_prediction_front_range.min()
 mask_prediction_front_range_scaled = (mask_prediction_front_range-mask_prediction_front_range_min)/(mask_prediction_front_range_max-mask_prediction_front_range_min)
 clip_lower = 0.4 # 0.4 - hazmap on 6, 0.4 - hazmap on 7
-clip_higher = 1 # 1 - hazmap on 6, 1 - hazmap on 7
+clip_higher = 0.9 # 1 - hazmap on 6, 1 - hazmap on 7
 mask_prediction_front_range_clipped = (mask_prediction_front_range_scaled.clip(clip_lower, clip_higher)-clip_lower)/(clip_higher-clip_lower)
 seaborn.distplot(mask_prediction_front_range_clipped.flatten())
 plt.title("front range")
@@ -63,7 +63,7 @@ gdal_backend.write_surface(geotiff_path, mask_prediction_front_range_scaled,
                            colour=False)
 
 plt.imshow(mask_prediction_front_range_scaled, cmap='gray')
-plt.title('strike slip greyscale')
+plt.title('front range greyscale')
 plt.show()
 
 
