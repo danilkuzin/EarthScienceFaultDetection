@@ -42,8 +42,7 @@ def is_point_strictly_inside_box(point, box):
 
 region_ind = 6
 region_data_folder = "Region 7 - Nevada train"
-channel_list = ['optical_rgb', 'elevation', 'nir', 'topographic_roughness',
-                'flow', 'incision']
+channel_list = ['elevation']
 input_path = f'{data_path}/' \
              f'labels_from_Philip/'
 output_path = f"{data_path}/" \
@@ -212,9 +211,9 @@ for ind, line in enumerate(lines):
             lbls[lbls == FeatureValue.UNDEFINED.value] = 3
 
             with h5py.File(f'{output_path}data_{patch_counter}.h5', 'w') as hf:
-                hf.create_dataset("img", data=imgs)
-                hf.create_dataset("lbl", data=lbls)
-                hf.create_dataset("coord", data=coords)
+                hf.create_dataset("img", data=imgs, compression='gzip', compression_opts=9)
+                hf.create_dataset("lbl", data=lbls, compression='gzip', compression_opts=9)
+                hf.create_dataset("coord", data=coords, compression='gzip', compression_opts=9)
 
             patch_counter += 1
 
@@ -239,9 +238,9 @@ for non_fault_point in non_fault_coords:
         lbls[lbls == FeatureValue.UNDEFINED.value] = 3
 
         with h5py.File(f'{output_path}data_{patch_counter}.h5', 'w') as hf:
-            hf.create_dataset("img", data=imgs)
-            hf.create_dataset("lbl", data=lbls)
-            hf.create_dataset("coord", data=coords)
+            hf.create_dataset("img", data=imgs, compression='gzip', compression_opts=9)
+            hf.create_dataset("lbl", data=lbls, compression='gzip', compression_opts=9)
+            hf.create_dataset("coord", data=coords, compression='gzip', compression_opts=9)
 
         patch_counter += 1
 
