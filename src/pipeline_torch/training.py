@@ -65,7 +65,7 @@ def datasets_on_single_files_torch_segmentation(device, regions,
     valid_dataset_size = 0
 
     for reg_id in regions:
-        reg_path = pathlib.Path(path_prefix + f'/regions_{reg_id}_segmentation_mask/')
+        reg_path = pathlib.Path(path_prefix, 'regions_'+str(reg_id)+'_segmentation_mask')
         all_image_paths = np.array([str(path) for path in list(reg_path.glob('*.h5'))])
 
         image_count = len(all_image_paths)

@@ -1,12 +1,18 @@
+import os
 import sys
+from collections import defaultdict
+
 import numpy as np
 import torch
-
-
 import torch.optim as optim
 from torch.optim import lr_scheduler
 
-sys.path.extend(['../../EarthScienceFaultDetection'])
+sys.path.extend(
+    [
+        os.path.join('..', '..', 'EarthScienceFaultDetection'),
+        os.path.join('..', '..', 'EarthScienceFaultDetection', 'hrnet'),
+    ]
+)
 #os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 from hrnet.lib.config import config, update_config
@@ -36,13 +42,27 @@ device = torch.device("cuda:0") # if torch.cuda.is_available() else "cpu")
 
 n_input_channels = 1
 n_classes = 3
-args = {}
-args.cfg = 'hrnet/experiments/cityscapes/seg_hrnet_w48_train_512x1024_sgd_lr1e-2_wd5e-4_bs_12_epoch484.yaml'
+
+class PolnayaErunda:
+    cfg=None
+    opts=None
+args = PolnayaErunda
+
+args.cfg= os.path.join(
+    '..',
+    'hrnet',
+    'experiments',
+    'cityscapes',
+    'seg_hrnet_w48_train_512x1024_sgd_lr1e-2_wd5e-4_bs_12_epoch484.yaml'
+)
+args.opts= ['DATASET.NUM_CLASSES', n_classes]
+
+
 update_config(config, args)
 
-config.defrost()
-config.DATASET.NUM_CLASSES = n_classes
-config.freeze()
+# config.defrost()
+# config.DATASET.NUM_CLASSES = n_classes
+# config.freeze()
 
 cnn_model = get_seg_model(config)
 cnn_model.conv1 = torch.nn.Conv2d(n_input_channels, 64, kernel_size=3, stride=2, padding=1, bias=False)
@@ -91,7 +111,7 @@ transform = torchvision.transforms.Compose([
 train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
     datasets_on_single_files_torch_segmentation(
         device=device,
-        regions=[6], path_prefix=f'{data_path}/train_data',
+        regions=[6], path_prefix=os.path.join(data_path, 'train_data'),
         channels=[0],
         train_ratio=0.8, batch_size=batch_size,
         num_workers=num_workers,
@@ -101,7 +121,7 @@ train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
 train_on_preloaded_single_files_torch_unet(
     cnn_model, train_dataset, train_dataset_size, valid_dataset,
     valid_dataset_size,
-    folder=f"{data_path}/results/nevada_hazmap_hrnet_elev",
+    folder=os.path.join(data_path, 'results', 'nevada_hazmap_hrnet_elev'),
     epochs=100,
     batch_size=batch_size,
     optimizer=optimizer,

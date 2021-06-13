@@ -1,3 +1,5 @@
+import os
+
 try:
     import google.colab
     from google.colab import drive
@@ -9,7 +11,7 @@ if IN_COLAB:
     data_path = '/gdrive/My Drive/Work/fault_detection/data'
     drive.mount('/gdrive')
 else:
-    data_path =  "/mnt/data/datasets/DataForEarthScienceFaultDetection" # "../../DataForEarthScienceFaultDetection"
+    data_path = os.path.join('..','..','DataForEarthScienceFaultDetection')  # "/mnt/data/datasets/DataForEarthScienceFaultDetection" #
 areas = {"Tibet": 0, "Nevada": 1, "Turkey": 2, "California": 3, "Nevada_other": 4}
 # path, area, trainable
 data_preprocessor_params = [
