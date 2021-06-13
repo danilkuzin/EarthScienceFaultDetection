@@ -330,8 +330,9 @@ def train_on_preloaded_single_files_torch_unet(
 
                 # print statistics
                 running_loss += loss.item() * inputs.size(0)
-                running_iou += get_jaccard_non_binary(
-                    labels, outputs).item()
+                running_iou += 0
+                # running_iou += get_jaccard_non_binary(
+                #     labels, outputs).item()
                 # running_iou += get_jaccard(labels,
                 #                            (outputs > 0).float()).item()
 

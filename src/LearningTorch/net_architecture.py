@@ -660,6 +660,7 @@ class LossMultiSemiSupervisedEachClass:
         self.device = device
 
     def __call__(self, outputs, targets):
+        print('I am in the right call')
         num_classes = outputs.shape[1]
         full_class_range = np.arange(num_classes)
         nll_class_range = np.setdiff1d(
