@@ -67,7 +67,6 @@ update_config(config, args)
 # config.freeze()
 
 cnn_model: HighResolutionNet = get_seg_model(config)
-print(cnn_model)
 cnn_model.conv1 = torch.nn.Conv2d(n_input_channels, 64, kernel_size=3, stride=2, padding=1, bias=False)
 
 criterion = LossMultiSemiSupervisedEachClassHRNet(

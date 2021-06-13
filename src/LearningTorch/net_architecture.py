@@ -715,7 +715,8 @@ class LossMultiSemiSupervisedEachClassHRNet(LossMultiSemiSupervisedEachClass):
                                     mode='bilinear',
                                     align_corners=False)
 
-        return super.__call__(outputs, targets)
+        return super(LossMultiSemiSupervisedEachClassHRNet, self).__call__(
+            outputs, targets)
 
 
 class LossCrossDice:

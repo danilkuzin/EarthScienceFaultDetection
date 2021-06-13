@@ -320,8 +320,6 @@ def train_on_preloaded_single_files_torch_unet(
                     # labels = labels[:, dim1_cropping:-dim1_cropping,
                     #          dim2_cropping:-dim2_cropping]
                     labels = labels.long()
-                    print(f"labels shape: {labels.shape}")
-                    print(f"outputs shape: {outputs.shape}")
                     loss = criterion(outputs,
                                      labels)
 
