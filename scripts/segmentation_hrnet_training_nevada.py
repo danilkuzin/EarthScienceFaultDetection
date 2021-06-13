@@ -24,7 +24,7 @@ from src.pipeline_torch.dataset import ToTensor, RandomRotation, ToTFImageInput,
 
 from src.LearningTorch.net_architecture import UNet, LossBinary, FocalLoss, \
     LossCrossDice, LossMulti, LossMultiSemiSupervised, Res34_Unet, \
-    LossMultiSemiSupervisedEachClass
+    LossMultiSemiSupervisedEachClass, LossMultiSemiSupervisedEachClassHRNet
 from src.pipeline_torch.training import datasets_on_single_files_torch, \
     train_on_preloaded_single_files_torch_unet, \
     datasets_on_single_files_torch_segmentation
@@ -60,7 +60,6 @@ args.cfg = os.path.join(
 )
 args.opts = ['DATASET.NUM_CLASSES', n_classes]
 
-
 update_config(config, args)
 
 # config.defrost()
@@ -71,7 +70,7 @@ cnn_model: HighResolutionNet = get_seg_model(config)
 print(cnn_model)
 cnn_model.conv1 = torch.nn.Conv2d(n_input_channels, 64, kernel_size=3, stride=2, padding=1, bias=False)
 
-criterion = LossMultiSemiSupervisedEachClass(
+criterion = LossMultiSemiSupervisedEachClassHRNet(
     device=device, nll_weight=1, jaccard_weight=5,
     focal_weight=12, ignore_classes_for_nll=[3],
     ignore_classes_for_jaccard=[0],

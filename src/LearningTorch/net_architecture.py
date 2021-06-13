@@ -706,6 +706,18 @@ class LossMultiSemiSupervisedEachClass:
         return loss
 
 
+class LossMultiSemiSupervisedEachClassHRNet(LossMultiSemiSupervisedEachClass):
+    def __call__(self, outputs, targets):
+        ph, pw = outputs.size(2), outputs.size(3)
+        h, w = targets.size(1), targets.size(2)
+        if ph != h or pw != w:
+            outputs = F.interpolate(input=outputs, size=(h, w),
+                                    mode='bilinear',
+                                    align_corners=False)
+
+        return super.__call__(outputs, targets)
+
+
 class LossCrossDice:
     """
      Implementation based  https://github.com/ternaus/robot-surgery-segmentation
