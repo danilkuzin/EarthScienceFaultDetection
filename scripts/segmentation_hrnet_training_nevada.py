@@ -43,19 +43,22 @@ device = torch.device("cuda:0") # if torch.cuda.is_available() else "cpu")
 n_input_channels = 1
 n_classes = 3
 
-class PolnayaErunda:
-    cfg=None
-    opts=None
-args = PolnayaErunda
 
-args.cfg= os.path.join(
+class Configs:
+    cfg = None
+    opts = None
+
+
+args = Configs
+
+args.cfg = os.path.join(
     '..',
     'hrnet',
     'experiments',
     'cityscapes',
     'seg_hrnet_w48_train_512x1024_sgd_lr1e-2_wd5e-4_bs_12_epoch484.yaml'
 )
-args.opts= ['DATASET.NUM_CLASSES', n_classes]
+args.opts = ['DATASET.NUM_CLASSES', n_classes]
 
 
 update_config(config, args)
