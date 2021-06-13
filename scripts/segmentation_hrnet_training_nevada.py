@@ -16,7 +16,7 @@ sys.path.extend(
 #os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 from hrnet.lib.config import config, update_config
-from hrnet.lib.models.seg_hrnet import get_seg_model
+from hrnet.lib.models.seg_hrnet import get_seg_model, HighResolutionNet
 
 from src.pipeline_torch.dataset import ToTensor, RandomRotation, ToTFImageInput, \
     RandomHorizontalFlip, RandomVerticalFlip, RandomBrightness, RandomContrast, \
@@ -67,7 +67,8 @@ update_config(config, args)
 # config.DATASET.NUM_CLASSES = n_classes
 # config.freeze()
 
-cnn_model = get_seg_model(config)
+cnn_model: HighResolutionNet = get_seg_model(config)
+print(cnn_model.state_dict())
 cnn_model.conv1 = torch.nn.Conv2d(n_input_channels, 64, kernel_size=3, stride=2, padding=1, bias=False)
 
 criterion = LossMultiSemiSupervisedEachClass(
