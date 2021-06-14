@@ -117,7 +117,7 @@ train_dataset, train_dataset_size, valid_dataset, valid_dataset_size = \
         channels=[0],
         train_ratio=0.8, batch_size=batch_size,
         num_workers=num_workers,
-        transform=transform
+        transform=transform,
 )
 
 train_on_preloaded_single_files_torch_unet(
@@ -128,5 +128,5 @@ train_on_preloaded_single_files_torch_unet(
     batch_size=batch_size,
     optimizer=optimizer,
     criterion=criterion,
-    scheduler=exp_lr_scheduler)
+    scheduler=exp_lr_scheduler),
 
