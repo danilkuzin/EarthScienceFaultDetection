@@ -55,7 +55,7 @@ def convert_box_to_mirror_image_coordinates(input_box, number_rows_mirrored, num
 
 device = torch.device("cuda:0") # if torch.cuda.is_available() else "cpu")
 # cnn_model = FCNet()
-region_id = 6
+region_id = 7
 
 folder = f"{data_path}/results/nevada_hazmap_semisupervised_elev_sar"
 training_output = torch.load(folder + '/model_epoch_99.pth',

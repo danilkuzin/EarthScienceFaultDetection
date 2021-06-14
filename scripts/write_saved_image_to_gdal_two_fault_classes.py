@@ -7,7 +7,7 @@ from src.DataPreprocessor.DataIOBackend.gdal_backend import GdalBackend
 from src.config import data_path
 
 folder = f"{data_path}/results/hrnet_on_6_elev_two_fault_classes_3xlookalike_dice_focal_alpha_0.9_semisupervised"
-prediction_region = 6
+prediction_region = 7
 saved_image_path = folder + f'/prediction_on_{prediction_region}.npz'
 prediction = numpy.load(saved_image_path)['prediction']
 
