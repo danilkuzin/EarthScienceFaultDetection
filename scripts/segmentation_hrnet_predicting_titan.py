@@ -141,9 +141,6 @@ for image_patch_num in range(len(image_patch_coordinate_list)):
                 ymax-ymin, xmax-xmin), mode='bilinear', align_corners=False)
     prediction_np = prediction.detach().cpu().numpy()
 
-    print(f"input_data shape {input_data.shape}")
-    print(f"prediction shape {prediction_np.shape}")
-
     xmin_center, ymin_center, xmax_center, ymax_center = \
         center_image_patch_coordinate_list[image_patch_num]
     full_prediction[:, ymin_center:ymax_center, xmin_center:xmax_center] = \
