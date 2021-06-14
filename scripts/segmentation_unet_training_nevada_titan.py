@@ -29,7 +29,7 @@ np.random.seed(1000)
 
 device = torch.device("cuda:0") # if torch.cuda.is_available() else "cpu")
 
-cnn_model = Res34_Unet(n_input_channels=2, n_classes=3)
+cnn_model = Res34_Unet(n_input_channels=3, n_classes=3)
 criterion = LossMultiSemiSupervisedEachClass(
     device=device, nll_weight=1, jaccard_weight=5,
     focal_weight=12, ignore_classes_for_nll=[3],

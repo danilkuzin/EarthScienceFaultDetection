@@ -42,7 +42,7 @@ def is_point_strictly_inside_box(point, box):
 
 region_ind = 6
 region_data_folder = "Region 7 - Nevada train"
-channel_list = ['elevation']
+channel_list = ['elevation', 'sar1', 'sar2']
 input_path = f'/mnt/data/datasets/DataForEarthScienceFaultDetection/' \
              f'labels_from_Philip/'
 output_path = f"/mnt/data/datasets/DataForEarthScienceFaultDetection/" \
