@@ -80,3 +80,4 @@ sys.path.extend(['../../EarthScienceFaultDetection'])
 # Interpretability/ feature/pixel importance determination
 * https://arxiv.org/pdf/1805.12233.pdf
 * https://captum.ai/tutorials/Segmentation_Interpret
+* https://arxiv.org/abs/1610.02391
