@@ -81,3 +81,10 @@ sys.path.extend(['../../EarthScienceFaultDetection'])
 * https://arxiv.org/pdf/1805.12233.pdf
 * https://captum.ai/tutorials/Segmentation_Interpret
 * https://arxiv.org/abs/1610.02391
+
+
+# Loss functions/Quality metric
+* Wasserstein loss paper - https://drive.google.com/file/d/1-2P5I0QPHiaRTfKDnFO4Lvf7M7zYQiRq/view?usp=sharing
+    * More details about Wasserstein distance:
+    * Application in Geophysics https://drive.google.com/file/d/1-4bCt57bO9424jCYH_MiuHTS5r7ziO_t/view?usp=sharing and https://arxiv.org/abs/1311.4581
+    * Original paper - https://proceedings.neurips.cc/paper/2015/hash/a9eb812238f753132652ae09963a05e9-Abstract.html
