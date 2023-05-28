@@ -1,3 +1,6 @@
+# Metrics
+* check [this](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://dl.acm.org/doi/pdf/10.1145/3359164) for Wasserstein distance explanation
+
 # Installation
 * seaborn has an optional requirements statsmodels that significantly increases the speed of plotting distributions
 #### GDAL
