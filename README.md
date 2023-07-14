@@ -1,5 +1,11 @@
 # Metrics
-* check [this](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://dl.acm.org/doi/pdf/10.1145/3359164) for Wasserstein distance explanation
+* check [this](https://dl.acm.org/doi/pdf/10.1145/3359164) for Wasserstein distance explanation
+
+
+## Maybe some hand-crafted useful features?
+* [this](https://isprs-archives.copernicus.org/articles/XLI-B3/187/2016/isprs-archives-XLI-B3-187-2016.pdf)
+* [this](https://www.sciencedirect.com/science/article/abs/pii/S0924271616305913)
+* [this](https://orbi.uliege.be/handle/2268/212353)
 
 # Installation
 * seaborn has an optional requirements statsmodels that significantly increases the speed of plotting distributions
