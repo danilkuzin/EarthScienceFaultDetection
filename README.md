@@ -1,6 +1,9 @@
 # Metrics
 * check [this](https://dl.acm.org/doi/pdf/10.1145/3359164) for Wasserstein distance explanation
 
+# Lines
+* book on line detection [here](https://link.springer.com/book/10.1007/978-1-4471-4414-4)
+
 
 ## Maybe some hand-crafted useful features?
 * [this](https://isprs-archives.copernicus.org/articles/XLI-B3/187/2016/isprs-archives-XLI-B3-187-2016.pdf)
