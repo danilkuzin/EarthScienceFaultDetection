@@ -1,6 +1,9 @@
 # Metrics
 * check [this](https://dl.acm.org/doi/pdf/10.1145/3359164) for Wasserstein distance explanation
 
+# Interpretability
+* [Grad-cam](https://openaccess.thecvf.com/content_iccv_2017/html/Selvaraju_Grad-CAM_Visual_Explanations_ICCV_2017_paper.html) method
+
 # Lines
 * book on line detection [here](https://link.springer.com/book/10.1007/978-1-4471-4414-4)
 * paper on Hough transform (maybe for line detection) [here](https://ieeexplore.ieee.org/abstract/document/7575646?casa_token=8BakdbEjX6sAAAAA:LEXGNJDY30yl2DVns0A6oaF_1OvRpHTUjOMF8CD8sfrLfkPxFTFXaXiviUr6IiQht4_Bd7hA)
