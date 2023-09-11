@@ -4,6 +4,7 @@
 # Lines
 * book on line detection [here](https://link.springer.com/book/10.1007/978-1-4471-4414-4)
 * paper on Hough transform (maybe for line detection) [here](https://ieeexplore.ieee.org/abstract/document/7575646?casa_token=8BakdbEjX6sAAAAA:LEXGNJDY30yl2DVns0A6oaF_1OvRpHTUjOMF8CD8sfrLfkPxFTFXaXiviUr6IiQht4_Bd7hA)
+* maybe something [here](https://www.spiedigitallibrary.org/journals/Journal-of-Applied-Remote-Sensing/volume-10/issue-3/035018/Development-of-the-iterative-edge-detection-method-applied-on-blurred/10.1117/1.JRS.10.035018.short?SSO=1)
 
 
 ## Maybe some hand-crafted useful features?
