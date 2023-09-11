@@ -3,6 +3,7 @@
 
 # Lines
 * book on line detection [here](https://link.springer.com/book/10.1007/978-1-4471-4414-4)
+* paper on Hough transform (maybe for line detection) [here](https://ieeexplore.ieee.org/abstract/document/7575646?casa_token=8BakdbEjX6sAAAAA:LEXGNJDY30yl2DVns0A6oaF_1OvRpHTUjOMF8CD8sfrLfkPxFTFXaXiviUr6IiQht4_Bd7hA)
 
 
 ## Maybe some hand-crafted useful features?
